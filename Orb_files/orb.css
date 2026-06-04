@@ -1,0 +1,636 @@
+
+
+body {
+    background-color: #202020;
+    color: white;
+}
+
+.simple-option {
+    margin: 9px;
+    padding: 3px;
+}
+
+.simple-option:hover {
+    background-color: #d0d0d0;
+}
+
+#language-button {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    width: 40px;
+    height: 40px;
+}
+
+#language-change {
+    position: absolute;
+    top: 70px;
+    right: 17px;
+    height: 200px;
+    width: 130px;
+    overflow: auto;
+    background: #c0c0c0;
+    color: black;
+}
+
+#sphere-panel {
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    width: 50%;
+    height: 100%;
+}
+
+#sphere-panel-inner {
+    display: block;
+    position: absolute;
+    top: 20%;
+    bottom: 20%;
+    left: 0%;
+    right: 0%;
+}
+
+#sphere {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+}
+
+#share-url { /* https://stackoverflow.com/a/22218694 */
+    display: flex;
+    position: absolute;
+    bottom: 65px;
+    left: 50%;
+    height: 50px;
+    width: 120px;
+    text-align: center;
+    transform: translateX(-50%);
+}
+
+#url-box { /* https://stackoverflow.com/a/22218694 */
+    display: flex;
+    position: absolute;
+    bottom: 16px;
+    left: 10%;
+    right: 10%;
+    height: 40px;
+    text-align: left;
+    border: 1px solid #c0c0c0;
+    color: white;
+    font-family: monospace;
+    overflow: auto;
+    word-break: break-all;
+}
+
+img {
+    user-drag: none;
+    -webkit-user-drag: none;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
+
+#sphere-controls {
+    position: absolute;
+    top: 80%;
+    bottom: 0%;
+    left: 0%;
+    right: 0%;
+}
+
+#slider-panel {
+    position: absolute;
+    top: 0%;
+    right: 0%;
+    width: 50%;
+    height: 50%;
+    background-color: #303030;
+    overflow: auto;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.system-unit {
+    margin: 40px;
+    /*width: 100%;*/
+}
+
+.ghost-system.system-unit {
+    margin: 40px;
+    visibility: hidden;
+}
+
+.system-settings {
+    display: flex; /* feels like there should be a better way */
+    flex-direction: column;
+    float: right;
+    align-items: center;
+}
+
+.system-button {
+    display: inline-block;
+    position: relative;
+    height: 50px;
+    width: 50px;
+    /*background-color: #4070c0;*/
+}
+
+.system-button > * {
+    width: 100%;
+    height: 100%;
+}
+
+.system-icon {
+    display: block;
+    position: absolute;
+}
+
+.svg-dark-bg {
+    filter: invert(85%);
+}
+
+.svg-blue-bg {
+    filter: invert(85%);
+    width: 40px;
+}
+
+.svg-light-bg {
+    filter: invert(-90%);
+}
+
+.svg-hoverable:hover {
+    background-color: #00000030;
+}
+
+.svg-light-bg.svg-hoverable:hover {
+    background-color: #ffffff30;
+}
+
+.ghost-system .system-icon {
+    display: none;
+}
+
+.system-add {
+    display: none;
+}
+
+.ghost-system .system-add {
+    display: block;
+    position: absolute;
+    visibility: visible;
+}
+
+.system-params {
+    display: inline-block;
+    height: 50px;
+    width: 110px;
+    vertical-align: middle;
+    text-align:center;
+    font-size: 30px;
+    line-height: 50px;
+}
+
+.system-params.system-params-in-use:hover {
+    background-color: #505050;
+}
+
+.system-params.small-text {
+    font-size: 25px;
+}
+
+.slider-group {
+    width: auto;
+    overflow: hidden;
+}
+
+.ghost-slider.slider-unit {
+    visibility: hidden;
+}
+
+.slider-input {
+    display: inline-block;
+    height: 24px;
+    width: 50px;
+    float: left;
+    margin: 11px 30px 11px 0px; /* do not make top margins too big! their borders crash */
+    background-color: inherit;
+    color: white;
+    border: 1px solid #c0c0c0;
+}
+
+
+.slider-input:focus {
+    -moz-user-select: auto;
+    -webkit-user-select: auto;
+    -ms-user-select: auto;
+    user-select: auto;
+}
+
+.slider-color {
+    display: inline-block;
+    height: 34px;
+    width: 34px;
+    margin: 8px 10px 8px 20px; /* margin: 8px 30px 8px 20px; */
+    float: right;
+}
+
+.slider-color > * {
+    width: 100%;
+    height: 100%;
+}
+
+.slider-color-swatch:hover, .color-choice:hover {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    border: 4px solid #ffffff40;
+}
+
+.color-choice:hover {
+    border-width: 3px;
+}
+
+.ghost-slider .slider-color-swatch {
+    display: none;
+}
+
+.slider-add {
+    display: none;
+}
+
+.ghost-slider .slider-add {
+    display: inline-block;
+    visibility: visible;
+}
+
+.slider {
+    position: relative;
+    width: auto;
+    height: 50px;
+    overflow: hidden;
+}
+
+.slider-bar {
+    position: absolute;
+    height: 8px;
+    left: 0%;
+    right: 10px;
+    top: 21px;
+    background-color: #808080;
+}
+
+.slider-bar.slider-neg {
+    display: none;
+}
+
+.slider-thumb {
+    position: absolute;
+    height: 30px;
+    width: 10px;
+    top: -11px;
+    z-index: 3;
+}
+
+/*.slider-thumb-in {
+    top: 0%;
+    height: 100%;
+    left: -50%;
+    right: 50%;
+    z-index: 4;
+}*/
+
+.slider-thumb.slider-neg {
+    display: none;
+    z-index: 2;
+}
+
+.full-depth .slider-bar {
+    display: block;
+    left: calc(50% - 5px);
+}
+
+.full-depth .slider-bar.slider-neg {
+    left: 0%;
+    right: calc(50% + 5px);
+    filter: brightness(85%);
+}
+
+.full-depth .slider-thumb.slider-neg {
+    display: block;
+    filter: brightness(85%);
+}
+
+.no-opposites .slider-bar.slider-neg, .no-opposites .slider-thumb.slider-neg {
+    filter: none;
+}
+
+.no-opposites .wrong-sign.slider-thumb {
+    display: none;
+}
+
+
+#phase-panel {
+    position: absolute;
+    bottom: 0%;
+    right: 0%;
+    width: 50%;
+    height: 50%;
+    background-color: #282828;
+}
+
+#phase-controls {
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    height: 100%;
+    width: 20%;
+}
+
+/* a bit off center */
+#phase-create { /* https://stackoverflow.com/a/22218694 */
+    display: flex;
+    position: absolute;
+    top: 50%;
+    left: 10%;
+    right: 10%;
+    height: 74px;
+    text-align: center;
+    transform: translateY(-50%);
+}
+
+#phase-diagram-container {
+    /*height: 80%;
+    max-height: 80%;
+    max-width: 80% */
+    width: 50%;
+}
+
+#phase-diagram {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    max-width: 50%;
+    max-height: 80%;
+}
+
+#phase-back {
+    fill: #c0c0c0;
+}
+
+.phase-domain-hoverable {
+    fill: #f00000;
+    stroke: #f00000;
+    opacity: 0;
+}
+
+.phase-domain-hoverable:hover {
+    opacity: 0.3;
+}
+
+.phase-region-hoverable {
+    stroke: none;
+}
+
+.phase-clip {
+    clip-path: url(#phase-back-clip);
+}
+
+.phase-clip-origin {
+    clip-path: url(#phase-back-clip-origin);
+}
+
+
+.phase-boundary {
+    stroke: #000000;
+    stroke-width: 0.0049;
+    stroke-linecap: round;
+    pointer-events: none;
+    fill: none;
+}
+
+.full-depth .phase-boundary {
+    stroke-width: 0.0098;
+}
+
+.phase-boundary-hoverable {
+    stroke-width: 0.04;
+    stroke-linecap: round;
+    fill: none;
+}
+
+.full-depth .phase-boundary-hoverable {
+    stroke-width: 0.08;
+}
+
+.phase-node-hoverable {
+    r: 0.03;
+    stroke: none;
+}
+
+.full-depth .phase-node-hoverable {
+    r: 0.06;
+}
+
+#phase-thumb.being-dragged {
+    pointer-events: none;
+}
+
+#phase-thumb-scale {
+    transform: scale(0.5, 0.5);
+}
+
+.full-depth #phase-thumb-scale {
+    transform: scale(1, 1);
+}
+
+
+#system-change {
+    display: inline-flex;
+    flex-direction: row;
+    position: absolute;
+    height: 400px;
+    right: 30px;
+    z-index: 99;
+    overflow: hidden;
+}
+
+#system-sidebar {
+    position: relative;
+    height: 100%;
+    width: auto;
+    background-color: #4070c0;
+    margin: 0;
+}
+
+#category-options {
+}
+
+.category-option {
+    margin: 10px;
+}
+
+.category-option:hover {
+    background-color: #6090d0;
+}
+
+#system-settings {
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+}
+
+#system-remove {
+    position: absolute;
+    bottom: 0px;
+    margin: calc(50% - 20px);
+}
+
+#system-options {
+    height: 100%;
+    overflow: auto;
+    background-color: #c0c0c0;
+    color: black;
+    margin: 0;
+}
+
+.system-option {
+    margin: 10px;
+    vertical-align: middle;
+    text-align: middle;
+}
+
+.system-option:hover {
+    background-color: #d0d0d0;
+}
+
+.system-option-icon {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    vertical-align: middle;
+    /*background-color: #6080a0;*/
+}
+
+.system-option-name {
+    display: inline;
+}
+
+
+#params-change {
+    position: absolute;
+    height: 200px;
+    width: 150px;
+    right: 30px;
+    z-index: 99;
+    color: #000000;
+    font-size: 20px;
+    overflow: auto;
+}
+
+#params-scroll {
+    display: inline-flex;
+    flex-direction: row;
+    width: 100%;
+    min-height: 100%;
+}
+
+#params-scroll > div:nth-child(2n+1) {
+    background-color: #c0c0c0;
+}
+
+#params-scroll > div:nth-child(2n) {
+    background-color: #b0b0b0;
+}
+
+#order-change {
+    flex-grow: 1;
+}
+
+.order-option {
+    min-width: 40px;
+}
+
+#jumble-config-change {
+    flex-grow: 2;
+}
+
+.jumble-config-option {
+    min-width: 50px;
+}
+
+
+#color-change {
+    display: inline-flex;
+    flex-direction: column;
+    position: absolute;
+    right: 100px;
+    z-index: 99;
+    background-color: #c0c0c0;
+    padding: 16px;
+}
+
+#color-group {
+    display: grid;
+    grid-template-columns: 30px 30px 30px 30px 30px;
+    grid-gap: 4px;
+}
+
+.color-choice {
+    height: 30px;
+    width: 30px;
+}
+
+#color-settings {
+    margin-top: 16px;
+}
+
+#color-remove {
+    float: right;
+    height: 30px;
+    width: 30px;
+}
+
+.gray-button {
+    justify-content: center; /* align horizontal */
+    align-items: center; /* align vertical */
+    background-color: #707070;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
+
+.gray-button:hover {
+    background-color: #606060;
+}
+
+.draggable {
+    cursor: move;
+    cursor: grab;
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+}
+
+.dragging .draggable {
+    cursor: grabbing;
+}
+
+.dragging {
+    cursor: grabbing;
+}
+
+
+
+#hidden, .hidden:not(#_) { /* _ is a dummy id */
+    display: none;
+}
+
+
+
+

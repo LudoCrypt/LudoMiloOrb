@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <title>Orb</title>
+    <script>const require=()=>TinyQueue;module={};</script> <!--ultimate hack-->
+    <script src="./Orb_files/quaternion.js" crossorigin=""></script>
+    <script src="./Orb_files/tinyqueue.js" crossorigin=""></script>
+    <script src="./Orb_files/polylabel.js" crossorigin=""></script>
+    <script type="text/javascript" src="./Orb_files/vector.js"></script>
+    <script type="text/javascript" src="./Orb_files/floatset.js"></script>
+    <script type="text/javascript" src="./Orb_files/orb_data.js"></script>
+    <script type="text/javascript" src="./Orb_files/orb.js"></script>
+    <link rel="stylesheet" type="text/css" href="./Orb_files/orb.css">
+</head>
+<body onload='initialize()'>
+
+<div id='sphere-panel'>
+    <div id='sphere-panel-inner'>
+        <canvas width='500' height='500' id='sphere'>
+            the Orb
+        </canvas>
+    </div>
+    <div id='sphere-controls'>
+        <div id='share-url' class='translate gray-button' data-translate='other.share_url'></div>
+        <div id='url-box' class='hidden'></div>
+    </div>
+    <img id='language-button' class='svg-dark-bg svg-hoverable' src='./icons/lang.svg'>
+    <div id='language-change' class='hidden'></div>
+</div>
+
+<div id='control-panel'>
+    <div id='slider-panel'>
+    </div>
+
+    <div id='phase-panel'>
+        <div id='phase-controls'>
+            <div id='phase-create' class='translate gray-button' data-translate='other.create_phase_diagram.good'>
+            </div>
+        </div>
+        <svg id='phase-diagram' class='hidden'>
+            <g id='phase-transform' transform='scale(1,-1)'>
+                <rect id='phase-back'></rect>
+                <clipPath id='phase-back-clip'>
+                    <rect id='phase-back-clip-rect'></rect>
+                </clipPath>
+                <clipPath id='phase-back-clip-origin'>
+                    <rect id='phase-back-clip-origin-rect'></rect>
+                </clipPath>
+                <g id='phase-domains'>
+                    <g id='phase-lines'></g>
+                    <g id='phase-regions'></g>
+                    <g id='phase-boundaries'></g>
+                    <g id='phase-nodes'></g>
+                </g>
+                <g id='phase-thumb' class='draggable' transform='translate(1,0)' fill='#a03030'>
+                    <g id="phase-thumb-scale">
+                        <rect id='phase-thumb-vert' x='-0.015' y='-0.075' width='0.03' height='0.15'></rect>
+                        <rect id='phase-thumb-horiz' x='-0.075' y='-0.015' width='0.15' height='0.03'></rect>
+                    </g>
+                </g>
+            </g>
+        </svg>
+    </div>
+</div>
+
+<div id='change-windows'>
+    <div id='system-change' class='hidden'>
+        <div id='system-sidebar'>
+            <div id='category-options'></div>
+            <div id='system-settings'>
+                <img id='system-remove' class='svg-blue-bg svg-hoverable' src='./icons/remove.svg'>
+            </div>
+        </div>
+        <div id='system-options'></div>
+    </div>
+
+    <div id='params-change' class='hidden'>
+        <div id='params-scroll'>
+            <div id='order-change'></div>
+            <div id='jumble-config-change'></div>
+            <div id='arbitrary-constant-change'></div>
+        </div>
+    </div>
+
+    <div id='color-change' class='hidden'>
+        <div id='color-group'></div>
+        <div id='color-settings'>
+            <img id='color-remove' class='svg-light-bg svg-hoverable' src='./icons/remove.svg'>
+        </div>
+    </div>
+</div>
+
+<div id='hidden'>
+    <div class='system-unit' id='template-system-unit' data-system='cube' data-jumble-config=''>
+        <div class='system-settings'>
+            <div class='system-button'>
+                <img class='system-icon svg-dark-bg svg-hoverable translate' data-alt-translate='system.cube' src='./icons/systems/cube.svg'>
+                <img class='system-add svg-dark-bg svg-hoverable' src='./icons/add.svg'>
+            </div>
+            <div class='system-params'></div>
+        </div>
+        <div class='slider-group'>
+        </div>
+    </div>
+    <div class='slider-unit' id='template-slider-unit' data-depth='1' data-color='#a00000'>
+        <input type='number' value='1000' class='slider-input' min='0' max='1000'></input>
+        <div class='slider-color'>
+            <div class='slider-color-swatch' style='background-color:#a00000;'></div>
+            <img class='slider-add svg-dark-bg svg-hoverable' src='./icons/add.svg'>
+        </div>
+        <div class='slider'>
+            <div class='slider-bar'>
+                <div class='slider-thumb draggable' style='left:100%;background-color:#a00000;'>
+                    <!--<div class='slider-thumb-in'></div>-->
+                </div>
+            </div>
+            <div class='slider-bar slider-neg'>
+                <div class='slider-thumb slider-neg draggable' style='left:0%;background-color:#a00000;'></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

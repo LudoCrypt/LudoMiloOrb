@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg width='50'
+    height='50'
+    viewBox='-0.6 -0.487435 1.2 1.2'
+    xmlns='http://www.w3.org/2000/svg'
+    xmlns:xlink='http://www.w3.org/1999/xlink'>
+ <g stroke='#000000'
+     stroke-width='0.096'
+     stroke-linecap='round'>
+  <line x1='0.'
+      y1='-0.361416'
+      x2='-0.5'
+      y2='0.337696' />
+  <line x1='0.'
+      y1='-0.361416'
+      x2='0.5'
+      y2='0.337696' />
+  <line x1='0.'
+      y1='-0.361416'
+      x2='0.'
+      y2='0.586546' />
+  <line x1='-0.5'
+      y1='0.337696'
+      x2='0.'
+      y2='0.586546' />
+  <line x1='0.5'
+      y1='0.337696'
+      x2='0.'
+      y2='0.586546' />
+ </g>
+</svg>
