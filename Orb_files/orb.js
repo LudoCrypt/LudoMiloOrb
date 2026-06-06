@@ -1514,7 +1514,7 @@ function createPhasePlot(){
         if (renderRegions){
             let segmentArcs = new Map(); // segment: the next segment in the region
 
-            for (let i = 0; i < intersectionArr.length; i++){
+            for (let i = 0; i < intersectionArr.length; i++) {
                 let intersection = intersectionArr[i];
                 if (!(intersection[0] > -1-THRESHOLD && intersection[1] > -1-THRESHOLD)) continue;
                 if (!(intersection[0] < 1+THRESHOLD && intersection[1] < 1+THRESHOLD)) continue;
@@ -1523,6 +1523,7 @@ function createPhasePlot(){
                 nodeHoverable.setAttributeNS(null, 'cy', intersection[1]);
                 nodeHoverable.dataset.centerX = intersection[0];
                 nodeHoverable.dataset.centerY = intersection[1];
+                nodeHoverable.setAttributeNS(null, 'r', 0.03);
                 nodeHoverable.classList.add('phase-domain-hoverable', 'phase-node-hoverable');
                 phaseNodeG.appendChild(nodeHoverable);
 
@@ -1602,8 +1603,11 @@ function createPhasePlot(){
 
     document.addEventListener('click', (e) => {
         const target = e.target;
+
         if (target.classList.contains('phase-domain-hoverable')) {
             let toast = "";
+
+            const format = (v) => e.shiftKey ? v : acosDegrees(v);
 
             const getAttr = (name) => parseFloat(target.getAttribute(name)) || 0;
 
@@ -1611,40 +1615,50 @@ function createPhasePlot(){
                 case 'rect':
                     const rx1 = getAttr('x');
                     const rx2 = rx1 + getAttr('width');
-                    toast = `${acosDegrees(rx1)}, ${acosDegrees(rx2)}`;
+
+                    toast = `${format(rx1)}, ${format(rx2)}`;
                     break;
 
                 case 'line':
                     if (is2D) {
-                        toast = `(${acosDegrees(getAttr('x1'))}, ${acosDegrees(getAttr('y1'))}), (${acosDegrees(getAttr('x2'))}, ${acosDegrees(getAttr('y2'))})`;
+                        toast = `(${format(getAttr('x1'))}, ${format(getAttr('y1'))}), (${format(getAttr('x2'))}, ${format(getAttr('y2'))})`;
                     } else {
-                        toast = `${acosDegrees(getAttr('x1'))}`;
+                        toast = `${format(getAttr('x1'))}`;
                     }
                     break;
 
                 case 'path':
                     const d = target.getAttribute('d') || '';
 
-                    const nums = d.match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi)?.map(Number);
+                    const sections = d.match(/[a-zA-Z][^a-zA-Z]*/g) || [];
 
-                    if (nums && nums.length >= 9) {
-                        const startX = nums[0];
-                        const startY = nums[1];
+                    const points = [];
 
-                        const endX = nums[7];
-                        const endY = nums[8];
+                    for (const section of sections) {
+                        const nums = section.match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi)?.map(Number);
 
-                        toast = `(${acosDegrees(startX)}, ${acosDegrees(startY)}), (${acosDegrees(endX)}, ${acosDegrees(endY)})`;
+                        if (nums && nums.length >= 2) {
+                            const x = nums[nums.length - 2];
+                            const y = nums[nums.length - 1];
+
+                            points.push(`(${format(x)}, ${format(y)})`);
+                        }
                     }
+
+                    if (points.length > 1 && points[0] === points[points.length - 1]) {
+                        points.pop();
+                    }
+
+                    toast = points.join(', ');
                     break;
 
-                default:
-                    const x = target.getAttribute('x');
-                    if (x !== null) toast = acosDegrees(parseFloat(x));
+                case 'circle':
+                    toast = `(${format(getAttr('cx'))}, ${format(getAttr('cy'))})`;
+                    break;
             }
 
             if (toast) {
-                showToast(`${toast}`);
+                showToast(toast);
             }
         }
     });
