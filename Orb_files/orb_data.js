@@ -660,53 +660,48 @@ addSystem({
     transitiveSymmetries: 0x0000,
 });
 
-
 addSystem({
     name: 'pyrito_edges_variable',
     paramsRequired: ['arbitraryConstant'],
     getAxes: function(params){
         let x = parseFloat(params.arbitraryConstant ?? 0.5);
 
-        let b = Math.sqrt( (1+x*0.5) * (1+x*0.5) + (1-x*x*0.5) * (1-x*x*0.5) + 0.5 * 0.5 )
-
-        let p = (1+x*0.5) / b;
-        let q = (1-x*x*0.5) / b;
-        let l = (0.5) / b;
+        let babaisyou = (Math.sqrt(x * x + x + 1) * Math.sqrt(2) * (x + 1));
+        let p = (x * x + x) / babaisyou;
+        let q = (x+1) / babaisyou;
+        let l = ((x+1) * (x+1)) / babaisyou;
 
         return [
-            new Vector(l,q,p),
-            new Vector(-l,q,p),
-            new Vector(l,-q,p),
-            new Vector(-l,-q,p),
-            new Vector(l,q,-p),
-            new Vector(-l,q,-p),
-            new Vector(l,-q,-p),
-            new Vector(-l,-q,-p),
 
-            new Vector(q,p,l),
-            new Vector(q,-p,l),
-            new Vector(-q,p,l),
-            new Vector(-q,-p,l),
-            new Vector(q,p,-l),
-            new Vector(q,-p,-l),
-            new Vector(-q,p,-l),
-            new Vector(-q,-p,-l),
+            new Vector(p, q, l),
+            new Vector(p, -q, l),
+            new Vector(-p, -q, l),
+            new Vector(-p, q, l),
 
-            new Vector(p,l,q),
-            new Vector(p,-l,q),
-            new Vector(-p,l,q),
-            new Vector(-p,-l,q),
-            new Vector(p,l,-q),
-            new Vector(p,-l,-q),
-            new Vector(-p,l,-q),
-            new Vector(-p,-l,-q),
+            new Vector(p, q, -l),
+            new Vector(p, -q, -l),
+            new Vector(-p, -q, -l),
+            new Vector(-p, q, -l),
 
-            new Vector(1,0,0),
-            new Vector(-1,0,0),
-            new Vector(0,1,0),
-            new Vector(0,-1,0),
-            new Vector(0,0,1),
-            new Vector(0,0,-1),
+            new Vector(q, l, p),
+            new Vector(q, -l, p),
+            new Vector(-q, -l, p),
+            new Vector(-q, l, p),
+
+            new Vector(q, l, -p),
+            new Vector(q, -l, -p),
+            new Vector(-q, -l, -p),
+            new Vector(-q, l, -p),
+ 
+            new Vector(l, p, q),
+            new Vector(l, -p, q),
+            new Vector(-l, -p, q),
+            new Vector(-l, p, q),
+
+            new Vector(l, p, -q),
+            new Vector(l, -p, -q),
+            new Vector(-l, -p, -q),
+            new Vector(-l, p, -q)
 
         ];
     },
