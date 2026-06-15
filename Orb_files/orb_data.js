@@ -22,22 +22,22 @@ symmetries:
 
 */
 
-function addSystemCategory(data){
+function addSystemCategory(data) {
     systemCategoryData[data.name] = data;
     systemCategories.set(data.name, []);
     mostRecentCategory = data.name;
 }
 
-function highestBit(n){
+function highestBit(n) {
     let hBit = 1;
-    while (n > 1){ // finds the highest bit set
+    while (n > 1) { // finds the highest bit set
         n >>= 1;
         hBit <<= 1;
     }
     return hBit;
 }
 
-function* allBits(n){
+function* allBits(n) {
     let bit = 1;
     do {
         if (bit & n) yield bit;
@@ -45,15 +45,15 @@ function* allBits(n){
     } while (bit < n);
 }
 
-function addSystem(data, addToMenu=true){
+function addSystem(data, addToMenu = true) {
     data.opposites ??= true;
     data.anyOpposites ??= data.opposites;
-    if (data.axes || data.getAxes){
-        data.axes?.forEach(function(vec, index){
-          this[index] = new Vector(...vec).unit();
+    if (data.axes || data.getAxes) {
+        data.axes?.forEach(function(vec, index) {
+            this[index] = new Vector(...vec).unit();
         }, data.axes);
         data.getOpposites ??= () => data.opposites;
-        if (data.axes && data.getOpposites()){
+        if (data.axes && data.getOpposites()) {
             data.axes.push(...data.axes.map(x => x.negative()));
         }
         data.getAnyOpposites ??= () => data.anyOpposites;
@@ -63,25 +63,24 @@ function addSystem(data, addToMenu=true){
         data.listjumbleConfigs ??= () => ['']
     } else {
         data.paramsRequired ??= ['jumbleConfig'];
-        data.jumbleConfigs?.forEach(function(p){
-        });
+        data.jumbleConfigs?.forEach(function(p) {});
         data.getJumbleCoeffs ??= params => data.jumbleConfigs.get(params.jumbleConfig);
         data.listjumbleConfigs ??= () => Array.from(data.jumbleConfigs.keys());
         data.getBaseAxes ??= () => data.baseAxes;
         data.getCombAxes ??= () => data.combAxes;
         data.getOpposites ??= () => data.opposites;
         data.getAnyOpposites ??= () => data.anyOpposites;
-        data.getAxes ??= function(params){
+        data.getAxes ??= function(params) {
             let axes = [];
             let coeffs = data.getJumbleCoeffs(params);
             let baseAxes = data.getBaseAxes(params);
-            if (coeffs.length < baseAxes.length){
-                coeffs.push(1 - coeffs.reduce((a,b)=>a+b));
+            if (coeffs.length < baseAxes.length) {
+                coeffs.push(1 - coeffs.reduce((a, b) => a + b));
             }
-            for (let comb of data.getCombAxes(params)){
+            for (let comb of data.getCombAxes(params)) {
                 let axis = new Vector();
-                for (let i = 0; i < comb.length; i++){
-                    if (comb[i] !== undefined){
+                for (let i = 0; i < comb.length; i++) {
+                    if (comb[i] !== undefined) {
                         axis = axis.add(baseAxes[i][comb[i]].multiply(coeffs[i]));
                     }
                 }
@@ -97,7 +96,7 @@ function addSystem(data, addToMenu=true){
     }
     data.symmetries ??= 0x0001;
     data.symmetries |= 0x0001; // just to be safe
-    if (data.transitiveSymmetries === undefined){ // assumes it's NOT transitive
+    if (data.transitiveSymmetries === undefined) { // assumes it's NOT transitive
         data.transitiveSymmetries = 0x0000 //highestBit(data.symmetries);
     }
     data.getSymAxes ??= (params, sym) => sym & data.transitiveSymmetries ? [0] : [...Array(data.getAxisCount(params)).keys()];
@@ -107,89 +106,131 @@ function addSystem(data, addToMenu=true){
     systemData[data.name] = data
 }
 
-function getAxesFromSystemUnit(systemUnit){
+function getAxesFromSystemUnit(systemUnit) {
     return systemData[systemUnit.dataset.system].getAxes(systemUnit.dataset);
 }
 
-function getSymAxesFromSystemUnit(systemUnit, symmetry=0){
+function getSymAxesFromSystemUnit(systemUnit, symmetry = 0) {
     return systemData[systemUnit.dataset.system].getSymAxes(systemUnit.dataset, symmetry);
 }
 
-function listjumbleConfigsFromSystemUnit(systemUnit){
+function listjumbleConfigsFromSystemUnit(systemUnit) {
     return systemData[systemUnit.dataset.system].listjumbleConfigs(systemUnit.dataset);
 }
 
-function getOppositesFromSystemUnit(systemUnit){
+function getOppositesFromSystemUnit(systemUnit) {
     return systemData[systemUnit.dataset.system].getOpposites(systemUnit.dataset);
 }
 
-function getAnyOppositesFromSystemUnit(systemUnit){
+function getAnyOppositesFromSystemUnit(systemUnit) {
     return systemData[systemUnit.dataset.system].getAnyOpposites(systemUnit.dataset);
 }
 
-function getIconFromSystemUnit(systemUnit){
+function getIconFromSystemUnit(systemUnit) {
     return systemData[systemUnit.dataset.system].getIcon(systemUnit.dataset);
 }
 
 
 addSystemCategory({
     name: 'regular',
-    });
+});
 
 addSystem({
-    name: 'tetra', 
-    axes: [[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]],
+    name: 'tetra',
+    axes: [
+        [1, 1, 1],
+        [1, -1, -1],
+        [-1, 1, -1],
+        [-1, -1, 1]
+    ],
     opposites: false,
     symmetries: 0x0031,
     transitiveSymmetries: 0x0030,
 });
 addSystem({
-    name: 'cube', 
-    axes: [[1,0,0],[0,1,0],[0,0,1]],
+    name: 'cube',
+    axes: [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1]
+    ],
     symmetries: 0x0371,
     transitiveSymmetries: 0x0370,
 });
 addSystem({
-    name: 'octa', 
-    axes: [[1,1,1],[1,1,-1],[1,-1,1],[1,-1,-1]],
+    name: 'octa',
+    axes: [
+        [1, 1, 1],
+        [1, 1, -1],
+        [1, -1, 1],
+        [1, -1, -1]
+    ],
     symmetries: 0x0371,
     transitiveSymmetries: 0x0340,
 });
 addSystem({
-    name: 'r_dodeca', 
-    axes: [[1,1,0],[0,1,1],[1,0,1],[1,-1,0],[0,1,-1],[-1,0,1]],
+    name: 'r_dodeca',
+    axes: [
+        [1, 1, 0],
+        [0, 1, 1],
+        [1, 0, 1],
+        [1, -1, 0],
+        [0, 1, -1],
+        [-1, 0, 1]
+    ],
     symmetries: 0x0371,
     transitiveSymmetries: 0x0370,
 });
 
-const phi = (1 + 5**0.5)/2
+const phi = (1 + 5 ** 0.5) / 2
 addSystem({
-    name: 'dodeca', 
+    name: 'dodeca',
     axes: [
-        [phi, 1,0],[ 1,0,phi],[0,phi, 1],
-        [phi,-1,0],[-1,0,phi],[0,phi,-1],
+        [phi, 1, 0],
+        [1, 0, phi],
+        [0, phi, 1],
+        [phi, -1, 0],
+        [-1, 0, phi],
+        [0, phi, -1],
     ],
     symmetries: 0x3071,
     transitiveSymmetries: 0x3040,
 });
 addSystem({
-    name: 'icosa', 
+    name: 'icosa',
     axes: [
-        [phi,0, 1/phi],[0, 1/phi,phi],[ 1/phi,phi,0],
-        [phi,0,-1/phi],[0,-1/phi,phi],[-1/phi,phi,0],
-        [1,1,1],[1,1,-1],[1,-1,1],[1,-1,-1]
+        [phi, 0, 1 / phi],
+        [0, 1 / phi, phi],
+        [1 / phi, phi, 0],
+        [phi, 0, -1 / phi],
+        [0, -1 / phi, phi],
+        [-1 / phi, phi, 0],
+        [1, 1, 1],
+        [1, 1, -1],
+        [1, -1, 1],
+        [1, -1, -1]
     ],
     symmetries: 0x3071,
     transitiveSymmetries: 0x3000,
 });
 addSystem({
-    name: 'r_triaconta', 
+    name: 'r_triaconta',
     axes: [
-        [phi, 1/phi, 1],[ 1/phi, 1,phi],[ 1,phi, 1/phi],
-        [phi,-1/phi, 1],[-1/phi, 1,phi],[ 1,phi,-1/phi],
-        [phi, 1/phi,-1],[ 1/phi,-1,phi],[-1,phi, 1/phi],
-        [phi,-1/phi,-1],[-1/phi,-1,phi],[-1,phi,-1/phi],
-        [1,0,0],[0,1,0],[0,0,1]
+        [phi, 1 / phi, 1],
+        [1 / phi, 1, phi],
+        [1, phi, 1 / phi],
+        [phi, -1 / phi, 1],
+        [-1 / phi, 1, phi],
+        [1, phi, -1 / phi],
+        [phi, 1 / phi, -1],
+        [1 / phi, -1, phi],
+        [-1, phi, 1 / phi],
+        [phi, -1 / phi, -1],
+        [-1 / phi, -1, phi],
+        [-1, phi, -1 / phi],
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1]
     ],
     symmetries: 0x3071,
     transitiveSymmetries: 0x3000,
@@ -199,12 +240,25 @@ addSystem({
 
 addSystemCategory({
     name: 'catalan',
-    });
+});
 
 addSystem({
-    name: 'k_tetra', 
+    name: 'k_tetra',
     baseAxes: [systemData.tetra.axes, systemData.cube.axes],
-    combAxes: [[0,0],[0,1],[0,2],[1,0],[1,4],[1,5],[2,3],[2,1],[2,5],[3,3],[3,4],[3,2]],
+    combAxes: [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [1, 0],
+        [1, 4],
+        [1, 5],
+        [2, 3],
+        [2, 1],
+        [2, 5],
+        [3, 3],
+        [3, 4],
+        [3, 2]
+    ],
     jumbleConfigs: new Map([
         ['J1', [0.4641016151377546]],
     ]),
@@ -214,9 +268,34 @@ addSystem({
 });
 
 addSystem({
-    name: 'k_cube', 
+    name: 'k_cube',
     baseAxes: [systemData.cube.axes, systemData.r_dodeca.axes],
-    combAxes: [[0,0],[0,2],[0,3],[0,11],[1,0],[1,1],[1,4],[1,9],[2,1],[2,2],[2,5],[2,10],[3,5],[3,6],[3,8],[3,9],[4,3],[4,6],[4,7],[4,10],[5,4],[5,7],[5,8],[5,11]],
+    combAxes: [
+        [0, 0],
+        [0, 2],
+        [0, 3],
+        [0, 11],
+        [1, 0],
+        [1, 1],
+        [1, 4],
+        [1, 9],
+        [2, 1],
+        [2, 2],
+        [2, 5],
+        [2, 10],
+        [3, 5],
+        [3, 6],
+        [3, 8],
+        [3, 9],
+        [4, 3],
+        [4, 6],
+        [4, 7],
+        [4, 10],
+        [5, 4],
+        [5, 7],
+        [5, 8],
+        [5, 11]
+    ],
     jumbleConfigs: new Map([
         ['J1', [0.4142135623730950]],
         ['J2', [0.5000000000000000]],
@@ -227,9 +306,34 @@ addSystem({
     transitiveSymmetries: 0x0340,
 });
 addSystem({
-    name: 'k_octa', 
+    name: 'k_octa',
     baseAxes: [systemData.octa.axes, systemData.r_dodeca.axes],
-    combAxes: [[0,0],[0,1],[0,2],[1,0],[1,4],[1,11],[2,2],[2,3],[2,10],[3,3],[3,7],[3,11],[4,6],[4,7],[4,8],[5,5],[5,6],[5,10],[6,4],[6,8],[6,9],[7,1],[7,5],[7,9]],
+    combAxes: [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [1, 0],
+        [1, 4],
+        [1, 11],
+        [2, 2],
+        [2, 3],
+        [2, 10],
+        [3, 3],
+        [3, 7],
+        [3, 11],
+        [4, 6],
+        [4, 7],
+        [4, 8],
+        [5, 5],
+        [5, 6],
+        [5, 10],
+        [6, 4],
+        [6, 8],
+        [6, 9],
+        [7, 1],
+        [7, 5],
+        [7, 9]
+    ],
     jumbleConfigs: new Map([
         ['J1', [0.4641016151377546]],
         ['JH', [0.5505102572168219]],
@@ -238,9 +342,34 @@ addSystem({
     transitiveSymmetries: 0x0340,
 });
 addSystem({
-    name: 'd_icositetra', 
+    name: 'd_icositetra',
     baseAxes: [systemData.cube.axes, systemData.octa.axes],
-    combAxes: [[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[1,6],[1,7],[2,0],[2,2],[2,5],[2,7],[3,4],[3,5],[3,6],[3,7],[4,2],[4,3],[4,4],[4,5],[5,1],[5,3],[5,4],[5,6]],
+    combAxes: [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [0, 3],
+        [1, 0],
+        [1, 1],
+        [1, 6],
+        [1, 7],
+        [2, 0],
+        [2, 2],
+        [2, 5],
+        [2, 7],
+        [3, 4],
+        [3, 5],
+        [3, 6],
+        [3, 7],
+        [4, 2],
+        [4, 3],
+        [4, 4],
+        [4, 5],
+        [5, 1],
+        [5, 3],
+        [5, 4],
+        [5, 6]
+    ],
     jumbleConfigs: new Map([
         ['J1', [0.4494897427831781]],
         ['J2', [0.5358983848622454]],
@@ -251,9 +380,58 @@ addSystem({
     transitiveSymmetries: 0x0340,
 });
 addSystem({
-    name: 'kr_dodeca', 
+    name: 'kr_dodeca',
     baseAxes: [systemData.cube.axes, systemData.octa.axes, systemData.r_dodeca.axes],
-    combAxes: [[5,3,7],[5,3,11],[5,1,4],[5,1,11],[4,3,7],[4,3,3],[4,2,10],[4,2,3],[5,4,7],[5,4,8],[4,4,7],[4,4,6],[3,4,8],[3,4,6],[4,5,6],[4,5,10],[3,5,6],[3,5,5],[2,5,10],[2,5,5],[2,2,10],[2,2,2],[2,0,1],[2,0,2],[3,7,5],[3,7,9],[2,7,5],[2,7,1],[5,6,8],[5,6,4],[3,6,8],[3,6,9],[1,7,9],[1,7,1],[1,6,9],[1,6,4],[1,1,4],[1,1,0],[1,0,1],[1,0,0],[0,3,11],[0,3,3],[0,2,3],[0,2,2],[0,1,11],[0,1,0],[0,0,2],[0,0,0]],
+    combAxes: [
+        [5, 3, 7],
+        [5, 3, 11],
+        [5, 1, 4],
+        [5, 1, 11],
+        [4, 3, 7],
+        [4, 3, 3],
+        [4, 2, 10],
+        [4, 2, 3],
+        [5, 4, 7],
+        [5, 4, 8],
+        [4, 4, 7],
+        [4, 4, 6],
+        [3, 4, 8],
+        [3, 4, 6],
+        [4, 5, 6],
+        [4, 5, 10],
+        [3, 5, 6],
+        [3, 5, 5],
+        [2, 5, 10],
+        [2, 5, 5],
+        [2, 2, 10],
+        [2, 2, 2],
+        [2, 0, 1],
+        [2, 0, 2],
+        [3, 7, 5],
+        [3, 7, 9],
+        [2, 7, 5],
+        [2, 7, 1],
+        [5, 6, 8],
+        [5, 6, 4],
+        [3, 6, 8],
+        [3, 6, 9],
+        [1, 7, 9],
+        [1, 7, 1],
+        [1, 6, 9],
+        [1, 6, 4],
+        [1, 1, 4],
+        [1, 1, 0],
+        [1, 0, 1],
+        [1, 0, 0],
+        [0, 3, 11],
+        [0, 3, 3],
+        [0, 2, 3],
+        [0, 2, 2],
+        [0, 1, 11],
+        [0, 1, 0],
+        [0, 0, 2],
+        [0, 0, 0]
+    ],
     jumbleConfigs: new Map([
         ['K1', [0.2748039083715090, 0.3365646774163698, 0.3886314142121213]],
     ]),
@@ -261,9 +439,34 @@ addSystem({
     transitiveSymmetries: 0x0200,
 });
 addSystem({
-    name: 'p_icositetra', 
+    name: 'p_icositetra',
     baseAxes: [systemData.cube.axes, systemData.octa.axes, systemData.r_dodeca.axes],
-    combAxes: [[5,3,7],[5,1,11],[4,3,3],[4,2,10],[5,4,8],[4,4,7],[3,4,6],[4,5,6],[3,5,5],[2,5,10],[2,2,2],[2,0,1],[3,7,9],[2,7,5],[5,6,4],[3,6,8],[1,7,1],[1,6,9],[1,1,4],[1,0,0],[0,3,11],[0,2,3],[0,1,0],[0,0,2]],
+    combAxes: [
+        [5, 3, 7],
+        [5, 1, 11],
+        [4, 3, 3],
+        [4, 2, 10],
+        [5, 4, 8],
+        [4, 4, 7],
+        [3, 4, 6],
+        [4, 5, 6],
+        [3, 5, 5],
+        [2, 5, 10],
+        [2, 2, 2],
+        [2, 0, 1],
+        [3, 7, 9],
+        [2, 7, 5],
+        [5, 6, 4],
+        [3, 6, 8],
+        [1, 7, 1],
+        [1, 6, 9],
+        [1, 1, 4],
+        [1, 0, 0],
+        [0, 3, 11],
+        [0, 2, 3],
+        [0, 1, 0],
+        [0, 0, 2]
+    ],
     jumbleConfigs: new Map([
         ['K1', [0.3459114898919877, 0.3881198029452335, 0.2659687071627788]],
     ]),
@@ -273,9 +476,70 @@ addSystem({
 });
 
 addSystem({
-    name: 'k_dodeca', 
+    name: 'k_dodeca',
     baseAxes: [systemData.dodeca.axes, systemData.r_triaconta.axes],
-    combAxes: [[0,0],[0,2],[0,5],[0,6],[0,12],[1,0],[1,1],[1,3],[1,7],[1,14],[2,1],[2,2],[2,4],[2,8],[2,13],[3,3],[3,9],[3,12],[3,23],[3,26],[4,4],[4,10],[4,14],[4,21],[4,24],[5,5],[5,11],[5,13],[5,22],[5,25],[6,15],[6,17],[6,20],[6,21],[6,27],[7,15],[7,16],[7,18],[7,22],[7,29],[8,16],[8,17],[8,19],[8,23],[8,28],[9,8],[9,11],[9,18],[9,24],[9,27],[10,6],[10,9],[10,19],[10,25],[10,29],[11,7],[11,10],[11,20],[11,26],[11,28]],
+    combAxes: [
+        [0, 0],
+        [0, 2],
+        [0, 5],
+        [0, 6],
+        [0, 12],
+        [1, 0],
+        [1, 1],
+        [1, 3],
+        [1, 7],
+        [1, 14],
+        [2, 1],
+        [2, 2],
+        [2, 4],
+        [2, 8],
+        [2, 13],
+        [3, 3],
+        [3, 9],
+        [3, 12],
+        [3, 23],
+        [3, 26],
+        [4, 4],
+        [4, 10],
+        [4, 14],
+        [4, 21],
+        [4, 24],
+        [5, 5],
+        [5, 11],
+        [5, 13],
+        [5, 22],
+        [5, 25],
+        [6, 15],
+        [6, 17],
+        [6, 20],
+        [6, 21],
+        [6, 27],
+        [7, 15],
+        [7, 16],
+        [7, 18],
+        [7, 22],
+        [7, 29],
+        [8, 16],
+        [8, 17],
+        [8, 19],
+        [8, 23],
+        [8, 28],
+        [9, 8],
+        [9, 11],
+        [9, 18],
+        [9, 24],
+        [9, 27],
+        [10, 6],
+        [10, 9],
+        [10, 19],
+        [10, 25],
+        [10, 29],
+        [11, 7],
+        [11, 10],
+        [11, 20],
+        [11, 26],
+        [11, 28]
+    ],
     jumbleConfigs: new Map([
         ['J1', [0.3701919081587501]],
         ['J2', [0.4874571845315417]],
@@ -290,9 +554,70 @@ addSystem({
     transitiveSymmetries: 0x3000,
 });
 addSystem({
-    name: 'k_icosa', 
+    name: 'k_icosa',
     baseAxes: [systemData.icosa.axes, systemData.r_triaconta.axes],
-    combAxes: [[0,0],[0,3],[0,12],[1,1],[1,4],[1,14],[2,2],[2,5],[2,13],[3,6],[3,9],[3,12],[4,7],[4,10],[4,14],[5,8],[5,11],[5,13],[6,0],[6,1],[6,2],[7,5],[7,6],[7,25],[8,3],[8,7],[8,26],[9,9],[9,19],[9,23],[10,15],[10,18],[10,27],[11,16],[11,19],[11,29],[12,17],[12,20],[12,28],[13,21],[13,24],[13,27],[14,22],[14,25],[14,29],[15,23],[15,26],[15,28],[16,15],[16,16],[16,17],[17,10],[17,20],[17,21],[18,11],[18,18],[18,22],[19,4],[19,8],[19,24]],
+    combAxes: [
+        [0, 0],
+        [0, 3],
+        [0, 12],
+        [1, 1],
+        [1, 4],
+        [1, 14],
+        [2, 2],
+        [2, 5],
+        [2, 13],
+        [3, 6],
+        [3, 9],
+        [3, 12],
+        [4, 7],
+        [4, 10],
+        [4, 14],
+        [5, 8],
+        [5, 11],
+        [5, 13],
+        [6, 0],
+        [6, 1],
+        [6, 2],
+        [7, 5],
+        [7, 6],
+        [7, 25],
+        [8, 3],
+        [8, 7],
+        [8, 26],
+        [9, 9],
+        [9, 19],
+        [9, 23],
+        [10, 15],
+        [10, 18],
+        [10, 27],
+        [11, 16],
+        [11, 19],
+        [11, 29],
+        [12, 17],
+        [12, 20],
+        [12, 28],
+        [13, 21],
+        [13, 24],
+        [13, 27],
+        [14, 22],
+        [14, 25],
+        [14, 29],
+        [15, 23],
+        [15, 26],
+        [15, 28],
+        [16, 15],
+        [16, 16],
+        [16, 17],
+        [17, 10],
+        [17, 20],
+        [17, 21],
+        [18, 11],
+        [18, 18],
+        [18, 22],
+        [19, 4],
+        [19, 8],
+        [19, 24]
+    ],
     jumbleConfigs: new Map([
         ['J1', [0.4641016151377546]],
         ['J2', [0.5241723606454736]],
@@ -304,9 +629,70 @@ addSystem({
     transitiveSymmetries: 0x3000,
 });
 addSystem({
-    name: 'd_hexeconta', 
+    name: 'd_hexeconta',
     baseAxes: [systemData.dodeca.axes, systemData.icosa.axes],
-    combAxes: [[0,0],[0,2],[0,3],[0,6],[0,7],[1,0],[1,1],[1,4],[1,6],[1,8],[2,1],[2,2],[2,5],[2,6],[2,19],[3,0],[3,3],[3,8],[3,9],[3,15],[4,1],[4,4],[4,13],[4,17],[4,19],[5,2],[5,5],[5,7],[5,14],[5,18],[6,10],[6,12],[6,13],[6,16],[6,17],[7,10],[7,11],[7,14],[7,16],[7,18],[8,9],[8,11],[8,12],[8,15],[8,16],[9,5],[9,10],[9,13],[9,18],[9,19],[10,3],[10,7],[10,9],[10,11],[10,14],[11,4],[11,8],[11,12],[11,15],[11,17]],
+    combAxes: [
+        [0, 0],
+        [0, 2],
+        [0, 3],
+        [0, 6],
+        [0, 7],
+        [1, 0],
+        [1, 1],
+        [1, 4],
+        [1, 6],
+        [1, 8],
+        [2, 1],
+        [2, 2],
+        [2, 5],
+        [2, 6],
+        [2, 19],
+        [3, 0],
+        [3, 3],
+        [3, 8],
+        [3, 9],
+        [3, 15],
+        [4, 1],
+        [4, 4],
+        [4, 13],
+        [4, 17],
+        [4, 19],
+        [5, 2],
+        [5, 5],
+        [5, 7],
+        [5, 14],
+        [5, 18],
+        [6, 10],
+        [6, 12],
+        [6, 13],
+        [6, 16],
+        [6, 17],
+        [7, 10],
+        [7, 11],
+        [7, 14],
+        [7, 16],
+        [7, 18],
+        [8, 9],
+        [8, 11],
+        [8, 12],
+        [8, 15],
+        [8, 16],
+        [9, 5],
+        [9, 10],
+        [9, 13],
+        [9, 18],
+        [9, 19],
+        [10, 3],
+        [10, 7],
+        [10, 9],
+        [10, 11],
+        [10, 14],
+        [11, 4],
+        [11, 8],
+        [11, 12],
+        [11, 15],
+        [11, 17]
+    ],
     jumbleConfigs: new Map([
         ['J1', [0.4043066061151344]],
         ['J2', [0.5233977102438481]],
@@ -323,9 +709,130 @@ addSystem({
     transitiveSymmetries: 0x3000,
 });
 addSystem({
-    name: 'kr_triaconta', 
+    name: 'kr_triaconta',
     baseAxes: [systemData.dodeca.axes, systemData.icosa.axes, systemData.r_triaconta.axes],
-    combAxes: [[10,7,25],[10,7,6],[10,3,9],[10,3,6],[10,11,19],[10,11,29],[8,11,19],[8,11,16],[7,11,29],[7,11,16],[8,16,16],[8,16,17],[7,16,16],[7,16,15],[11,12,28],[11,12,20],[8,12,28],[8,12,17],[9,10,18],[9,10,27],[7,10,18],[7,10,15],[6,16,17],[6,16,15],[6,12,20],[6,12,17],[6,10,27],[6,10,15],[9,18,18],[9,18,11],[7,18,18],[7,18,22],[10,14,29],[10,14,25],[7,14,29],[7,14,22],[5,18,22],[5,18,11],[5,14,25],[5,14,22],[5,7,25],[5,7,5],[5,2,13],[5,2,5],[11,17,20],[11,17,10],[6,17,20],[6,17,21],[9,13,27],[9,13,24],[6,13,27],[6,13,21],[4,17,21],[4,17,10],[4,13,24],[4,13,21],[11,15,28],[11,15,26],[8,15,28],[8,15,23],[10,9,19],[10,9,9],[8,9,19],[8,9,23],[3,15,26],[3,15,23],[3,9,23],[3,9,9],[3,3,9],[3,3,12],[3,0,3],[3,0,12],[9,19,24],[9,19,8],[4,19,24],[4,19,4],[9,5,11],[9,5,8],[5,5,11],[5,5,13],[2,19,8],[2,19,4],[2,5,13],[2,5,8],[2,6,1],[2,6,2],[2,2,13],[2,2,2],[11,8,26],[11,8,7],[3,8,26],[3,8,3],[11,4,10],[11,4,7],[4,4,10],[4,4,14],[4,1,4],[4,1,14],[2,1,4],[2,1,1],[1,8,7],[1,8,3],[1,4,14],[1,4,7],[1,1,14],[1,1,1],[1,6,1],[1,6,0],[1,0,3],[1,0,0],[0,7,6],[0,7,5],[0,6,2],[0,6,0],[0,3,12],[0,3,6],[0,2,5],[0,2,2],[0,0,12],[0,0,0]],
+    combAxes: [
+        [10, 7, 25],
+        [10, 7, 6],
+        [10, 3, 9],
+        [10, 3, 6],
+        [10, 11, 19],
+        [10, 11, 29],
+        [8, 11, 19],
+        [8, 11, 16],
+        [7, 11, 29],
+        [7, 11, 16],
+        [8, 16, 16],
+        [8, 16, 17],
+        [7, 16, 16],
+        [7, 16, 15],
+        [11, 12, 28],
+        [11, 12, 20],
+        [8, 12, 28],
+        [8, 12, 17],
+        [9, 10, 18],
+        [9, 10, 27],
+        [7, 10, 18],
+        [7, 10, 15],
+        [6, 16, 17],
+        [6, 16, 15],
+        [6, 12, 20],
+        [6, 12, 17],
+        [6, 10, 27],
+        [6, 10, 15],
+        [9, 18, 18],
+        [9, 18, 11],
+        [7, 18, 18],
+        [7, 18, 22],
+        [10, 14, 29],
+        [10, 14, 25],
+        [7, 14, 29],
+        [7, 14, 22],
+        [5, 18, 22],
+        [5, 18, 11],
+        [5, 14, 25],
+        [5, 14, 22],
+        [5, 7, 25],
+        [5, 7, 5],
+        [5, 2, 13],
+        [5, 2, 5],
+        [11, 17, 20],
+        [11, 17, 10],
+        [6, 17, 20],
+        [6, 17, 21],
+        [9, 13, 27],
+        [9, 13, 24],
+        [6, 13, 27],
+        [6, 13, 21],
+        [4, 17, 21],
+        [4, 17, 10],
+        [4, 13, 24],
+        [4, 13, 21],
+        [11, 15, 28],
+        [11, 15, 26],
+        [8, 15, 28],
+        [8, 15, 23],
+        [10, 9, 19],
+        [10, 9, 9],
+        [8, 9, 19],
+        [8, 9, 23],
+        [3, 15, 26],
+        [3, 15, 23],
+        [3, 9, 23],
+        [3, 9, 9],
+        [3, 3, 9],
+        [3, 3, 12],
+        [3, 0, 3],
+        [3, 0, 12],
+        [9, 19, 24],
+        [9, 19, 8],
+        [4, 19, 24],
+        [4, 19, 4],
+        [9, 5, 11],
+        [9, 5, 8],
+        [5, 5, 11],
+        [5, 5, 13],
+        [2, 19, 8],
+        [2, 19, 4],
+        [2, 5, 13],
+        [2, 5, 8],
+        [2, 6, 1],
+        [2, 6, 2],
+        [2, 2, 13],
+        [2, 2, 2],
+        [11, 8, 26],
+        [11, 8, 7],
+        [3, 8, 26],
+        [3, 8, 3],
+        [11, 4, 10],
+        [11, 4, 7],
+        [4, 4, 10],
+        [4, 4, 14],
+        [4, 1, 4],
+        [4, 1, 14],
+        [2, 1, 4],
+        [2, 1, 1],
+        [1, 8, 7],
+        [1, 8, 3],
+        [1, 4, 14],
+        [1, 4, 7],
+        [1, 1, 14],
+        [1, 1, 1],
+        [1, 6, 1],
+        [1, 6, 0],
+        [1, 0, 3],
+        [1, 0, 0],
+        [0, 7, 6],
+        [0, 7, 5],
+        [0, 6, 2],
+        [0, 6, 0],
+        [0, 3, 12],
+        [0, 3, 6],
+        [0, 2, 5],
+        [0, 2, 2],
+        [0, 0, 12],
+        [0, 0, 0]
+    ],
     jumbleConfigs: new Map([
         ['K1', [0.2395397749361024, 0.3529308187001753, 0.4075294063637224]],
     ]),
@@ -333,9 +840,70 @@ addSystem({
     transitiveSymmetries: 0x2000,
 });
 addSystem({
-    name: 'p_hexeconta', 
+    name: 'p_hexeconta',
     baseAxes: [systemData.dodeca.axes, systemData.icosa.axes, systemData.r_triaconta.axes],
-    combAxes: [[10,7,6],[10,3,9],[10,11,29],[8,11,19],[7,11,16],[8,16,16],[7,16,15],[11,12,28],[8,12,17],[9,10,27],[7,10,18],[6,16,17],[6,12,20],[6,10,15],[9,18,18],[7,18,22],[10,14,25],[7,14,29],[5,18,11],[5,14,22],[5,7,25],[5,2,5],[11,17,20],[6,17,21],[9,13,24],[6,13,27],[4,17,10],[4,13,21],[11,15,26],[8,15,28],[10,9,19],[8,9,23],[3,15,23],[3,9,9],[3,3,12],[3,0,3],[9,19,8],[4,19,24],[9,5,11],[5,5,13],[2,19,4],[2,5,8],[2,6,2],[2,2,13],[11,8,7],[3,8,26],[11,4,10],[4,4,14],[4,1,4],[2,1,1],[1,8,3],[1,4,7],[1,1,14],[1,6,1],[1,0,0],[0,7,5],[0,6,0],[0,3,6],[0,2,2],[0,0,12]],
+    combAxes: [
+        [10, 7, 6],
+        [10, 3, 9],
+        [10, 11, 29],
+        [8, 11, 19],
+        [7, 11, 16],
+        [8, 16, 16],
+        [7, 16, 15],
+        [11, 12, 28],
+        [8, 12, 17],
+        [9, 10, 27],
+        [7, 10, 18],
+        [6, 16, 17],
+        [6, 12, 20],
+        [6, 10, 15],
+        [9, 18, 18],
+        [7, 18, 22],
+        [10, 14, 25],
+        [7, 14, 29],
+        [5, 18, 11],
+        [5, 14, 22],
+        [5, 7, 25],
+        [5, 2, 5],
+        [11, 17, 20],
+        [6, 17, 21],
+        [9, 13, 24],
+        [6, 13, 27],
+        [4, 17, 10],
+        [4, 13, 21],
+        [11, 15, 26],
+        [8, 15, 28],
+        [10, 9, 19],
+        [8, 9, 23],
+        [3, 15, 23],
+        [3, 9, 9],
+        [3, 3, 12],
+        [3, 0, 3],
+        [9, 19, 8],
+        [4, 19, 24],
+        [9, 5, 11],
+        [5, 5, 13],
+        [2, 19, 4],
+        [2, 5, 8],
+        [2, 6, 2],
+        [2, 2, 13],
+        [11, 8, 7],
+        [3, 8, 26],
+        [11, 4, 10],
+        [4, 4, 14],
+        [4, 1, 4],
+        [2, 1, 1],
+        [1, 8, 3],
+        [1, 4, 7],
+        [1, 1, 14],
+        [1, 6, 1],
+        [1, 0, 0],
+        [0, 7, 5],
+        [0, 6, 0],
+        [0, 3, 6],
+        [0, 2, 2],
+        [0, 0, 12]
+    ],
     jumbleConfigs: new Map([
         ['K1', [0.3148276877628239, 0.4095288945536147, 0.2756434176835614]],
     ]),
@@ -347,75 +915,84 @@ addSystem({
 
 addSystemCategory({
     name: 'axial',
-    });
+});
 
-function diptrapConstructor(trap){
+function diptrapConstructor(trap) {
     let data = {
         name: trap ? 'trapezo' : 'dipyramid',
         order: 5,
         paramsRequired: ['order', 'jumbleConfig'],
-        getBaseAxes: function(params){
+        getBaseAxes: function(params) {
             let order = parseInt(params.order ?? this.order);
-            return [[new Vector(0,0,1), new Vector(0,0,-1)], [...new Array(order*(trap+1)).keys()].map(i => new Vector(Math.cos((2-trap)*Math.PI*i/order), Math.sin((2-trap)*Math.PI*i/order), 0))];
+            return [
+                [new Vector(0, 0, 1), new Vector(0, 0, -1)],
+                [...new Array(order * (trap + 1)).keys()].map(i => new Vector(Math.cos((2 - trap) * Math.PI * i / order), Math.sin((2 - trap) * Math.PI * i / order), 0))
+            ];
         },
-        getCombAxes: function(params){
+        getCombAxes: function(params) {
             let order = parseInt(params.order ?? this.order);
-            return [...new Array(order).keys()].map(i => [[0,(trap+1)*i],[1,(trap+1)*i+trap]]).flat();
+            return [...new Array(order).keys()].map(i => [
+                [0, (trap + 1) * i],
+                [1, (trap + 1) * i + trap]
+            ]).flat();
         },
-        getJumbleCoeffs: function(params, returnDepth){
+        getJumbleCoeffs: function(params, returnDepth) {
             let order = parseInt(params.order ?? this.order);
             let top, bottom;
-            if (params.jumbleConfig[0] === 'A'){
+            if (params.jumbleConfig[0] === 'A') {
                 top = parseInt(params.jumbleConfig.slice(1));
                 bottom = 0;
-            } else if (params.jumbleConfig[0] === 'B'){
+            } else if (params.jumbleConfig[0] === 'B') {
                 [top, bottom] = params.jumbleConfig.slice(1).split('.').map(n => parseInt(n));
             }
-            bottom += trap*0.5
-            let [topCos, bottomCos] = [top, bottom].map(n => Math.cos(n * 2*Math.PI/order));
+            bottom += trap * 0.5
+            let [topCos, bottomCos] = [top, bottom].map(n => Math.cos(n * 2 * Math.PI / order));
             let diffCos = bottomCos - topCos;
             let coeffs;
-            if (diffCos >= 2-THRESHOLD) coeffs = [0.5]; 
-            else coeffs = [(-diffCos + Math.sqrt(2*diffCos)) / (2 - diffCos)];
-            if (returnDepth){
-                return [coeffs, (topCos + bottomCos) / (2 + diffCos + Math.sqrt(8*diffCos))];
+            if (diffCos >= 2 - THRESHOLD) coeffs = [0.5];
+            else coeffs = [(-diffCos + Math.sqrt(2 * diffCos)) / (2 - diffCos)];
+            if (returnDepth) {
+                return [coeffs, (topCos + bottomCos) / (2 + diffCos + Math.sqrt(8 * diffCos))];
             }
             return coeffs;
         },
-        listjumbleConfigs: function(params){
+        listjumbleConfigs: function(params) {
             let order = parseInt(params.order ?? this.order);
             let coeffs = new FloatSet(1);
             let configMap = new Map(); // coeff: [config, depth]
-            for (let top = 1; top <= order/2; top++){
-                for (let bottom = 0; bottom < top; bottom++){
+            for (let top = 1; top <= order / 2; top++) {
+                for (let bottom = 0; bottom < top; bottom++) {
                     let jumbleConfig;
                     if (bottom === 0) jumbleConfig = 'A' + top;
-                    else jumbleConfig = 'B' + top + '.' + bottom; 
-                    let [coeff, depth] = this.getJumbleCoeffs({order:order, jumbleConfig:jumbleConfig});
+                    else jumbleConfig = 'B' + top + '.' + bottom;
+                    let [coeff, depth] = this.getJumbleCoeffs({
+                        order: order,
+                        jumbleConfig: jumbleConfig
+                    });
                     let resetConfig = false;
                     let coeffWhich;
                     //console.log(order,top,bottom,coeff)
-                    if (coeffs.has(coeff)){
+                    if (coeffs.has(coeff)) {
                         coeffWhich = coeffs.hasWhich(coeff);
-                        if (depth < configMap.get(coeffWhich)[1]){
+                        if (depth < configMap.get(coeffWhich)[1]) {
                             resetConfig = true;
                         }
                     } else {
                         coeffWhich = coeffs.addWhich(coeff);
                         resetConfig = true;
                     }
-                    if (resetConfig){
+                    if (resetConfig) {
                         configMap.set(coeffWhich, [jumbleConfig, depth]);
                     }
                 }
             }
             //let configs = new Map(Array.from(configMap.entries()).sort((a,b) => b[1][1]-a[1][1]).map(pair => [pair[1][0],pair[0]]));
-            let configs = Array.from(configMap.values()).sort((a,b) => b[1]-a[1]).map(pair => pair[0]);
+            let configs = Array.from(configMap.values()).sort((a, b) => b[1] - a[1]).map(pair => pair[0]);
             return configs;
         },
-        getOpposites: function(params){
+        getOpposites: function(params) {
             let order = parseInt(params.order ?? this.order);
-            return !((order+trap)%2);
+            return !((order + trap) % 2);
         },
         symmetries: 0x0001,
         transitiveSymmetries: 0x0000,
@@ -431,13 +1008,13 @@ addSystem({
     name: 'equator',
     order: 5,
     paramsRequired: ['order'],
-    getAxes: function(params){
+    getAxes: function(params) {
         let order = parseInt(params.order ?? this.order);
-        return [...new Array(order).keys()].map(i => new Vector(Math.cos(2*Math.PI*i/order), Math.sin(2*Math.PI*i/order), 0));
+        return [...new Array(order).keys()].map(i => new Vector(Math.cos(2 * Math.PI * i / order), Math.sin(2 * Math.PI * i / order), 0));
     },
-    getOpposites: function(params){
+    getOpposites: function(params) {
         let order = parseInt(params.order ?? this.order);
-        return !(order%2);
+        return !(order % 2);
     },
     symmetries: 0x0001,
     transitiveSymmetries: 0x0000,
@@ -447,11 +1024,11 @@ addSystem({
     name: 'prism_edges',
     order: 4,
     paramsRequired: ['order'],
-    getAxes: function(params){
+    getAxes: function(params) {
         let order = parseInt(params.order ?? this.order);
         let axes = [];
 
-        const phi = Math.PI / order; 
+        const phi = Math.PI / order;
         const cosPhi = Math.cos(phi);
         const sinPhi = Math.sin(phi);
 
@@ -462,22 +1039,22 @@ addSystem({
 
             let shiftedTheta = theta + Math.PI / order;
             axes.push(new Vector(
-                Math.cos(shiftedTheta) * cosPhi, 
-                Math.sin(shiftedTheta) * cosPhi, 
+                Math.cos(shiftedTheta) * cosPhi,
+                Math.sin(shiftedTheta) * cosPhi,
                 sinPhi
             ));
 
             axes.push(new Vector(
-                Math.cos(shiftedTheta) * cosPhi, 
-                Math.sin(shiftedTheta) * cosPhi, 
+                Math.cos(shiftedTheta) * cosPhi,
+                Math.sin(shiftedTheta) * cosPhi,
                 -sinPhi
             ));
         }
         return axes;
     },
-    getOpposites: function(params){
+    getOpposites: function(params) {
         let order = parseInt(params.order ?? this.order);
-        return !(order%2);
+        return !(order % 2);
     },
     symmetries: 0x0001,
     transitiveSymmetries: 0x0000,
@@ -487,28 +1064,35 @@ addSystem({
     name: 'pyramid',
     order: 5,
     paramsRequired: ['order', 'jumbleConfig'],
-    getBaseAxes: function(params){
+    getBaseAxes: function(params) {
         let order = parseInt(params.order ?? this.order);
-        return [[new Vector(0,0,1)], [new Vector(0,0,1)], [new Vector(0,0,-1)], [...new Array(order).keys()].map(i => new Vector(Math.cos(2*Math.PI*i/order), Math.sin(2*Math.PI*i/order), 0))];
+        return [
+            [new Vector(0, 0, 1)],
+            [new Vector(0, 0, 1)],
+            [new Vector(0, 0, -1)],
+            [...new Array(order).keys()].map(i => new Vector(Math.cos(2 * Math.PI * i / order), Math.sin(2 * Math.PI * i / order), 0))
+        ];
         // that vector is there twice to serve the two different axis types
     },
-    getCombAxes: function(params){
+    getCombAxes: function(params) {
         let order = parseInt(params.order ?? this.order);
-        return [...new Array(order).keys()].map(i => [,0,0,i]).concat([[0,,,]]);
+        return [...new Array(order).keys()].map(i => [, 0, 0, i]).concat([
+            [0, , , ]
+        ]);
     },
-    getJumbleCoeffs: function(params){
+    getJumbleCoeffs: function(params) {
         let order = parseInt(params.order ?? this.order);
         let step = parseInt(params.jumbleConfig.slice(1));
-        if (6*step <= order) return NaN;
-        let stepCos = Math.cos(step * 2*Math.PI/order);
-        return [1, clamp(stepCos / (1-stepCos), 0, 1), clamp(-stepCos / (1-stepCos), 0, 1), Math.sqrt(1 - 2*stepCos)/(1-stepCos)];
+        if (6 * step <= order) return NaN;
+        let stepCos = Math.cos(step * 2 * Math.PI / order);
+        return [1, clamp(stepCos / (1 - stepCos), 0, 1), clamp(-stepCos / (1 - stepCos), 0, 1), Math.sqrt(1 - 2 * stepCos) / (1 - stepCos)];
     },
-    listjumbleConfigs: function(params){
+    listjumbleConfigs: function(params) {
         let order = parseInt(params.order ?? this.order);
-        return [...new Array((order>>1)+1).keys()].filter(step => 6*step > order).map(step => 'A'+step);
+        return [...new Array((order >> 1) + 1).keys()].filter(step => 6 * step > order).map(step => 'A' + step);
     },
     opposites: false,
-    getAnyOpposites: function(params){
+    getAnyOpposites: function(params) {
         console.log()
         return parseInt(params.jumbleConfig.slice(1)) * 4 === parseInt(params.order)
     },
@@ -517,15 +1101,20 @@ addSystem({
 });
 
 addSystem({
-    name: 'poles', 
-    axes: [[0,0,1],[0,0,-1]],
+    name: 'poles',
+    axes: [
+        [0, 0, 1],
+        [0, 0, -1]
+    ],
     symmetries: 0x0001,
     transitiveSymmetries: 0x0001,
 });
 
 addSystem({
-    name: 'single', 
-    axes: [[0,0,1]],
+    name: 'single',
+    axes: [
+        [0, 0, 1]
+    ],
     opposites: false,
     symmetries: 0x0001,
     transitiveSymmetries: 0x0001,
@@ -535,11 +1124,24 @@ addSystem({
 
 addSystemCategory({
     name: 'special',
-    });
+});
 
 addSystem({
-    name: 'tr_dodeca', 
-    axes: [[1,1,0],[0,1,1],[1,0,1],[1,-1,0],[0,1,-1],[-1,0,1],[-1,1,0],[0,-1,1],[1,0,-1],[-1,-1,-4],[-4,-1,-1],[-1,-4,-1]],
+    name: 'tr_dodeca',
+    axes: [
+        [1, 1, 0],
+        [0, 1, 1],
+        [1, 0, 1],
+        [1, -1, 0],
+        [0, 1, -1],
+        [-1, 0, 1],
+        [-1, 1, 0],
+        [0, -1, 1],
+        [1, 0, -1],
+        [-1, -1, -4],
+        [-4, -1, -1],
+        [-1, -4, -1]
+    ],
     opposites: false,
     anyOpposites: true,
     symmetries: 0x0001,
@@ -548,34 +1150,89 @@ addSystem({
 
 const sil = 1 + Math.sqrt(2);
 addSystem({
-    name: 'td_icositetra', 
-    axes: [[1,1,sil],[1,-1,sil],[-1,1,sil],[-1,-1,sil],
-           [1,sil,1],[1,sil,-1],[-1,sil,1],[-1,sil,-1],
-           [sil,1,1],[sil,1,-1],[sil,-1,1],[sil,-1,-1],
-           [1,-sil,1],[1,-sil,-1],[-1,-sil,1],[-1,-sil,-1],
-           [-sil,1,1],[-sil,1,-1],[-sil,-1,1],[-sil,-1,-1],
-           [2,0,-sil-1],[0,2,-sil-1],[-2,0,-sil-1],[0,-2,-sil-1]],
-    opposites: false,
-    anyOpposites: true,
-    symmetries: 0x0001,
-    transitiveSymmetries: 0x0000,
-});
-
-
-addSystem({
-    name: 'tr_triaconta', 
-    axes: [[0.809016994374947424,0.309016994374947424,0.500000000000000000],[0.309016994374947424,0.500000000000000000,0.809016994374947424],[0.500000000000000000,0.809016994374947424,0.309016994374947424],[0.809016994374947424,-0.309016994374947424,0.500000000000000000],[-0.309016994374947424,0.500000000000000000,0.809016994374947424],[0.809016994374947424,0.30901699437494742,-0.500000000000000000],[0.809016994374947424,-0.309016994374947424,-0.500000000000000000],[0.309016994374947424,-0.500000000000000000,0.809016994374947424],[0.e-18,1.0000000000000000,0.e-18],[0.500000000000000000,-0.809016994374947424,-0.309016994374947424],[-0.309016994374947424,-0.500000000000000000,0.809016994374947424],[-0.052786404500042061,0.80901699437494742,-0.585410196624968454],[1.00000000000000000,0,0],[0.500000000000000000,0.809016994374947424,-0.309016994374947424],[0,0,1.00000000000000000],[-0.894427190999915879,0.e-18,-0.447213595499957939],[-0.585410196624968454,-0.500000000000000000,-0.638196601125010515],[-0.861803398874989485,-0.50000000000000000,-0.085410196624968454],[-0.585410196624968454,0.500000000000000000,-0.638196601125010515],[-0.052786404500042061,-0.809016994374947424,-0.585410196624968454],[-0.809016994374947424,-0.30901699437494742,0.500000000000000000],[-0.809016994374947424,0.309016994374947424,0.500000000000000000],[-0.085410196624968454,0.309016994374947424,-0.947213595499957939],[0.e-18,-1.0000000000000000,0.e-18],[-0.500000000000000000,0.809016994374947424,0.309016994374947424],[0.447213595499957939,0.e-18,-0.894427190999915879],[0.500000000000000000,-0.809016994374947424,0.309016994374947424],[-0.861803398874989485,0.500000000000000000,-0.0854101966249684545],[-0.500000000000000000,-0.809016994374947424,0.309016994374947424],[-0.0854101966249684545,-0.309016994374947424,-0.947213595499957939]],
-    opposites: false,
-    anyOpposites: true,
-    symmetries: 0x0001,
-    transitiveSymmetries: 0x0000,
-});
-
-addSystem({
-    name: 'pyrito', 
+    name: 'td_icositetra',
     axes: [
-        [3/2, 3/4,0],[ 3/4,0,3/2],[0,3/2, 3/4],
-        [3/2,-3/4,0],[-3/4,0,3/2],[0,3/2,-3/4],
+        [1, 1, sil],
+        [1, -1, sil],
+        [-1, 1, sil],
+        [-1, -1, sil],
+        [1, sil, 1],
+        [1, sil, -1],
+        [-1, sil, 1],
+        [-1, sil, -1],
+        [sil, 1, 1],
+        [sil, 1, -1],
+        [sil, -1, 1],
+        [sil, -1, -1],
+        [1, -sil, 1],
+        [1, -sil, -1],
+        [-1, -sil, 1],
+        [-1, -sil, -1],
+        [-sil, 1, 1],
+        [-sil, 1, -1],
+        [-sil, -1, 1],
+        [-sil, -1, -1],
+        [2, 0, -sil - 1],
+        [0, 2, -sil - 1],
+        [-2, 0, -sil - 1],
+        [0, -2, -sil - 1]
+    ],
+    opposites: false,
+    anyOpposites: true,
+    symmetries: 0x0001,
+    transitiveSymmetries: 0x0000,
+});
+
+
+addSystem({
+    name: 'tr_triaconta',
+    axes: [
+        [0.809016994374947424, 0.309016994374947424, 0.500000000000000000],
+        [0.309016994374947424, 0.500000000000000000, 0.809016994374947424],
+        [0.500000000000000000, 0.809016994374947424, 0.309016994374947424],
+        [0.809016994374947424, -0.309016994374947424, 0.500000000000000000],
+        [-0.309016994374947424, 0.500000000000000000, 0.809016994374947424],
+        [0.809016994374947424, 0.30901699437494742, -0.500000000000000000],
+        [0.809016994374947424, -0.309016994374947424, -0.500000000000000000],
+        [0.309016994374947424, -0.500000000000000000, 0.809016994374947424],
+        [0.e-18, 1.0000000000000000, 0.e-18],
+        [0.500000000000000000, -0.809016994374947424, -0.309016994374947424],
+        [-0.309016994374947424, -0.500000000000000000, 0.809016994374947424],
+        [-0.052786404500042061, 0.80901699437494742, -0.585410196624968454],
+        [1.00000000000000000, 0, 0],
+        [0.500000000000000000, 0.809016994374947424, -0.309016994374947424],
+        [0, 0, 1.00000000000000000],
+        [-0.894427190999915879, 0.e-18, -0.447213595499957939],
+        [-0.585410196624968454, -0.500000000000000000, -0.638196601125010515],
+        [-0.861803398874989485, -0.50000000000000000, -0.085410196624968454],
+        [-0.585410196624968454, 0.500000000000000000, -0.638196601125010515],
+        [-0.052786404500042061, -0.809016994374947424, -0.585410196624968454],
+        [-0.809016994374947424, -0.30901699437494742, 0.500000000000000000],
+        [-0.809016994374947424, 0.309016994374947424, 0.500000000000000000],
+        [-0.085410196624968454, 0.309016994374947424, -0.947213595499957939],
+        [0.e-18, -1.0000000000000000, 0.e-18],
+        [-0.500000000000000000, 0.809016994374947424, 0.309016994374947424],
+        [0.447213595499957939, 0.e-18, -0.894427190999915879],
+        [0.500000000000000000, -0.809016994374947424, 0.309016994374947424],
+        [-0.861803398874989485, 0.500000000000000000, -0.0854101966249684545],
+        [-0.500000000000000000, -0.809016994374947424, 0.309016994374947424],
+        [-0.0854101966249684545, -0.309016994374947424, -0.947213595499957939]
+    ],
+    opposites: false,
+    anyOpposites: true,
+    symmetries: 0x0001,
+    transitiveSymmetries: 0x0000,
+});
+
+addSystem({
+    name: 'pyrito',
+    axes: [
+        [3 / 2, 3 / 4, 0],
+        [3 / 4, 0, 3 / 2],
+        [0, 3 / 2, 3 / 4],
+        [3 / 2, -3 / 4, 0],
+        [-3 / 4, 0, 3 / 2],
+        [0, 3 / 2, -3 / 4],
     ],
     symmetries: 0x0070,
     transitiveSymmetries: 0x0040,
@@ -588,7 +1245,7 @@ addSystemCategory({
 addSystem({
     name: 'pyrito_variable',
     paramsRequired: ['arbitraryConstant0'],
-    getAxes: function(params){
+    getAxes: function(params) {
         let x = parseFloat(params.arbitraryConstant0 ?? 0.5);
 
         let v = 1.0 / Math.sqrt(1 + x * x);
@@ -619,12 +1276,12 @@ addSystem({
 addSystem({
     name: 'pyrito_vertices_variable',
     paramsRequired: ['arbitraryConstant0'],
-    getAxes: function(params){
+    getAxes: function(params) {
         let x = parseFloat(params.arbitraryConstant0 ?? 0.5);
 
-        let b = Math.sqrt(((1+x)*(1+x))+((1-x*x)*(1-x*x)));
-        let c = (1+x) / b;
-        let v = (1-x*x) / b;
+        let b = Math.sqrt(((1 + x) * (1 + x)) + ((1 - x * x) * (1 - x * x)));
+        let c = (1 + x) / b;
+        let v = (1 - x * x) / b;
 
         let v13 = Math.sqrt(1 / 3);
 
@@ -663,13 +1320,13 @@ addSystem({
 addSystem({
     name: 'pyrito_edges_variable',
     paramsRequired: ['arbitraryConstant0'],
-    getAxes: function(params){
+    getAxes: function(params) {
         let x = parseFloat(params.arbitraryConstant0 ?? 0.5);
 
         let babaisyou = (Math.sqrt(x * x + x + 1) * Math.sqrt(2) * (x + 1));
         let p = (x * x + x) / babaisyou;
-        let q = (x+1) / babaisyou;
-        let l = ((x+1) * (x+1)) / babaisyou;
+        let q = (x + 1) / babaisyou;
+        let l = ((x + 1) * (x + 1)) / babaisyou;
 
         return [
 
@@ -692,7 +1349,7 @@ addSystem({
             new Vector(q, -l, -p),
             new Vector(-q, -l, -p),
             new Vector(-q, l, -p),
- 
+
             new Vector(l, p, q),
             new Vector(l, -p, q),
             new Vector(-l, -p, q),
@@ -713,7 +1370,7 @@ addSystem({
 addSystem({
     name: 'tetartoid_variable',
     paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1'],
-    getAxes: function(params){
+    getAxes: function(params) {
         let a = parseFloat(params.arbitraryConstant0 ?? 0.5);
         let b = parseFloat(params.arbitraryConstant1 ?? 0.5);
 
@@ -750,7 +1407,7 @@ addSystem({
 addSystem({
     name: 'tetartoid_vertices_variable',
     paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1'],
-    getAxes: function(params){
+    getAxes: function(params) {
         let a = parseFloat(params.arbitraryConstant0 ?? 0.5);
         let b = parseFloat(params.arbitraryConstant1 ?? 0.5);
         let c = 1.0;
@@ -788,7 +1445,7 @@ addSystem({
 addSystem({
     name: 'variable_normal',
     paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1', 'arbitraryConstant2'],
-    getAxes: function(params){
+    getAxes: function(params) {
         let a = parseFloat(params.arbitraryConstant0 ?? 0.5);
         let b = parseFloat(params.arbitraryConstant1 ?? 0.5);
         let c = parseFloat(params.arbitraryConstant2 ?? 0.5);
@@ -980,18 +1637,10 @@ const langs = {
     },
 }
 
-for (let code of Object.keys(langs.en_us)){
-    for (let lang of Object.keys(langs)){
-        if (langs[lang][code] === undefined){
+for (let code of Object.keys(langs.en_us)) {
+    for (let lang of Object.keys(langs)) {
+        if (langs[lang][code] === undefined) {
             console.warn('missing translation for', code, 'in', lang)
         }
     }
 }
-
-
-
-
-
-
-
-

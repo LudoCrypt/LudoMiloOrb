@@ -23,7 +23,7 @@ if you're reading this take this all with a grain of salt
 
 
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max); // https://www.webtips.dev/webtips/javascript/how-to-clamp-numbers-in-javascript
-const pair = (x, y) => ((x+y)*(x+y+1) >> 1) + y; // cantor pairing function
+const pair = (x, y) => ((x + y) * (x + y + 1) >> 1) + y; // cantor pairing function
 
 const svgns = 'http://www.w3.org/2000/svg';
 
@@ -89,7 +89,7 @@ var colorChoices = ['#a00000', '#1f4bd1', '#167f18', '#965500', '#7528af', '#727
 
 
 
-function transform(quat, vec){
+function transform(quat, vec) {
     return new Vector(...quat.rotateVector(vec.toArray()))
 }
 
@@ -103,7 +103,7 @@ const colorChoiceDivTemplate = color => `<div class='color-choice' style='backgr
 const languageChoiceDivTemplate = name => `<div class='language-option simple-option'>${name}</div>`
 
 
-function initialize(){
+function initialize() {
     sphereCanvas = document.getElementById('sphere');
     sphereCtx = sphereCanvas.getContext('2d');
     /*sphereCanvasRadius = sphereCanvas.width/(2+2*sphereMargin);
@@ -127,60 +127,60 @@ function initialize(){
     phaseThumb = document.getElementById('phase-thumb');
     phaseBack = document.getElementById('phase-back');
 
-    phasePt = phaseDiagram.createSVGPoint();  // Created once for document
+    phasePt = phaseDiagram.createSVGPoint(); // Created once for document
 
     languageChangeDiv = document.getElementById('language-change');
 
     createSystemUnit(true); // create the ghost one
     let urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('system')){
+    if (urlParams.has('system')) {
         let urlSystems = urlParams.getAll('system');
         let urlSystemDepths = urlParams.getAll('depths');
         let urlSystemColors = urlParams.getAll('colors');
-        for (let i=0; i<urlSystems.length; i++){
-            createSystemUnit(false, urlSystems[i].split('-')[0], urlSystems[i].split('-').slice(1), urlSystemDepths[i].split('_').map(parseFloat), urlSystemColors[i].split('_').map(x=>'#'+x))
+        for (let i = 0; i < urlSystems.length; i++) {
+            createSystemUnit(false, urlSystems[i].split('-')[0], urlSystems[i].split('-').slice(1), urlSystemDepths[i].split('_').map(parseFloat), urlSystemColors[i].split('_').map(x => '#' + x))
         }
     } else {
         createSystemUnit();
     }
 
-    document.getElementById('color-remove').addEventListener('click', function(){
+    document.getElementById('color-remove').addEventListener('click', function() {
         removeSlider(targetOfChangeDiv.closest('.slider-unit'));
     })
-    
-    window.addEventListener('resize', function(e){
+
+    window.addEventListener('resize', function(e) {
         makeCanvasSize();
         drawPuzzle();
     });
 
-    sphereCanvas.addEventListener('mousedown', function(e){
+    sphereCanvas.addEventListener('mousedown', function(e) {
         if (e.button !== 0) return;
         let rect = sphereCanvas.getBoundingClientRect();
-        let canvasX = (e.clientX - rect.left - sphereCanvas.width/2) / sphereCanvasRadius;
-        let canvasY = (e.clientY - rect.top - sphereCanvas.height/2) / sphereCanvasRadius;
-        
-        if (canvasX**2 + canvasY**2 <= 1){
+        let canvasX = (e.clientX - rect.left - sphereCanvas.width / 2) / sphereCanvasRadius;
+        let canvasY = (e.clientY - rect.top - sphereCanvas.height / 2) / sphereCanvasRadius;
+
+        if (canvasX ** 2 + canvasY ** 2 <= 1) {
             sphereDrag = true;
             spherePrevE = e;
         }
         document.body.classList.add('dragging');
     });
-    
-    document.getElementById('sphere-panel').addEventListener('click', function(e){
-        if (!e.keepLanguageChangeDiv_){
+
+    document.getElementById('sphere-panel').addEventListener('click', function(e) {
+        if (!e.keepLanguageChangeDiv_) {
             languageChangeDiv.classList.add('hidden');
         }
     });
 
-    document.addEventListener('mousemove', function(e){
-        if (sphereDrag){
+    document.addEventListener('mousemove', function(e) {
+        if (sphereDrag) {
             moveSphere(e.clientX - spherePrevE.clientX, e.clientY - spherePrevE.clientY);
             spherePrevE = e;
-        } else if (sliderDrag){
-            if (sliderDrag === phaseThumb){
+        } else if (sliderDrag) {
+            if (sliderDrag === phaseThumb) {
                 //console.log(cursorPt,sliderGrabOffsetX)
                 let hoveredDomain = phaseDomainG.querySelector('.phase-domain-hoverable:hover');
-                if (e.shiftKey && hoveredDomain){
+                if (e.shiftKey && hoveredDomain) {
                     setSlider(slidersInPhase[0].getElementsByClassName('slider-thumb')[0], parseFloat(hoveredDomain.dataset.centerX), false, true);
                     if (slidersInPhase[1]) {
                         setSlider(slidersInPhase[1].getElementsByClassName('slider-thumb')[0], parseFloat(hoveredDomain.dataset.centerY), false, true);
@@ -190,7 +190,7 @@ function initialize(){
                     let newValueX = cursorPt.x - sliderGrabOffsetX;
                     //console.log('x',newValueX)
                     setSlider(slidersInPhase[0].querySelector('.slider-thumb:not(.wrong-sign)'), newValueX, false, true);
-                    if (slidersInPhase[1]){
+                    if (slidersInPhase[1]) {
                         let newValueY = cursorPt.y - sliderGrabOffsetY;
                         //console.log('y',newValueY)
                         setSlider(slidersInPhase[1].querySelector('.slider-thumb:not(.wrong-sign)'), newValueY, false, true);
@@ -209,11 +209,11 @@ function initialize(){
         }
     });
 
-    document.addEventListener('mouseup', function(e){
-        if (sliderDrag || sphereDrag){ // maybe change this to allow click if no movement
+    document.addEventListener('mouseup', function(e) {
+        if (sliderDrag || sphereDrag) { // maybe change this to allow click if no movement
             window.addEventListener('click', captureClick, true);
         }
-        if (sliderDrag && sliderDrag !== phaseThumb){
+        if (sliderDrag && sliderDrag !== phaseThumb) {
             setSlider(sliderDrag, Math.floor(sliderDrag.closest('.slider-unit').dataset.depth * 1000.0001) / 1000);
             //setSlider(sliderDrag, sliderDrag.closest('.slider-unit').dataset.depth);
         }
@@ -223,21 +223,21 @@ function initialize(){
         phaseThumb.classList.remove('being-dragged');
     });
 
-    document.addEventListener('keydown', function(e){
+    document.addEventListener('keydown', function(e) {
         let keySpeed = sphereCanvasRadius / 10
-        let keyMove = function(code){
-            switch (code){
+        let keyMove = function(code) {
+            switch (code) {
                 case 'KeyW':
-                    moveSphere(0,keySpeed);
+                    moveSphere(0, keySpeed);
                     break;
                 case 'KeyA':
-                    moveSphere(keySpeed,0);
+                    moveSphere(keySpeed, 0);
                     break;
                 case 'KeyS':
-                    moveSphere(0,-keySpeed);
+                    moveSphere(0, -keySpeed);
                     break;
                 case 'KeyD':
-                    moveSphere(-keySpeed,0);
+                    moveSphere(-keySpeed, 0);
                     break;
             }
         }
@@ -249,15 +249,15 @@ function initialize(){
         }, 900));*/ // this was supposed to implement autorepeat but apparently it already exists
     });
 
-    document.addEventListener('keyup', function(e){
+    document.addEventListener('keyup', function(e) {
         keysDown.forEach(clearInterval); // it may also clear a timeout; this is intended
     });
 
-    sliderPanel.addEventListener('scroll', function(){
+    sliderPanel.addEventListener('scroll', function() {
         summonChangeDiv();
     });
 
-    languageButton.addEventListener('click', function(e){
+    languageButton.addEventListener('click', function(e) {
         languageChangeDiv.classList.toggle('hidden');
         e.keepLanguageChangeDiv_ = true;
     })
@@ -266,16 +266,16 @@ function initialize(){
     changeDivs = document.getElementById('change-windows');
 
     systemChangeDiv = document.getElementById('system-change');
-    for (let [systemCategory, systemNames] of systemCategories){
+    for (let [systemCategory, systemNames] of systemCategories) {
         document.getElementById('category-options').insertAdjacentHTML('beforeend', categoryOptionDivTemplate(systemCategory));
         let categoryOptionDiv = document.getElementById('category-options').lastChild;
         let systemCategoryDiv = document.createElement('div');
         systemCategoryDiv.classList.add('system-category');
         document.getElementById('system-options').appendChild(systemCategoryDiv);
-        for (let systemName of systemNames){
+        for (let systemName of systemNames) {
             systemCategoryDiv.insertAdjacentHTML('beforeend', systemOptionDivTemplate(systemName));
             let systemOptionDiv = systemCategoryDiv.lastChild;
-            systemOptionDiv.addEventListener('click', function(){ // assuming systemChangeDiv is active
+            systemOptionDiv.addEventListener('click', function() { // assuming systemChangeDiv is active
                 setSystem(targetOfChangeDiv, systemName, true);
                 /*let systemUnit = targetOfChangeDiv.closest('.system-unit');
                 systemUnit.dataset.system = systemName;
@@ -303,13 +303,13 @@ function initialize(){
                 drawPuzzle();
             });
         }
-        categoryOptionDiv.addEventListener('click', function(){
+        categoryOptionDiv.addEventListener('click', function() {
             document.getElementById('system-options').scrollTop = systemCategoryDiv.offsetTop - 10; // compensate for the margin of the option divs
         })
         document.getElementById('system-options').appendChild(document.createElement('hr'));
     }
 
-    document.getElementById('system-remove').addEventListener('click', function(){
+    document.getElementById('system-remove').addEventListener('click', function() {
         removeSystem(targetOfChangeDiv.closest('.system-unit'));
     })
 
@@ -319,10 +319,10 @@ function initialize(){
     arbitraryConstantChangeDiv = document.getElementById('arbitrary-constant-change');
 
     colorChangeDiv = document.getElementById('color-change');
-    for (let color of colorChoices){
+    for (let color of colorChoices) {
         document.getElementById('color-group').insertAdjacentHTML('beforeend', colorChoiceDivTemplate(color));
         let colorChoiceDiv = document.getElementById('color-group').lastChild;
-        colorChoiceDiv.addEventListener('click', function(){ // assuming colorChangeDiv is active
+        colorChoiceDiv.addEventListener('click', function() { // assuming colorChangeDiv is active
             /*targetOfChangeDiv.closest('.slider-unit').dataset.color = color;
             targetOfChangeDiv.style.backgroundColor = color;
             let sliderThumbs = Array.from(targetOfChangeDiv.closest('.slider-unit').getElementsByClassName('slider-thumb'));
@@ -333,24 +333,24 @@ function initialize(){
         });
     }
 
-    changeDivs.addEventListener('click', function(e){
+    changeDivs.addEventListener('click', function(e) {
         e.keepChangeDivs_ = true; // this might be bad practice but i guess it works
     });
 
-    controlPanel.addEventListener('click', function(e){
-        if (!e.keepChangeDivs_){
+    controlPanel.addEventListener('click', function(e) {
+        if (!e.keepChangeDivs_) {
             removeChangeDivs();
         }
     });
 
-    for (let lang in langs){
+    for (let lang in langs) {
         languageChangeDiv.insertAdjacentHTML('beforeend', languageChoiceDivTemplate(langs[lang]['other.lang']));
         let languageOptionDiv = languageChangeDiv.lastChild;
-        languageOptionDiv.addEventListener('click', function(e){
+        languageOptionDiv.addEventListener('click', function(e) {
             currentLanguage = lang;
             try {
                 window.localStorage.setItem('lang', currentLanguage);
-            } catch (e){}
+            } catch (e) {}
             languageChangeDiv.classList.add('hidden');
             setTranslationHTML();
             e.keepLanguageChangeDiv_ = true;
@@ -358,12 +358,12 @@ function initialize(){
     }
 
 
-    document.getElementById('phase-create').addEventListener('click', function(){
+    document.getElementById('phase-create').addEventListener('click', function() {
         if (document.getElementById('phase-create').dataset.disabled !== undefined) return;
         createPhasePlot();
     });
 
-    phaseThumb.addEventListener('mousedown', function(e){
+    phaseThumb.addEventListener('mousedown', function(e) {
         if (e.button !== 0) return;
         sliderDrag = phaseThumb;
         let cursorPt = phaseMouseToPoint(e);
@@ -376,19 +376,19 @@ function initialize(){
     });
 
 
-    document.getElementById('share-url').addEventListener('click', function(){
+    document.getElementById('share-url').addEventListener('click', function() {
         let urlParams = new URLSearchParams();
-        for (let systemUnit of sliderPanel.children){
+        for (let systemUnit of sliderPanel.children) {
             if (systemUnit.classList.contains('ghost-system')) continue;
             let systemCode = systemUnit.dataset.system;
-            for (let reqParam of systemData[systemUnit.dataset.system].paramsRequired){
+            for (let reqParam of systemData[systemUnit.dataset.system].paramsRequired) {
                 systemCode += '-' + systemUnit.dataset[reqParam];
             }
             urlParams.append('system', systemCode);
             let systemAxes = getAxesFromSystemUnit(systemUnit);
             let systemDepths = [];
             let systemColors = [];
-            for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children){
+            for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children) {
                 if (sliderUnit.classList.contains('ghost-slider')) continue;
                 systemDepths.push(parseFloat(sliderUnit.dataset.depth).toFixed(6));
                 systemColors.push(sliderUnit.dataset.color.replaceAll('#', ''));
@@ -400,7 +400,7 @@ function initialize(){
         const toggleIfConstant = true;
         let urlBox = document.getElementById('url-box');
         let url = window.location.origin + window.location.pathname + '?' + urlParams.toString()
-        if (toggleIfConstant && !urlBox.classList.contains('hidden') && urlBox.innerHTML === url.replaceAll('&', '&amp;')){
+        if (toggleIfConstant && !urlBox.classList.contains('hidden') && urlBox.innerHTML === url.replaceAll('&', '&amp;')) {
             urlBox.classList.add('hidden');
         } else {
             urlBox.classList.remove('hidden');
@@ -410,39 +410,39 @@ function initialize(){
 
     try {
         currentLanguage = window.localStorage.getItem('lang') ?? 'en_us';
-    } catch (e){} // not sure if there's a better way to do this
+    } catch (e) {} // not sure if there's a better way to do this
     setTranslationHTML(); // has to be at the bottom!
 
 
 }
 
-function makeCanvasSize(){
+function makeCanvasSize() {
     let spherePanelInnerStyle = window.getComputedStyle(document.getElementById('sphere-panel-inner'));
-    let canvasSide = parseInt((Math.min(parseFloat(spherePanelInnerStyle.height), parseFloat(spherePanelInnerStyle.height))*.9)/2)*2;
+    let canvasSide = parseInt((Math.min(parseFloat(spherePanelInnerStyle.height), parseFloat(spherePanelInnerStyle.height)) * .9) / 2) * 2;
     sphereCanvas.width = canvasSide;
     sphereCanvas.height = canvasSide;
-    sphereCanvasRadius = parseInt(sphereCanvas.width/(2+2*sphereMargin));
-    sphereCtx.translate(sphereCanvas.width/2, sphereCanvas.height/2);
+    sphereCanvasRadius = parseInt(sphereCanvas.width / (2 + 2 * sphereMargin));
+    sphereCtx.translate(sphereCanvas.width / 2, sphereCanvas.height / 2);
     sphereCtx.scale(sphereCanvasRadius, -sphereCanvasRadius);
     //console.log(canvasSide)
     //drawPuzzle();
 }
 
-function setTranslationHTML(){
-    for (let element of document.getElementsByClassName('translate')){
+function setTranslationHTML() {
+    for (let element of document.getElementsByClassName('translate')) {
         singleSetTranslationHTML(element);
     }
 }
 
-function getTranslatedName(str){
+function getTranslatedName(str) {
     return langs[currentLanguage]?.[str] ?? langs['en_us']?.[str] ?? str;
 }
 
-function singleSetTranslationHTML(element){
-    if (element.dataset.translate !== undefined){
+function singleSetTranslationHTML(element) {
+    if (element.dataset.translate !== undefined) {
         element.innerHTML = getTranslatedName(element.dataset.translate);
     }
-    if (element.dataset.altTranslate !== undefined){
+    if (element.dataset.altTranslate !== undefined) {
         element.alt = getTranslatedName(element.dataset.altTranslate);
         //element.title = getTranslatedName(element.dataset.altTranslate); // kind of annoying
     }
@@ -457,16 +457,16 @@ function captureClick(e) { // https://stackoverflow.com/a/20290312
 }
 
 
-function drawPuzzle(){
+function drawPuzzle() {
     drawSphere();
-    for (let systemUnit of sliderPanel.children){
+    for (let systemUnit of sliderPanel.children) {
         if (systemUnit.classList.contains('ghost-system')) continue;
         let systemAxes = getAxesFromSystemUnit(systemUnit);
-        for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children){
+        for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children) {
             if (sliderUnit.classList.contains('ghost-slider')) continue;
             let depth = sliderUnit.dataset.depth;
             let color = sliderUnit.dataset.color;
-            for (let axis of systemAxes){
+            for (let axis of systemAxes) {
                 drawCircleOnSphere(axis, depth, color);
             }
         }
@@ -474,11 +474,11 @@ function drawPuzzle(){
 }
 
 
-function drawSphere(){
+function drawSphere() {
     sphereCtx.clearRect(-3, -3, 6, 6); // it's big enough
     /*sphereCtx.fillStyle = 'green';
     sphereCtx.fillRect(0.3,0.3,0.3,0.3);*/
-    let sphereShading = sphereCtx.createRadialGradient(0.3, 0.3, 0.3, 0.05, 0.05, 1+0.05*2**0.5);
+    let sphereShading = sphereCtx.createRadialGradient(0.3, 0.3, 0.3, 0.05, 0.05, 1 + 0.05 * 2 ** 0.5);
     sphereShading.addColorStop(0, '#c0c0c0');
     sphereShading.addColorStop(0.6, '#a0a0a0');
     sphereShading.addColorStop(0.9, '#808080');
@@ -492,9 +492,9 @@ function drawSphere(){
 }
 
 
-function drawPointOnSphere(pointRaw){
+function drawPointOnSphere(pointRaw) {
     let point = transform(sphereTransformation, pointRaw);
-    if (point.z >= 0){
+    if (point.z >= 0) {
         sphereCtx.beginPath();
         sphereCtx.arc(point.x, point.y, 0.02, 0, 2 * Math.PI);
         sphereCtx.fillStyle = '#a00000';
@@ -503,27 +503,27 @@ function drawPointOnSphere(pointRaw){
 }
 
 
-function drawCircleOnSphere(centerRaw, depth, color){
+function drawCircleOnSphere(centerRaw, depth, color) {
     let center = transform(sphereTransformation, centerRaw);
     // center is on sphere, depth from -1 to 1
-    if (center.z < 0){
+    if (center.z < 0) {
         center = center.negative();
         depth *= -1;
     }
-    let discrim = center.x**2 + center.y**2 - depth**2;
-    let circleRadius = Math.sqrt(1 - depth**2);
+    let discrim = center.x ** 2 + center.y ** 2 - depth ** 2;
+    let circleRadius = Math.sqrt(1 - depth ** 2);
     //let circleSlant = center.z / Math.sqrt(1 - center.z**2);
     let beginAngle, endAngle;
     //console.log(depth, discrim)
-    if (discrim <= 0 && depth > 0){
+    if (discrim <= 0 && depth > 0) {
         beginAngle = 0;
-    } else if (discrim > 0){
-        beginAngle = Math.acos(center.z * depth / Math.sqrt((1 - center.z**2)*(1 - depth**2)));
+    } else if (discrim > 0) {
+        beginAngle = Math.acos(center.z * depth / Math.sqrt((1 - center.z ** 2) * (1 - depth ** 2)));
     }
-    if (beginAngle !== undefined){
+    if (beginAngle !== undefined) {
         endAngle = 2 * Math.PI - beginAngle;
         sphereCtx.beginPath();
-        sphereCtx.ellipse(center.x*depth, center.y*depth, circleRadius*center.z, circleRadius, Math.atan2(center.y, center.x), beginAngle, endAngle);
+        sphereCtx.ellipse(center.x * depth, center.y * depth, circleRadius * center.z, circleRadius, Math.atan2(center.y, center.x), beginAngle, endAngle);
         //console.log(center.x*depth, center.y*depth, circleRadius*center.z, circleRadius, Math.atan2(center.y, center.x), beginAngle, endAngle);
         sphereCtx.strokeStyle = color;
         sphereCtx.lineWidth = 0.005;
@@ -532,9 +532,9 @@ function drawCircleOnSphere(centerRaw, depth, color){
 }
 
 
-function moveSphere(x, y){
-    if (x != 0 || y != 0){
-        let newTransf = Quaternion.fromAxisAngle([y, x, 0], Math.sqrt(x**2 + y**2) / sphereCanvasRadius);
+function moveSphere(x, y) {
+    if (x != 0 || y != 0) {
+        let newTransf = Quaternion.fromAxisAngle([y, x, 0], Math.sqrt(x ** 2 + y ** 2) / sphereCanvasRadius);
         //sphereTransformation = sphereTransformation.mul(newTransf);
         sphereTransformation = newTransf.mul(sphereTransformation);
         drawPuzzle();
@@ -544,12 +544,12 @@ function moveSphere(x, y){
 
 
 
-function createSystemUnit(ghost=false, system='cube', params=[], systemDepths=[1], systemColors=[colorChoices[0]]){
+function createSystemUnit(ghost = false, system = 'cube', params = [], systemDepths = [1], systemColors = [colorChoices[0]]) {
     let systemUnit = document.getElementById('template-system-unit').cloneNode(true);
     systemUnit.removeAttribute('id');
-    if (ghost){
+    if (ghost) {
         systemUnit.classList.add('ghost-system');
-        systemUnit.getElementsByClassName('system-add')[0].addEventListener('click', function(){
+        systemUnit.getElementsByClassName('system-add')[0].addEventListener('click', function() {
             createSystemUnit();
         })
         sliderPanel.appendChild(systemUnit);
@@ -557,31 +557,31 @@ function createSystemUnit(ghost=false, system='cube', params=[], systemDepths=[1
         sliderPanel.insertBefore(systemUnit, sliderPanel.lastChild);
 
         let systemIcon = systemUnit.getElementsByClassName('system-icon')[0];
-        systemIcon.addEventListener('click', function(e){
-            if (systemIcon !== targetOfChangeDiv){
+        systemIcon.addEventListener('click', function(e) {
+            if (systemIcon !== targetOfChangeDiv) {
                 summonChangeDiv(systemIcon, systemChangeDiv);
                 e.keepChangeDivs_ = true; // otherwise it will close the div
             }
         });
 
         let systemParams = systemUnit.getElementsByClassName('system-params')[0];
-        systemParams.addEventListener('click', function(e){
+        systemParams.addEventListener('click', function(e) {
             //if (!systemUnit.dataset.jumbleConfig) return;
             if (!(systemData[systemUnit.dataset.system].paramsRequired.length)) return;
-            if (systemParams !== targetOfChangeDiv){
+            if (systemParams !== targetOfChangeDiv) {
                 summonChangeDiv(systemParams, paramsChangeDiv);
                 e.keepChangeDivs_ = true; // otherwise it will close the div
             }
         });
 
         setSystem(systemIcon, system)
-        for (let i=0; i<params.length; i++){
+        for (let i = 0; i < params.length; i++) {
             setSystemParam(systemData[system].paramsRequired[i], systemUnit, params[i])
         }
-        
+
 
         createSliderUnit(systemUnit, true);
-        for (let i=0; i<systemDepths.length; i++){
+        for (let i = 0; i < systemDepths.length; i++) {
             createSliderUnit(systemUnit, false, systemDepths[i], systemColors[i]);
         }
         drawPuzzle();
@@ -589,13 +589,13 @@ function createSystemUnit(ghost=false, system='cube', params=[], systemDepths=[1
 }
 
 
-function createSliderUnit(systemUnit, ghost=false, depth=1, color=colorChoices[0]){
+function createSliderUnit(systemUnit, ghost = false, depth = 1, color = colorChoices[0]) {
     let sliderUnit = document.getElementById('template-slider-unit').cloneNode(true);
     sliderUnit.removeAttribute('id');
     let sliderGroup = systemUnit.getElementsByClassName('slider-group')[0];
-    if (ghost){
+    if (ghost) {
         sliderUnit.classList.add('ghost-slider');
-        sliderUnit.getElementsByClassName('slider-add')[0].addEventListener('click', function(){
+        sliderUnit.getElementsByClassName('slider-add')[0].addEventListener('click', function() {
             createSliderUnit(systemUnit);
         })
         sliderGroup.appendChild(sliderUnit);
@@ -605,7 +605,7 @@ function createSliderUnit(systemUnit, ghost=false, depth=1, color=colorChoices[0
 
 
         let sliderThumb = sliderUnit.getElementsByClassName('slider-thumb')[0];
-        sliderThumb.addEventListener('mousedown', function(e){
+        sliderThumb.addEventListener('mousedown', function(e) {
             if (e.button !== 0) return;
             sliderDrag = sliderThumb;
             sliderGrabOffsetX = e.clientX - parseFloat(window.getComputedStyle(sliderThumb).getPropertyValue('left'));
@@ -616,7 +616,7 @@ function createSliderUnit(systemUnit, ghost=false, depth=1, color=colorChoices[0
 
         let sliderDiv = sliderUnit.getElementsByClassName('slider')[0];
         let sliderBar = sliderUnit.querySelector('.slider-bar:not(.slider-neg)');
-        sliderDiv.addEventListener('mousedown', function(e){
+        sliderDiv.addEventListener('mousedown', function(e) {
             if (e.button !== 0) return;
             let sliderWidth = sliderBar.getBoundingClientRect().width;
             let newSliderX = e.clientX - sliderBar.getBoundingClientRect().left; //clamp(e.clientX - sliderBar.getBoundingClientRect().left, 0, sliderWidth);
@@ -629,18 +629,18 @@ function createSliderUnit(systemUnit, ghost=false, depth=1, color=colorChoices[0
         });
 
         let sliderInput = sliderUnit.getElementsByClassName('slider-input')[0];
-        sliderInput.addEventListener('change', function(e){
+        sliderInput.addEventListener('change', function(e) {
             setSlider(sliderThumb, parseFloat(sliderInput.value) / 1000, true);
         });
 
         let colorButton = sliderUnit.getElementsByClassName('slider-color-swatch')[0];
-        colorButton.addEventListener('click', function(e){
-            if (colorButton !== targetOfChangeDiv){
+        colorButton.addEventListener('click', function(e) {
+            if (colorButton !== targetOfChangeDiv) {
                 summonChangeDiv(colorButton, colorChangeDiv);
                 e.keepChangeDivs_ = true; // otherwise it will close the div
             }
         });
-    
+
         setSlider(sliderThumb, depth);
         sliderDrag = undefined; // kind of a hack
         setSliderColor(colorButton, color);
@@ -649,15 +649,15 @@ function createSliderUnit(systemUnit, ghost=false, depth=1, color=colorChoices[0
     hidePhaseDiagram();
 }
 
-function setSystem(systemIcon, systemName, fromInput=false){
+function setSystem(systemIcon, systemName, fromInput = false) {
     let systemUnit = systemIcon.closest('.system-unit');
     systemUnit.dataset.system = systemName;
     systemUnit.dataset.jumbleConfig = listjumbleConfigsFromSystemUnit(systemUnit)[0];
     systemUnit.dataset.order = 5;
 
-    for (let param of systemData[systemName].paramsRequired){
+    for (let param of systemData[systemName].paramsRequired) {
 
-        if (param.startsWith('arbitraryConstant')){
+        if (param.startsWith('arbitraryConstant')) {
             systemUnit.dataset[param] = 0.5;
         }
     }
@@ -684,7 +684,7 @@ function setSystem(systemIcon, systemName, fromInput=false){
 }
 
 
-function setSlider(sliderThumb, depth, fromInput=false, fromExtern=false){ // it also clamps the value
+function setSlider(sliderThumb, depth, fromInput = false, fromExtern = false) { // it also clamps the value
     //fromInput is if it's from the text box
     //fromExtern is if it's from the phase slider or similar
 
@@ -697,25 +697,25 @@ function setSlider(sliderThumb, depth, fromInput=false, fromExtern=false){ // it
     let noOpposites = sliderThumb.closest('.system-unit').classList.contains('no-opposites');
     let swapNegate = 1;
     depth = clamp(depth, isFullDepth && !(fromExtern && !noOpposites) ? -1 : 0, 1);
-    if (isFullDepth && ((depth >= 0) === isNegative) /*&& !fromInput*/){ // === acting as XOR
+    if (isFullDepth && ((depth >= 0) === isNegative) /*&& !fromInput*/ ) { // === acting as XOR
         if (!fromInput && !fromExtern) sliderDrag = sliderThumbOpp;
         swapNegate = -1;
         //console.log('swap')
         //console.log('swapped');
     }
-    if (isNegative){
-        sliderThumb.style.left = (100 + swapNegate*depth * 100) + '%';
-        sliderThumbOpp.style.left = (-swapNegate*depth * 100) + '%';
+    if (isNegative) {
+        sliderThumb.style.left = (100 + swapNegate * depth * 100) + '%';
+        sliderThumbOpp.style.left = (-swapNegate * depth * 100) + '%';
     } else {
-        sliderThumb.style.left = (swapNegate*depth * 100) + '%';
-        sliderThumbOpp.style.left = (100 - swapNegate*depth * 100) + '%';
+        sliderThumb.style.left = (swapNegate * depth * 100) + '%';
+        sliderThumbOpp.style.left = (100 - swapNegate * depth * 100) + '%';
     }
     updateWrongSign(sliderUnit, depth);
-    if (!noOpposites){
+    if (!noOpposites) {
         depth = Math.abs(depth);
     }
     sliderUnit.dataset.depth = depth;
-    if (!fromInput){
+    if (!fromInput) {
         sliderUnit.getElementsByClassName('slider-input')[0].value = clamp(Math.floor(depth * 1000.0001), isFullDepth ? -1000 : 0, 1000);
     }
 
@@ -724,7 +724,7 @@ function setSlider(sliderThumb, depth, fromInput=false, fromExtern=false){ // it
     drawPuzzle(); // not quite sure i want this in this function
 }
 
-function setSliderColor(colorSwatch, color, fromInput=false){
+function setSliderColor(colorSwatch, color, fromInput = false) {
     colorSwatch.closest('.slider-unit').dataset.color = color;
     colorSwatch.style.backgroundColor = color;
     let sliderThumbs = Array.from(colorSwatch.closest('.slider-unit').getElementsByClassName('slider-thumb'));
@@ -733,7 +733,7 @@ function setSliderColor(colorSwatch, color, fromInput=false){
 }
 
 
-function setPhaseSlider(){
+function setPhaseSlider() {
     let xDepth = slidersInPhase[0]?.dataset?.depth ?? 0
     let yDepth = slidersInPhase[1]?.dataset?.depth ?? 0
     //let transformRe = /^translate\(\s*([-0-9.]+)\s*,\s*([-0-9.]+)\s*\)/.exec(phaseThumb.getAttributeNS(null, 'transform'));
@@ -743,10 +743,10 @@ function setPhaseSlider(){
 }
 
 
-function removeSlider(sliderUnit){
+function removeSlider(sliderUnit) {
     hidePhaseDiagram();
 
-    if (sliderUnit.parentNode.querySelectorAll('.slider-unit:not(.ghost-slider)').length <= 1){
+    if (sliderUnit.parentNode.querySelectorAll('.slider-unit:not(.ghost-slider)').length <= 1) {
         removeSystem(sliderUnit.closest('.system-unit')); // handles drawing puzzle
     } else {
         sliderUnit.remove();
@@ -756,14 +756,14 @@ function removeSlider(sliderUnit){
     hidePhaseDiagram();
 }
 
-function updateFullDepth(){
-    controlPanel.classList.toggle('full-depth', 
+function updateFullDepth() {
+    controlPanel.classList.toggle('full-depth',
         controlPanel.getElementsByClassName('no-opposites').length
     );
 }
 
 
-function removeSystem(systemUnit){
+function removeSystem(systemUnit) {
     systemUnit.remove();
     updateFullDepth();
     removeChangeDivs();
@@ -772,7 +772,7 @@ function removeSystem(systemUnit){
 }
 
 
-function updateSystemOpposite(systemUnit){
+function updateSystemOpposite(systemUnit) {
     let noOpposites = !getOppositesFromSystemUnit(systemUnit);
     systemUnit.classList.toggle('no-opposites', noOpposites);
     /*if (controlPanel.getElementsByClassName('no-opposites').length){
@@ -782,9 +782,9 @@ function updateSystemOpposite(systemUnit){
         controlPanel.classList.remove('full-depth');
     }*/
     updateFullDepth();
-    for (let sliderUnit of systemUnit.getElementsByClassName('slider-unit')){
+    for (let sliderUnit of systemUnit.getElementsByClassName('slider-unit')) {
         // update the opposite states of the sliders
-        if (noOpposites){ // the axis system has unpaired axes
+        if (noOpposites) { // the axis system has unpaired axes
             updateWrongSign(sliderUnit);
             sliderUnit.getElementsByClassName('slider-input')[0].min = -1000;
         } else {
@@ -792,7 +792,7 @@ function updateSystemOpposite(systemUnit){
             sliderThumbs.forEach(thumb => thumb.classList.remove('wrong-sign'));
             sliderUnit.getElementsByClassName('slider-input')[0].min = 0;
             let sliderDepth = parseFloat(sliderUnit.dataset.depth);
-            if (sliderDepth < 0){
+            if (sliderDepth < 0) {
                 setSlider(sliderThumbs[0], Math.abs(sliderDepth), false, true);
             }
         }
@@ -800,11 +800,11 @@ function updateSystemOpposite(systemUnit){
 }
 
 
-function updateWrongSign(sliderUnit, depth){
-    if (depth === undefined){
+function updateWrongSign(sliderUnit, depth) {
+    if (depth === undefined) {
         depth = parseFloat(sliderUnit.dataset.depth);
     }
-    if (depth >= 0){
+    if (depth >= 0) {
         //console.log(sliderUnit)
         sliderUnit.querySelector('.slider-thumb:not(.slider-neg)').classList.remove('wrong-sign');
         sliderUnit.querySelector('.slider-thumb.slider-neg').classList.add('wrong-sign');
@@ -815,7 +815,7 @@ function updateWrongSign(sliderUnit, depth){
 }
 
 
-function setSystemParamInnerHTML(systemParamsDiv){
+function setSystemParamInnerHTML(systemParamsDiv) {
     let systemUnit = systemParamsDiv.closest('.system-unit');
     //console.log(systemData[systemUnit.dataset.system].paramsRequired,systemUnit.dataset['jumbleConfig']);
     let string = systemData[systemUnit.dataset.system].paramsRequired.map(param => systemUnit.dataset[param]).join(': ');
@@ -824,8 +824,8 @@ function setSystemParamInnerHTML(systemParamsDiv){
     systemParamsDiv.classList.toggle('system-params-in-use', string.length > 0)
 }
 
-function removeChildren(element){
-    while (element.lastChild){
+function removeChildren(element) {
+    while (element.lastChild) {
         element.removeChild(element.lastChild);
     }
 }
@@ -848,21 +848,21 @@ const arbitraryConstantTemplate = (currentVal, index) => `
     </div>`;
 
 function summonChangeDiv(targetButton, changeDiv) {
-    if (changeDiv === paramsChangeDiv){ // intentional: this will not run if we are just moving the div
+    if (changeDiv === paramsChangeDiv) { // intentional: this will not run if we are just moving the div
         let systemUnit = targetButton.closest('.system-unit');
         Array.from(paramsChangeDiv.children[0].children).forEach(ch => ch.classList.add('hidden'));
 
         removeChildren(arbitraryConstantChangeDiv);
 
-        for (let param of systemData[systemUnit.dataset.system].paramsRequired){
-            switch (param){
+        for (let param of systemData[systemUnit.dataset.system].paramsRequired) {
+            switch (param) {
                 case 'order':
                     removeChildren(orderChangeDiv);
                     orderChangeDiv.classList.remove('hidden');
-                    for (let order = 3; order <= 24; order++){
+                    for (let order = 3; order <= 24; order++) {
                         orderChangeDiv.insertAdjacentHTML('beforeend', orderDivTemplate(order));
                         let orderOptionDiv = orderChangeDiv.lastChild;
-                        orderOptionDiv.addEventListener('click', function(){
+                        orderOptionDiv.addEventListener('click', function() {
                             setSystemParam(param, systemUnit, order);
                             drawPuzzle();
                         });
@@ -871,10 +871,10 @@ function summonChangeDiv(targetButton, changeDiv) {
                 case 'jumbleConfig':
                     removeChildren(jumbleConfigChangeDiv);
                     jumbleConfigChangeDiv.classList.remove('hidden');
-                    for (let jumbleConfig of listjumbleConfigsFromSystemUnit(systemUnit)){
+                    for (let jumbleConfig of listjumbleConfigsFromSystemUnit(systemUnit)) {
                         jumbleConfigChangeDiv.insertAdjacentHTML('beforeend', jumbleConfigDivTemplate(jumbleConfig));
                         let jumbleConfigOptionDiv = jumbleConfigChangeDiv.lastChild;
-                        jumbleConfigOptionDiv.addEventListener('click', function(){
+                        jumbleConfigOptionDiv.addEventListener('click', function() {
                             setSystemParam(param, systemUnit, jumbleConfig);
                             drawPuzzle();
                         });
@@ -900,7 +900,7 @@ function summonChangeDiv(targetButton, changeDiv) {
                 let inputField =
                     arbitraryConstantChangeDiv.lastChild.querySelector('.constant-input');
 
-                inputField.addEventListener('change', function(e){
+                inputField.addEventListener('change', function(e) {
 
                     let val = parseFloat(e.target.value);
 
@@ -917,36 +917,36 @@ function summonChangeDiv(targetButton, changeDiv) {
         }
     }
 
-    if (changeDiv){
-        if (changeDiv !== activeChangeDiv){
+    if (changeDiv) {
+        if (changeDiv !== activeChangeDiv) {
             removeChangeDivs();
         }
         activeChangeDiv = changeDiv;
     } else {
         changeDiv = activeChangeDiv;
     }
-    if (targetButton){
+    if (targetButton) {
         targetOfChangeDiv = targetButton;
         //console.log(targetOfChangeDiv, targetButton)
     } else {
         targetButton = targetOfChangeDiv;
     }
     //console.log(targetButton,changeDiv,targetOfChangeDiv);
-    if (targetButton){
+    if (targetButton) {
         changeDiv.classList.remove('hidden');
         let targetBottom = parseFloat(targetButton.getBoundingClientRect().bottom);
-        if (targetBottom < 0){
+        if (targetBottom < 0) {
             targetBottom = 0;
-        } else if (targetBottom > parseFloat(sliderPanel.getBoundingClientRect().bottom)){
+        } else if (targetBottom > parseFloat(sliderPanel.getBoundingClientRect().bottom)) {
             targetBottom = parseFloat(sliderPanel.getBoundingClientRect().bottom)
         }
         changeDiv.style.top = (targetBottom + 20) + 'px';
     }
 }
 
-function setSystemParam(param, systemUnit, value){
+function setSystemParam(param, systemUnit, value) {
     //console.log(param,systemUnit,value)
-    switch (param){
+    switch (param) {
         case 'order':
             systemUnit.dataset.order = value;
             systemUnit.dataset.jumbleConfig = listjumbleConfigsFromSystemUnit(systemUnit)[0];
@@ -964,7 +964,7 @@ function setSystemParam(param, systemUnit, value){
             //drawPuzzle();
             break;
     }
-    if (param.startsWith('arbitraryConstant')){
+    if (param.startsWith('arbitraryConstant')) {
 
         systemUnit.dataset[param] = value;
 
@@ -980,43 +980,43 @@ function setSystemParam(param, systemUnit, value){
     }
 }
 
-function removeChangeDivs(){
+function removeChangeDivs() {
     activeChangeDiv = undefined;
     targetOfChangeDiv = undefined;
-    if (changeDivs !== undefined){ // sometimes this function runs before changeDivs has been made
-        for (let changeDiv of changeDivs.children){
+    if (changeDivs !== undefined) { // sometimes this function runs before changeDivs has been made
+        for (let changeDiv of changeDivs.children) {
             changeDiv.classList.add('hidden');
         }
     }
 }
 
 
-function countAxes(){
+function countAxes() {
     let systemUnits = [];
-    for (let systemUnit of sliderPanel.children){
+    for (let systemUnit of sliderPanel.children) {
         if (systemUnit.classList.contains('ghost-system')) continue;
-        for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children){
+        for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children) {
             if (sliderUnit.classList.contains('ghost-slider')) continue;
             systemUnits.push(systemUnit);
         }
     }
 
     let systemsAxes = []
-    for (let systemUnit of systemUnits){
+    for (let systemUnit of systemUnits) {
         systemsAxes.push(getAxesFromSystemUnit(systemUnit));
     }
 
-    return systemsAxes.map(x=>x.length);
+    return systemsAxes.map(x => x.length);
 }
 
 
-function createPhasePlot(){
+function createPhasePlot() {
     let systemUnits = [];
     let overallSymmetry = -1; // all bits on
     slidersInPhase = [];
-    for (let systemUnit of sliderPanel.children){
+    for (let systemUnit of sliderPanel.children) {
         if (systemUnit.classList.contains('ghost-system')) continue;
-        for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children){
+        for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children) {
             if (sliderUnit.classList.contains('ghost-slider')) continue;
             // also skip it if the slider is locked
             systemUnits.push(systemUnit);
@@ -1028,7 +1028,7 @@ function createPhasePlot(){
     if (systemUnits.length > 2) return;
     let is2D = systemUnits.length === 2;
     let systemsAxes = []
-    for (let systemUnit of systemUnits){
+    for (let systemUnit of systemUnits) {
         systemsAxes.push(getAxesFromSystemUnit(systemUnit));
     }
 
@@ -1038,14 +1038,14 @@ function createPhasePlot(){
     let systemReducedIndex;
     let systemReducedAxes;
     let systemReducedAxesLen = Infinity;
-    for (let bit of allBits(overallSymmetry)){
-        for (let reduced = 0; reduced < systemUnits.length; reduced++){
+    for (let bit of allBits(overallSymmetry)) {
+        for (let reduced = 0; reduced < systemUnits.length; reduced++) {
             let systemReducedAxesL = []
             let reducedOffset = 0;
-            for (let systemUnit of systemUnits){
+            for (let systemUnit of systemUnits) {
                 systemReducedAxesL.push(getSymAxesFromSystemUnit(systemUnit, bit));
             }
-            if (systemReducedAxesL.flat().length < systemReducedAxesLen){
+            if (systemReducedAxesL.flat().length < systemReducedAxesLen) {
                 systemReducedIndex = reduced;
                 systemReducedAxes = systemReducedAxesL;
                 systemReducedAxesLen = systemReducedAxesL.flat().length;
@@ -1060,20 +1060,20 @@ function createPhasePlot(){
     let lineEqns = new FloatSet(4);
     // format: [p0, p1, cos 2f, sin 2f] => (p0 + t cos f, p1 + t sin f) ???
     // last two values: 1,0: horizontal; -1,0: vertical
-    lineEqns.add([1,0,-1,0]).add([-1,0,-1,0]);
-    if (is2D) lineEqns.add([0,1,1,0]).add([0,-1,1,0]);
+    lineEqns.add([1, 0, -1, 0]).add([-1, 0, -1, 0]);
+    if (is2D) lineEqns.add([0, 1, 1, 0]).add([0, -1, 1, 0]);
 
     let lineClippingRaw = []; // [line vector, [lower bound, upper bound]]
     // where the bounds represent dir . endpoint
 
 
-    for (let s0 = 0; s0 < systemUnits.length; s0++){
-        for (let i0 of systemReducedAxes[s0]){
-            for (let s1 = 0; s1 < systemUnits.length; s1++){
-                for (let i1 = 0; i1 < systemsAxes[s1].length; i1++){
+    for (let s0 = 0; s0 < systemUnits.length; s0++) {
+        for (let i0 of systemReducedAxes[s0]) {
+            for (let s1 = 0; s1 < systemUnits.length; s1++) {
+                for (let i1 = 0; i1 < systemsAxes[s1].length; i1++) {
                     if (s0 === s1 && i0 === i1) continue;
-                    if (axSetsSeen.has([pair(s0,i0),pair(s1,i1)].sort())) continue;
-                    axSetsSeen.add([pair(s0,i0),pair(s1,i1)].sort())
+                    if (axSetsSeen.has([pair(s0, i0), pair(s1, i1)].sort())) continue;
+                    axSetsSeen.add([pair(s0, i0), pair(s1, i1)].sort())
 
                     let axis0 = systemsAxes[s0][i0];
                     let axis1 = systemsAxes[s1][i1];
@@ -1081,45 +1081,48 @@ function createPhasePlot(){
                     // add tangency depth
                     let dot = axis0.dot(axis1);
                     let tangencyCoeff = Math.sqrt((1 + dot) / 2);
-                    if (dot > 1 - THRESHOLD){
-                        if ((s0 === 0 && s1 === 1) || (s0 === 1 && s1 === 0)) lineEqns.add([0,0,0,1]); // diagonal line
+                    if (dot > 1 - THRESHOLD) {
+                        if ((s0 === 0 && s1 === 1) || (s0 === 1 && s1 === 0)) lineEqns.add([0, 0, 0, 1]); // diagonal line
                         continue;
-                    } else if (dot < -1 + THRESHOLD){
-                        if ((s0 === 0 && s1 === 1) || (s0 === 1 && s1 === 0)) lineEqns.add([0,0,0,-1]); // antidiagonal line
+                    } else if (dot < -1 + THRESHOLD) {
+                        if ((s0 === 0 && s1 === 1) || (s0 === 1 && s1 === 0)) lineEqns.add([0, 0, 0, -1]); // antidiagonal line
                         continue;
                     }
-                    if (s0 === 0 && s1 === 0){
-                        lineEqns.add([tangencyCoeff,0,-1,0]).add([-tangencyCoeff,0,-1,0]);
-                    } else if (s0 === 1 && s1 === 1){
-                        lineEqns.add([0,tangencyCoeff,1,0]).add([0,-tangencyCoeff,1,0]);
+                    if (s0 === 0 && s1 === 0) {
+                        lineEqns.add([tangencyCoeff, 0, -1, 0]).add([-tangencyCoeff, 0, -1, 0]);
+                    } else if (s0 === 1 && s1 === 1) {
+                        lineEqns.add([0, tangencyCoeff, 1, 0]).add([0, -tangencyCoeff, 1, 0]);
                     } else {
-                        let det = 1 - axis0.dot(axis1)**2
-                        ellipseMats.add([1/det, -dot/det, 1/det]);
+                        let det = 1 - axis0.dot(axis1) ** 2
+                        ellipseMats.add([1 / det, -dot / det, 1 / det]);
                     }
                     //console.log(i0,i1,tangencyDepth);
-                    for (let s2 = 0; s2 < systemUnits.length; s2++){
-                        for (let i2 = 0; i2 < systemsAxes[s2].length; i2++){
+                    for (let s2 = 0; s2 < systemUnits.length; s2++) {
+                        for (let i2 = 0; i2 < systemsAxes[s2].length; i2++) {
                             if ((s0 === s2 && i0 === i2) || (s1 === s2 && i1 === i2)) continue;
-                            if (axSetsSeen.has([pair(s0,i0),pair(s1,i1),pair(s2,i2)].sort())) continue;
-                            axSetsSeen.add([pair(s0,i0),pair(s1,i1),pair(s2,i2)].sort())
-                            let sarr = [s0,s1,s2];
+                            if (axSetsSeen.has([pair(s0, i0), pair(s1, i1), pair(s2, i2)].sort())) continue;
+                            axSetsSeen.add([pair(s0, i0), pair(s1, i1), pair(s2, i2)].sort())
+                            let sarr = [s0, s1, s2];
 
                             let axis2 = systemsAxes[s2][i2];
-                            let aarr = [axis0,axis1,axis2];
-                            if (axis2.dot(axis0) > 1 - THRESHOLD || axis2.dot(axis0) < -1 + THRESHOLD
-                             || axis2.dot(axis1) > 1 - THRESHOLD || axis2.dot(axis1) < -1 + THRESHOLD) continue;
+                            let aarr = [axis0, axis1, axis2];
+                            if (axis2.dot(axis0) > 1 - THRESHOLD || axis2.dot(axis0) < -1 + THRESHOLD ||
+                                axis2.dot(axis1) > 1 - THRESHOLD || axis2.dot(axis1) < -1 + THRESHOLD) continue;
 
                             // add triple depth
                             let detAxes = axis0.dot(axis1.cross(axis2)); // determinant of matrix formed by axes
-                            if (Math.abs(detAxes) < THRESHOLD){
+                            if (Math.abs(detAxes) < THRESHOLD) {
                                 // definitely something should happen
                                 //console.log('zero det');
-                                let axesSystems = [[],[]];
+                                let axesSystems = [
+                                    [],
+                                    []
+                                ];
                                 axesSystems[s0].push(0);
                                 axesSystems[s1].push(1);
                                 axesSystems[s2].push(2);
 
-                                if (axesSystems[0].length && axesSystems[1].length){
+                                if (axesSystems[0].length && axesSystems[1].length) {
                                     let singleSystem = axesSystems[0].length === 1 ? 0 : 1;
                                     let doubleSystem = axesSystems[0].length === 1 ? 1 : 0;
                                     let singleAxis = aarr[axesSystems[singleSystem][0]];
@@ -1132,49 +1135,49 @@ function createPhasePlot(){
                                         else if (singleSystem === 1) lineEqns.add([0,0,1,0]);* /
 
                                     } else */
-                                    if (Math.abs(singleAxis.dot(doubleAxis1.subtract(doubleAxis2))) < THRESHOLD){
+                                    if (Math.abs(singleAxis.dot(doubleAxis1.subtract(doubleAxis2))) < THRESHOLD) {
                                         // line needs to pass through [0,0] and [1,singleAxis.dot(doubleAxis1)] (with 1 in place of singleSystem)
                                         //console.log('needs no clipping')
                                         let dir = [];
-                                        let norm = Math.sqrt(1 + singleAxis.dot(doubleAxis1)**2)
-                                        dir[singleSystem] = 1/norm;
-                                        dir[doubleSystem] = singleAxis.dot(doubleAxis1)/norm;
-                                        lineEqns.add([0,0,dir[0]**2-dir[1]**2,2*dir[0]*dir[1]]); // remember to complex square the direction
+                                        let norm = Math.sqrt(1 + singleAxis.dot(doubleAxis1) ** 2)
+                                        dir[singleSystem] = 1 / norm;
+                                        dir[doubleSystem] = singleAxis.dot(doubleAxis1) / norm;
+                                        lineEqns.add([0, 0, dir[0] ** 2 - dir[1] ** 2, 2 * dir[0] * dir[1]]); // remember to complex square the direction
                                     } else {
                                         //console.log('needs clipping!');
                                         let dirUnnorm = [];
-                                        dirUnnorm[doubleSystem] = Math.sqrt((1 + doubleAxis1.dot(doubleAxis2))/2);
-                                        dirUnnorm[singleSystem] = singleAxis.dot(doubleAxis1.add(doubleAxis2)) / Math.sqrt((1 + doubleAxis1.dot(doubleAxis2))*2);
-                                        let norm = Math.sqrt(dirUnnorm[singleSystem]**2 + dirUnnorm[doubleSystem]**2);
-                                        let dir = dirUnnorm.map(x => x/norm);
-                                        let lineEqn = [0,0,dir[0]**2-dir[1]**2,2*dir[0]*dir[1]]; // remember to complex square the direction
+                                        dirUnnorm[doubleSystem] = Math.sqrt((1 + doubleAxis1.dot(doubleAxis2)) / 2);
+                                        dirUnnorm[singleSystem] = singleAxis.dot(doubleAxis1.add(doubleAxis2)) / Math.sqrt((1 + doubleAxis1.dot(doubleAxis2)) * 2);
+                                        let norm = Math.sqrt(dirUnnorm[singleSystem] ** 2 + dirUnnorm[doubleSystem] ** 2);
+                                        let dir = dirUnnorm.map(x => x / norm);
+                                        let lineEqn = [0, 0, dir[0] ** 2 - dir[1] ** 2, 2 * dir[0] * dir[1]]; // remember to complex square the direction
                                         lineClippingRaw.push([lineEqn, [-norm, norm]]);
                                     }
-                                } else if (axesSystems[0].length){
-                                    lineEqns.add([0,0,-1,0]);
-                                } else if (axesSystems[1].length){
-                                    lineEqns.add([0,0,1,0]);
+                                } else if (axesSystems[0].length) {
+                                    lineEqns.add([0, 0, -1, 0]);
+                                } else if (axesSystems[1].length) {
+                                    lineEqns.add([0, 0, 1, 0]);
                                 }
 
                             } else {
                                 let invAxes = [axis1.cross(axis2).divide(detAxes), axis2.cross(axis0).divide(detAxes), axis0.cross(axis1).divide(detAxes)]; // inverse of matrix formed by axes
                                 //let ellipsoidDepth = ; // the ellipsoid if all three axes had different ellipseMats
-                                let tripleCoeffs = [0,0,0]; // inverse square root
-                                for (let k1 = 0; k1 < 3; k1++){
-                                    for (let k2 = 0; k2 < 3; k2++){
-                                        if (sarr[k1] === 0){
-                                                 if (sarr[k2] === 0) tripleCoeffs[0] += invAxes[k1].dot(invAxes[k2]);
+                                let tripleCoeffs = [0, 0, 0]; // inverse square root
+                                for (let k1 = 0; k1 < 3; k1++) {
+                                    for (let k2 = 0; k2 < 3; k2++) {
+                                        if (sarr[k1] === 0) {
+                                            if (sarr[k2] === 0) tripleCoeffs[0] += invAxes[k1].dot(invAxes[k2]);
                                             else if (sarr[k2] === 1) tripleCoeffs[1] += invAxes[k1].dot(invAxes[k2]);
-                                        } else if (sarr[k1] === 1){
-                                             // sarr[k2] === 0 is redundant since coefficient matrix is symmetric
+                                        } else if (sarr[k1] === 1) {
+                                            // sarr[k2] === 0 is redundant since coefficient matrix is symmetric
                                             if (sarr[k2] === 1) tripleCoeffs[2] += invAxes[k1].dot(invAxes[k2]);
                                         }
                                     }
                                 }
-                                if (Math.abs(tripleCoeffs[1]) < THRESHOLD && Math.abs(tripleCoeffs[2]) < THRESHOLD){
-                                    lineEqns.add([tripleCoeffs[0]**-0.5,0,-1,0]).add([-(tripleCoeffs[0]**-0.5),0,-1,0]);
-                                } else if (Math.abs(tripleCoeffs[1]) < THRESHOLD && Math.abs(tripleCoeffs[0]) < THRESHOLD){
-                                    lineEqns.add([0,tripleCoeffs[2]**-0.5,1,0]).add([0,-(tripleCoeffs[2]**-0.5),1,0]);
+                                if (Math.abs(tripleCoeffs[1]) < THRESHOLD && Math.abs(tripleCoeffs[2]) < THRESHOLD) {
+                                    lineEqns.add([tripleCoeffs[0] ** -0.5, 0, -1, 0]).add([-(tripleCoeffs[0] ** -0.5), 0, -1, 0]);
+                                } else if (Math.abs(tripleCoeffs[1]) < THRESHOLD && Math.abs(tripleCoeffs[0]) < THRESHOLD) {
+                                    lineEqns.add([0, tripleCoeffs[2] ** -0.5, 1, 0]).add([0, -(tripleCoeffs[2] ** -0.5), 1, 0]);
                                 } else {
                                     ellipseMats.add(tripleCoeffs);
                                 }
@@ -1189,15 +1192,15 @@ function createPhasePlot(){
 
     let lowerRightX = -1;
     let lowerRightY = -1;
-    if (getAnyOppositesFromSystemUnit(systemUnits[0])){
-        lineEqns.add([0,0,-1,0]);
-        if (getOppositesFromSystemUnit(systemUnits[0])){
+    if (getAnyOppositesFromSystemUnit(systemUnits[0])) {
+        lineEqns.add([0, 0, -1, 0]);
+        if (getOppositesFromSystemUnit(systemUnits[0])) {
             lowerRightX = 0;
         }
     }
-    if (is2D && getAnyOppositesFromSystemUnit(systemUnits[1])){
-        lineEqns.add([0,0,1,0]);
-        if (getOppositesFromSystemUnit(systemUnits[1])){
+    if (is2D && getAnyOppositesFromSystemUnit(systemUnits[1])) {
+        lineEqns.add([0, 0, 1, 0]);
+        if (getOppositesFromSystemUnit(systemUnits[1])) {
             lowerRightY = 0;
         }
     }
@@ -1208,9 +1211,9 @@ function createPhasePlot(){
     // add the lines from lineClippingRaw back into lineEqns
     let linesClipped = new FloatSet(4);
     let lineClipping = new Map();
-    for (let [lineEqnRaw, lineBounds] of lineClippingRaw){
+    for (let [lineEqnRaw, lineBounds] of lineClippingRaw) {
         //console.log(lineEqnRaw)
-        if (!lineEqns.has(lineEqnRaw)){ // if it has it the bounds are infinite
+        if (!lineEqns.has(lineEqnRaw)) { // if it has it the bounds are infinite
             let lineEqn = linesClipped.addWhich(lineEqnRaw);
             if (!lineClipping.has(lineEqn)) lineClipping.set(lineEqn, [Infinity, -Infinity]);
             let bounds = lineClipping.get(lineEqn);
@@ -1222,46 +1225,46 @@ function createPhasePlot(){
     for (let lineEqn of linesClipped) lineEqns.add(lineEqn);
 
     phaseDiagram.classList.remove('hidden');
-    for (let phaseDomainGChild of phaseDomainG.children){
+    for (let phaseDomainGChild of phaseDomainG.children) {
         removeChildren(phaseDomainGChild);
     }
 
     let phaseDiagramMargin = 0.1;
 
     //console.log(Array.from(ellipseMats));
-    if (!is2D){
-        let phaseDiagramThickness = 0.26 * (1-lowerRightX); // the width of the 1d phase diagram
+    if (!is2D) {
+        let phaseDiagramThickness = 0.26 * (1 - lowerRightX); // the width of the 1d phase diagram
         phaseDiagram.setAttribute('viewBox', `${-phaseDiagramMargin+lowerRightX} ${-phaseDiagramThickness/2-phaseDiagramMargin} ${1-lowerRightX+2*phaseDiagramMargin} ${phaseDiagramThickness+2*phaseDiagramMargin}`);
         phaseBack.setAttributeNS(null, 'x', lowerRightX);
-        phaseBack.setAttributeNS(null, 'y', -phaseDiagramThickness/2);
-        phaseBack.setAttributeNS(null, 'width', 1-lowerRightX);
+        phaseBack.setAttributeNS(null, 'y', -phaseDiagramThickness / 2);
+        phaseBack.setAttributeNS(null, 'width', 1 - lowerRightX);
         phaseBack.setAttributeNS(null, 'height', phaseDiagramThickness);
 
-        let depthsArr = Array.from(lineEqns).map(x => x[0]).filter(x => x >= lowerRightX-THRESHOLD).sort((a, b) => a - b);
+        let depthsArr = Array.from(lineEqns).map(x => x[0]).filter(x => x >= lowerRightX - THRESHOLD).sort((a, b) => a - b);
         let hasZero = Math.abs(depthsArr[0]) < THRESHOLD || lowerRightX === -1
         //hasZeroVLine = hasZero;
         if (!hasZero) depthsArr.unshift(0);
         //if (midLineV) depthsArr.unshift(0);
         //console.log(depthsArr);
 
-        for (let i = 0; i < depthsArr.length-1; i++){
+        for (let i = 0; i < depthsArr.length - 1; i++) {
             let rect = document.createElementNS(svgns, 'rect'); // https://stackoverflow.com/a/12786915
             rect.setAttributeNS(null, 'x', depthsArr[i]);
-            rect.setAttributeNS(null, 'y', -phaseDiagramThickness/2);
-            rect.setAttributeNS(null, 'width', depthsArr[i+1] - depthsArr[i]);
+            rect.setAttributeNS(null, 'y', -phaseDiagramThickness / 2);
+            rect.setAttributeNS(null, 'width', depthsArr[i + 1] - depthsArr[i]);
             rect.setAttributeNS(null, 'height', phaseDiagramThickness);
-            rect.dataset.centerX = (depthsArr[i+1] + depthsArr[i])/2;
+            rect.dataset.centerX = (depthsArr[i + 1] + depthsArr[i]) / 2;
             rect.dataset.centerY = 0;
             rect.classList.add('phase-domain-hoverable', 'phase-region-hoverable');
             phaseRegionG.appendChild(rect);
         }
 
-        for (let i = hasZero?0:1; i < depthsArr.length; i++){
+        for (let i = hasZero ? 0 : 1; i < depthsArr.length; i++) {
             let lineHoverable = document.createElementNS(svgns, 'line'); // https://stackoverflow.com/a/12786915
             lineHoverable.setAttributeNS(null, 'x1', depthsArr[i]);
-            lineHoverable.setAttributeNS(null, 'y1', -phaseDiagramThickness/2);
+            lineHoverable.setAttributeNS(null, 'y1', -phaseDiagramThickness / 2);
             lineHoverable.setAttributeNS(null, 'x2', depthsArr[i]);
-            lineHoverable.setAttributeNS(null, 'y2', phaseDiagramThickness/2);
+            lineHoverable.setAttributeNS(null, 'y2', phaseDiagramThickness / 2);
             lineHoverable.dataset.centerX = depthsArr[i];
             lineHoverable.dataset.centerY = 0;
             lineHoverable.classList.add('phase-domain-hoverable', 'phase-boundary-hoverable');
@@ -1269,9 +1272,9 @@ function createPhasePlot(){
 
             let line = document.createElementNS(svgns, 'line'); // https://stackoverflow.com/a/12786915
             line.setAttributeNS(null, 'x1', depthsArr[i]);
-            line.setAttributeNS(null, 'y1', -phaseDiagramThickness/2);
+            line.setAttributeNS(null, 'y1', -phaseDiagramThickness / 2);
             line.setAttributeNS(null, 'x2', depthsArr[i]);
-            line.setAttributeNS(null, 'y2', phaseDiagramThickness/2);
+            line.setAttributeNS(null, 'y2', phaseDiagramThickness / 2);
             line.classList.add('phase-boundary')
             phaseLineG.appendChild(line);
         }
@@ -1281,10 +1284,10 @@ function createPhasePlot(){
         phaseDiagram.setAttribute('viewBox', `${lowerRightX-phaseDiagramMargin} ${-1-phaseDiagramMargin} ${(1-lowerRightX)+2*phaseDiagramMargin} ${(1-lowerRightY)+2*phaseDiagramMargin}`); // prepare for scale() later
         phaseBack.setAttributeNS(null, 'x', lowerRightX);
         phaseBack.setAttributeNS(null, 'y', lowerRightY);
-        phaseBack.setAttributeNS(null, 'width', 1-lowerRightX);
-        phaseBack.setAttributeNS(null, 'height', 1-lowerRightY);
+        phaseBack.setAttributeNS(null, 'width', 1 - lowerRightX);
+        phaseBack.setAttributeNS(null, 'height', 1 - lowerRightY);
 
-        
+
         let renderRegions = axisCount <= 24 && ellipseMats.size <= 72;
 
         let ellipseArr = Array.from(ellipseMats);
@@ -1299,39 +1302,42 @@ function createPhasePlot(){
 
         // find intersection points of the ellipses and lines
 
-        if (renderRegions){
-            for (let i = 0; i < lineArr.length; i++){ // lines and ...
-                let [[p0, p1], [d0, d1], dot, perp] = lineArr[i];
-                let bounds = lineClipping.get(lineArrOg[i]) ?? [-3,3];
+        if (renderRegions) {
+            for (let i = 0; i < lineArr.length; i++) { // lines and ...
+                let [
+                    [p0, p1],
+                    [d0, d1], dot, perp
+                ] = lineArr[i];
+                let bounds = lineClipping.get(lineArrOg[i]) ?? [-3, 3];
 
-                for (let j = 0; j < i; j++){ // loop through lines
+                for (let j = 0; j < i; j++) { // loop through lines
                     let [pt1, [d10, d11], dot1, perp1] = lineArr[j];
 
-                    let bounds1 = lineClipping.get(lineArrOg[j]) ?? [-3,3];
+                    let bounds1 = lineClipping.get(lineArrOg[j]) ?? [-3, 3];
 
                     let intersection = intersections.wouldAddWhich(intersectLines(dot, perp, dot1, perp1));
-                    if (intersection){
+                    if (intersection) {
                         //console.log(intersection[0]*d0+intersection[1]*d1, bounds, intersection[0]*d10+intersection[1]*d11, bounds1)
-                        if ((intersection[0]*d0+intersection[1]*d1 > bounds[0]-THRESHOLD && intersection[0]*d0+intersection[1]*d1 < bounds[1]+THRESHOLD)
-                         && (intersection[0]*d10+intersection[1]*d11 > bounds1[0]-THRESHOLD && intersection[0]*d10+intersection[1]*d11 < bounds1[1]+THRESHOLD)){
+                        if ((intersection[0] * d0 + intersection[1] * d1 > bounds[0] - THRESHOLD && intersection[0] * d0 + intersection[1] * d1 < bounds[1] + THRESHOLD) &&
+                            (intersection[0] * d10 + intersection[1] * d11 > bounds1[0] - THRESHOLD && intersection[0] * d10 + intersection[1] * d11 < bounds1[1] + THRESHOLD)) {
                             lineIntersections[i].add(intersection);
                             lineIntersections[j].add(intersection);
                             intersections.add(intersection);
                         }
                     }
                 }
-                for (let j = 0; j < ellipseArr.length; j++){ // loop through ellipses
+                for (let j = 0; j < ellipseArr.length; j++) { // loop through ellipses
                     let [a0, a1, a2] = ellipseArr[j];
-                    let [tP, tM] = quadratic(a0*d0*d0+2*a1*d0*d1+a2*d1*d1, 2*(a0*p0*d0+a1*p1*d0+a1*p0*d1+a2*p1*d1), a0*p0*p0+2*a1*p0*p1+a2*p1*p1-1); // substitute parametric line into ellipse
+                    let [tP, tM] = quadratic(a0 * d0 * d0 + 2 * a1 * d0 * d1 + a2 * d1 * d1, 2 * (a0 * p0 * d0 + a1 * p1 * d0 + a1 * p0 * d1 + a2 * p1 * d1), a0 * p0 * p0 + 2 * a1 * p0 * p1 + a2 * p1 * p1 - 1); // substitute parametric line into ellipse
                     if (tP === null) continue;
 
                     //if (Math.abs(p1-1/3)<THRESHOLD) console.log('a third',p0,p1,d0,d1,a0,a1,a2);
                     //console.log([p0+tP*d0, p1+tP*d1],[p0+tM*d0, p1+tM*d1])
-                    for (let t of [tP, tM]){
-                        let intersection = intersections.wouldAddWhich([p0+t*d0, p1+t*d1])
+                    for (let t of [tP, tM]) {
+                        let intersection = intersections.wouldAddWhich([p0 + t * d0, p1 + t * d1])
                         //if (i===0) console.log('el',intersection);
-                        if (intersection){
-                            if (intersection[0]*d0+intersection[1]*d1 > bounds[0]-THRESHOLD && intersection[0]*d0+intersection[1]*d1 < bounds[1]+THRESHOLD){
+                        if (intersection) {
+                            if (intersection[0] * d0 + intersection[1] * d1 > bounds[0] - THRESHOLD && intersection[0] * d0 + intersection[1] * d1 < bounds[1] + THRESHOLD) {
                                 lineIntersections[i].add(intersection);
                                 ellipseIntersections[j].add(intersection);
                                 intersections.add(intersection);
@@ -1341,12 +1347,12 @@ function createPhasePlot(){
                 }
             }
 
-            for (let i = 0; i < ellipseArr.length; i++){ // KNOWN ISSUE: tangent ellipses
-                for (let j = 0; j < i; j++){ // loop through ellipses
+            for (let i = 0; i < ellipseArr.length; i++) { // KNOWN ISSUE: tangent ellipses
+                for (let j = 0; j < i; j++) { // loop through ellipses
                     let [a0, a1, a2] = ellipseArr[i]; // definitely will not have determinant 0
                     let [b0, b1, b2] = ellipseArr[j]; // definitely will not have determinant 0
-                                                      // also they're not the same so discrim is not 0
-                    
+                    // also they're not the same so discrim is not 0
+
                     /*let [testX, testY] = [0.915790, 0.535789]
                     //console.log(Math.abs(a0*testX**2+2*a1*testX*testY+a2*testY**2-1))
                     if (Math.abs(a0*testX**2+2*a1*testX*testY+a2*testY**2-1) < 1e-1 && Math.abs(b0*testX**2+2*b1*testX*testY+b2*testY**2-1) < 1e-1){
@@ -1354,18 +1360,18 @@ function createPhasePlot(){
                         debugger;
                     }*/
 
-                    let diffDet = (a0-b0)*(a2-b2)-(a1-b1)**2;
+                    let diffDet = (a0 - b0) * (a2 - b2) - (a1 - b1) ** 2;
                     //console.log(diffDet)
                     if (diffDet > THRESHOLD) continue; // the ellipses do not intersect
 
-                    let ts = quadratic(b0*b2-b1*b1, a2*b0-2*a1*b1+a0*b2, a0*a2-a1*a1);
+                    let ts = quadratic(b0 * b2 - b1 * b1, a2 * b0 - 2 * a1 * b1 + a0 * b2, a0 * a2 - a1 * a1);
                     // det(A + t B) = 0
                     //if (i===3&&j===0) console.log([a0, a1, a2],[b0, b1, b2],diffDet)
                     if (ts[0] === null) continue;
                     let lineParams = [] // dot0, perp0, dot1, perp1 
-                    for (let t of ts){
-                        let [c0, c1, c2] = [a0+t*b0, a1+t*b1, a2+t*b2].map(c => Math.abs(c) < THRESHOLD ? 0 : c); // without the zeroing sometimes you get incorrect negatives below
-                        if (c0 < 0 || c2 < 0){
+                    for (let t of ts) {
+                        let [c0, c1, c2] = [a0 + t * b0, a1 + t * b1, a2 + t * b2].map(c => Math.abs(c) < THRESHOLD ? 0 : c); // without the zeroing sometimes you get incorrect negatives below
+                        if (c0 < 0 || c2 < 0) {
                             c0 *= -1;
                             c1 *= -1;
                             c2 *= -1;
@@ -1373,19 +1379,19 @@ function createPhasePlot(){
                         //console.log(c0,c1,c2)
                         let [v0, v1] = [Math.sqrt(c0), Math.sqrt(c2)];
                         if (c1 < 0) v1 *= -1;
-                        let norm = Math.sqrt(v0**2 + v1**2);
+                        let norm = Math.sqrt(v0 ** 2 + v1 ** 2);
                         //if (i===3&&j===0) console.log(t,[c0,c1,c2],[v0,v1],Math.sqrt(Math.abs(1+t))/norm)
-                        lineParams.push(Math.sqrt(Math.abs(1+t))/norm, [v0/norm, v1/norm]);
+                        lineParams.push(Math.sqrt(Math.abs(1 + t)) / norm, [v0 / norm, v1 / norm]);
                     }
 
                     let [dot0, perp0, dot1, perp1] = lineParams;
                     //console.log(ts, dot0, perp0, dot1, perp1)
                     //console.log(intersectLines( dot0, perp0,  dot1, perp1),intersectLines( dot0, perp0, -dot1, perp1))
-                    for (let k0 of [1,-1]){
-                        for (let k1 of [1,-1]){
-                            let intersection = intersections.wouldAddWhich(intersectLines(k0*dot0, perp0, k1*dot1, perp1));
+                    for (let k0 of [1, -1]) {
+                        for (let k1 of [1, -1]) {
+                            let intersection = intersections.wouldAddWhich(intersectLines(k0 * dot0, perp0, k1 * dot1, perp1));
                             //if (i===31&&j===0) console.log('ee',intersection);
-                            if (intersection){
+                            if (intersection) {
                                 //if (i===3&&j===0) console.log(k0*dot0, perp0, k1*dot1, perp1,intersection)
                                 ellipseIntersections[i].add(intersection);
                                 ellipseIntersections[j].add(intersection);
@@ -1398,37 +1404,37 @@ function createPhasePlot(){
         }
 
         // find the segments on the lines and ellipses
- 
+
         let intersectionArr = Array.from(intersections);
         let intersectionSegs = intersectionArr.map(() => new Map()); // map from exit angle to [opposite segment, exit angle, svg path, initial endpoint]
 
-        for (let i = 0; i < lineArr.length; i++){
+        for (let i = 0; i < lineArr.length; i++) {
             let [pt, [d0, d1], dot, perp] = lineArr[i];
             let lineInts = Array.from(lineIntersections[i])
-                .filter(int => int.every(c => Math.abs(c) < 1+THRESHOLD))
-                .sort((intA, intB) => (intA[0]*d0 + intA[1]+d1) - (intB[0]*d0 + intB[1]+d1));
+                .filter(int => int.every(c => Math.abs(c) < 1 + THRESHOLD))
+                .sort((intA, intB) => (intA[0] * d0 + intA[1] + d1) - (intB[0] * d0 + intB[1] + d1));
 
             let line = document.createElementNS(svgns, 'line'); // https://stackoverflow.com/a/12786915
             //console.log(pt,dot,dir)
 
             let bounds;
-            if (linesClipped.has(lineArrOg[i])){
+            if (linesClipped.has(lineArrOg[i])) {
                 bounds = lineClipping.get(lineArrOg[i]);
             } else {
-                bounds = [-3,3];
+                bounds = [-3, 3];
             }
-            line.setAttributeNS(null, 'x1', pt[0]+bounds[0]*d0);
-            line.setAttributeNS(null, 'y1', pt[1]+bounds[0]*d1);
-            line.setAttributeNS(null, 'x2', pt[0]+bounds[1]*d0);
-            line.setAttributeNS(null, 'y2', pt[1]+bounds[1]*d1);
+            line.setAttributeNS(null, 'x1', pt[0] + bounds[0] * d0);
+            line.setAttributeNS(null, 'y1', pt[1] + bounds[0] * d1);
+            line.setAttributeNS(null, 'x2', pt[0] + bounds[1] * d0);
+            line.setAttributeNS(null, 'y2', pt[1] + bounds[1] * d1);
             line.classList.add('phase-clip', 'phase-boundary');
             phaseLineG.appendChild(line);
 
-            if (renderRegions){
-                for (let j = 0; j < lineInts.length-1; j++){
-                    let [end0, end1] = [lineInts[j], lineInts[j+1]];
-                    let [midpointX, midpointY] = [(end0[0] + end1[0])/2, (end0[1] + end1[1])/2];
-                    if (midpointX > lowerRightX-THRESHOLD && midpointX < 1+THRESHOLD && midpointY > lowerRightY-THRESHOLD && midpointY < 1+THRESHOLD){
+            if (renderRegions) {
+                for (let j = 0; j < lineInts.length - 1; j++) {
+                    let [end0, end1] = [lineInts[j], lineInts[j + 1]];
+                    let [midpointX, midpointY] = [(end0[0] + end1[0]) / 2, (end0[1] + end1[1]) / 2];
+                    if (midpointX > lowerRightX - THRESHOLD && midpointX < 1 + THRESHOLD && midpointY > lowerRightY - THRESHOLD && midpointY < 1 + THRESHOLD) {
                         let lineSeg = document.createElementNS(svgns, 'line'); // https://stackoverflow.com/a/12786915
                         lineSeg.setAttributeNS(null, 'x1', end0[0]);
                         lineSeg.setAttributeNS(null, 'y1', end0[1]);
@@ -1437,7 +1443,7 @@ function createPhasePlot(){
                         lineSeg.classList.add('phase-domain-hoverable', 'phase-boundary-hoverable');
                         lineSeg.dataset.centerX = midpointX; // edit these maybe
                         lineSeg.dataset.centerY = midpointY;
-                        if (end0[0] * end1[0] < -(THRESHOLD**2) || end0[1] * end1[1] < -(THRESHOLD**2)){
+                        if (end0[0] * end1[0] < -(THRESHOLD ** 2) || end0[1] * end1[1] < -(THRESHOLD ** 2)) {
                             lineSeg.classList.add('phase-clip-origin');
                         }
                         phaseBoundaryG.appendChild(lineSeg);
@@ -1445,14 +1451,14 @@ function createPhasePlot(){
 
                     let end0ind = intersectionArr.indexOf(end0);
                     let end1ind = intersectionArr.indexOf(end1);
-                    let end0angle = Math.atan2(midpointY-end0[1], midpointX-end0[0]);
-                    let end1angle = Math.atan2(midpointY-end1[1], midpointX-end1[0]);
+                    let end0angle = Math.atan2(midpointY - end0[1], midpointX - end0[0]);
+                    let end1angle = Math.atan2(midpointY - end1[1], midpointX - end1[0]);
                     let end0path = `L ${end1[0]} ${end1[1]}`; // says to go from end0 to end1
                     let end1path = `L ${end0[0]} ${end0[1]}`;
                     let end0desc = [, end0angle, end0path, [end0]];
                     let end1desc = [, end1angle, end1path, [end1]];
                     //console.log(end0ind, end1ind);
-                    console.assert(end0ind>=0 && end1ind>=0);
+                    console.assert(end0ind >= 0 && end1ind >= 0);
                     end0desc[0] = end1desc;
                     end1desc[0] = end0desc;
                     /*if (end0[0]===1&&end0[1]===0&&end0path==='L 1 0.3333333333333333'){
@@ -1468,19 +1474,19 @@ function createPhasePlot(){
 
         //console.log(intersectionSegs[0])
 
-        for (let i = 0; i < ellipseArr.length; i++){ // change for non-centered ellipses
+        for (let i = 0; i < ellipseArr.length; i++) { // change for non-centered ellipses
             let ellipseInts = Array.from(ellipseIntersections[i])
                 .sort((intA, intB) => Math.atan2(intA[1], intA[0]) - Math.atan2(intB[1], intB[0]));
             ellipseInts.push(ellipseInts[0]);
 
             let [a0, a1, a2] = ellipseArr[i]; // definitely will not have determinant 0
             // solve equation l^2 - (a0+a2)l + (a0 a2-a1^2) = 0 for eigenvalues l
-            let [eigenP, eigenM] = quadratic(1, -a0-a2, a0*a2-a1*a1); // it will be real
-            let axisX = eigenM**-0.5;
-            let axisY = eigenP**-0.5;
+            let [eigenP, eigenM] = quadratic(1, -a0 - a2, a0 * a2 - a1 * a1); // it will be real
+            let axisX = eigenM ** -0.5;
+            let axisY = eigenP ** -0.5;
             let angle;
-            if (Math.abs(a1) < THRESHOLD){
-                angle = a0 < a2 ? 0 : Math.PI/2
+            if (Math.abs(a1) < THRESHOLD) {
+                angle = a0 < a2 ? 0 : Math.PI / 2
             } else {
                 angle = Math.atan2(a1, (a0 - eigenP)); // not sure why
             }
@@ -1498,18 +1504,18 @@ function createPhasePlot(){
             ellipseG.appendChild(ellipse);
             phaseLineG.appendChild(ellipseG);
 
-            if (renderRegions){
-                for (let j = 0; j < ellipseInts.length-1; j++){
-                    let [end0, end1] = [ellipseInts[j], ellipseInts[j+1]];
+            if (renderRegions) {
+                for (let j = 0; j < ellipseInts.length - 1; j++) {
+                    let [end0, end1] = [ellipseInts[j], ellipseInts[j + 1]];
                     let angDiff = Math.atan2(end1[1], end1[0]) - Math.atan2(end0[1], end0[0]);
                     let largeArc = angDiff > Math.PI || (angDiff < 0 && angDiff > -Math.PI);
-                    let [midpointX, midpointY] = [(end0[0] + end1[0])/2, (end0[1] + end1[1])/2];
-                    let scaleFactor = Math.sqrt(a0*midpointX**2 + 2*a1*midpointX*midpointY + a2*midpointY**2);
+                    let [midpointX, midpointY] = [(end0[0] + end1[0]) / 2, (end0[1] + end1[1]) / 2];
+                    let scaleFactor = Math.sqrt(a0 * midpointX ** 2 + 2 * a1 * midpointX * midpointY + a2 * midpointY ** 2);
                     midpointX /= scaleFactor;
                     midpointY /= scaleFactor;
-                    console.assert(Math.abs(a0*midpointX**2 + 2*a1*midpointX*midpointY + a2*midpointY**2-1)<THRESHOLD)
+                    console.assert(Math.abs(a0 * midpointX ** 2 + 2 * a1 * midpointX * midpointY + a2 * midpointY ** 2 - 1) < THRESHOLD)
                     let ellipsePath = (ori, end) => `A ${axisX} ${axisY} ${angle * 180/Math.PI} ${+largeArc} ${ori} ${end[0]} ${end[1]}`
-                    if (midpointX > lowerRightX-THRESHOLD && midpointX < 1+THRESHOLD && midpointY > lowerRightY-THRESHOLD && midpointY < 1+THRESHOLD){
+                    if (midpointX > lowerRightX - THRESHOLD && midpointX < 1 + THRESHOLD && midpointY > lowerRightY - THRESHOLD && midpointY < 1 + THRESHOLD) {
                         let ellipseSeg = document.createElementNS(svgns, 'path'); // https://stackoverflow.com/a/12786915
                         ellipseSeg.setAttributeNS(null, 'd', `M ${end0[0]} ${end0[1]} ` + ellipsePath(1, end1));
                         ellipseSeg.classList.add('phase-domain-hoverable', 'phase-boundary-hoverable');
@@ -1521,20 +1527,20 @@ function createPhasePlot(){
 
                     let end0ind = intersectionArr.indexOf(end0);
                     let end1ind = intersectionArr.indexOf(end1);
-                    let end0angle = Math.atan2(midpointY-end0[1], midpointX-end0[0]);
-                    let end1angle = Math.atan2(midpointY-end1[1], midpointX-end1[0]);
-                    console.assert(end0angle!=Math.PI/2,end0,midpointX,midpointY)
-                    console.assert(end1angle!=Math.PI/2,end1,midpointX,midpointY)
+                    let end0angle = Math.atan2(midpointY - end0[1], midpointX - end0[0]);
+                    let end1angle = Math.atan2(midpointY - end1[1], midpointX - end1[0]);
+                    console.assert(end0angle != Math.PI / 2, end0, midpointX, midpointY)
+                    console.assert(end1angle != Math.PI / 2, end1, midpointX, midpointY)
 
                     const ellipseSegCount = 10;
-                    let verts = Array(ellipseSegCount+1).fill().map((_,i)=>{
-                        let vx = end0[0]*(1-i/ellipseSegCount)+end1[0]*i/ellipseSegCount;
-                        let vy = end0[1]*(1-i/ellipseSegCount)+end1[1]*i/ellipseSegCount;
-                        let scaleFactor = Math.sqrt(a0*vx**2 + 2*a1*vx*vy + a2*vy**2);
-                        return [vx/scaleFactor, vy/scaleFactor];
+                    let verts = Array(ellipseSegCount + 1).fill().map((_, i) => {
+                        let vx = end0[0] * (1 - i / ellipseSegCount) + end1[0] * i / ellipseSegCount;
+                        let vy = end0[1] * (1 - i / ellipseSegCount) + end1[1] * i / ellipseSegCount;
+                        let scaleFactor = Math.sqrt(a0 * vx ** 2 + 2 * a1 * vx * vy + a2 * vy ** 2);
+                        return [vx / scaleFactor, vy / scaleFactor];
                     });
 
-                    let end0desc = [, end0angle, ellipsePath(1, end1), verts.slice(0,-1)];
+                    let end0desc = [, end0angle, ellipsePath(1, end1), verts.slice(0, -1)];
                     let end1desc = [, end1angle, ellipsePath(0, end0), verts.slice(1).reverse()];
                     end0desc[0] = end1desc;
                     end1desc[0] = end0desc;
@@ -1549,13 +1555,13 @@ function createPhasePlot(){
             }
         }
 
-        if (renderRegions){
+        if (renderRegions) {
             let segmentArcs = new Map(); // segment: the next segment in the region
 
             for (let i = 0; i < intersectionArr.length; i++) {
                 let intersection = intersectionArr[i];
-                if (!(intersection[0] > -1-THRESHOLD && intersection[1] > -1-THRESHOLD)) continue;
-                if (!(intersection[0] < 1+THRESHOLD && intersection[1] < 1+THRESHOLD)) continue;
+                if (!(intersection[0] > -1 - THRESHOLD && intersection[1] > -1 - THRESHOLD)) continue;
+                if (!(intersection[0] < 1 + THRESHOLD && intersection[1] < 1 + THRESHOLD)) continue;
                 let nodeHoverable = document.createElementNS(svgns, 'circle'); // https://stackoverflow.com/a/12786915
                 nodeHoverable.setAttributeNS(null, 'cx', intersection[0]);
                 nodeHoverable.setAttributeNS(null, 'cy', intersection[1]);
@@ -1566,13 +1572,13 @@ function createPhasePlot(){
                 phaseNodeG.appendChild(nodeHoverable);
 
                 // assemble segments into arcs (chain of segment-end-segment that forms part of a region)
-                let segAngles = Array.from(intersectionSegs[i].keys()).sort((a,b) => a - b);
+                let segAngles = Array.from(intersectionSegs[i].keys()).sort((a, b) => a - b);
                 segAngles.push(segAngles[0]);
                 //if (i===0) console.log(intersectionSegs[i],segAngles,i);
-                for (let j = 0; j < segAngles.length-1; j++){
+                for (let j = 0; j < segAngles.length - 1; j++) {
                     let segPrev = intersectionSegs[i].get(segAngles[j]);
-                    let segNext = intersectionSegs[i].get(segAngles[j+1]);
-                    let angDiff = segAngles[j+1] - segAngles[j];
+                    let segNext = intersectionSegs[i].get(segAngles[j + 1]);
+                    let angDiff = segAngles[j + 1] - segAngles[j];
                     //if (intersection[0]===1&&intersection[1]===0) console.log('n',segPrev);
                     //if (segPrev[0][3][0]===1&&segPrev[0][3][1]===0) console.log('o',segPrev[0]);
                     //if (i===0) console.log('aaaaaa',segNext,segAngles)
@@ -1581,18 +1587,18 @@ function createPhasePlot(){
                     //console.log(angDiff, intersection, angDiff > Math.PI-THRESHOLD || (angDiff < 0 && angDiff > -Math.PI+THRESHOLD))
                     ////if (angDiff > Math.PI-THRESHOLD || (angDiff < 0 && angDiff > -Math.PI+THRESHOLD)) continue;
                     //console.assert(!segmentArcs.has(segPrev[0]));
-                    segmentArcs.set(segPrev[0], [segNext, angDiff > Math.PI-THRESHOLD || (angDiff < 0 && angDiff > -Math.PI+THRESHOLD)]); // segPrev[0] is its opposite segment
+                    segmentArcs.set(segPrev[0], [segNext, angDiff > Math.PI - THRESHOLD || (angDiff < 0 && angDiff > -Math.PI + THRESHOLD)]); // segPrev[0] is its opposite segment
                 }
             }
 
-            while (segmentArcs.size){
+            while (segmentArcs.size) {
                 let [firstSeg, [curSeg, big]] = segmentArcs.entries().next().value;
                 //let [firstSeg, curSeg] = Array.from(segmentArcs.entries())[1];
                 segmentArcs.delete(firstSeg);
                 //let regionSegments = [firstSeg];
                 let path = `M ${firstSeg[3][0][0]} ${firstSeg[3][0][1]} ${firstSeg[2]} `;
                 let vertices = firstSeg[3];
-                while (curSeg !== firstSeg){
+                while (curSeg !== firstSeg) {
                     //regionSegments.push(curSeg);
                     //console.log(curSeg)
                     path += curSeg[2] + ' ';
@@ -1602,7 +1608,7 @@ function createPhasePlot(){
                     segmentArcs.delete(curSeg);
                     curSeg = curSegNew;
                     big ||= bigNew; // don't need this
-                }//;break;
+                } //;break;
 
                 /*let bigReal = true; // whether or not it spends all its time on the outside
                 for (let vert of vertices){
@@ -1612,17 +1618,17 @@ function createPhasePlot(){
                     }
                 }*/
                 let corners = new FloatSet(2)
-                    .add([ 1, 1])
+                    .add([1, 1])
                     .add([-1, 1])
-                    .add([-1,-1])
-                    .add([ 1,-1]);
-                for (let vert of vertices){
+                    .add([-1, -1])
+                    .add([1, -1]);
+                for (let vert of vertices) {
                     corners.delete(vert);
                 }
                 let bigReal = corners.size == 0;
 
                 // draw the guy
-                if (!bigReal){ //(!big){
+                if (!bigReal) { //(!big){
                     path += 'Z';
                     let region = document.createElementNS(svgns, 'path'); // https://stackoverflow.com/a/12786915
                     region.setAttributeNS(null, 'd', path);
@@ -1703,19 +1709,19 @@ function createPhasePlot(){
 
     let phaseBackClipRect = document.getElementById('phase-back-clip-rect');
     //console.log(phaseBackClone, phaseBackClone.getAttributeNS(null, 'width'))
-    phaseBackClipRect.setAttributeNS(null, 'x', parseFloat(phaseBack.getAttributeNS(null, 'x'))-0.0035);
-    phaseBackClipRect.setAttributeNS(null, 'y', parseFloat(phaseBack.getAttributeNS(null, 'y'))-0.0035);
-    phaseBackClipRect.setAttributeNS(null, 'width', parseFloat(phaseBack.getAttributeNS(null, 'width'))+0.007);
-    phaseBackClipRect.setAttributeNS(null, 'height', parseFloat(phaseBack.getAttributeNS(null, 'height'))+0.007);
+    phaseBackClipRect.setAttributeNS(null, 'x', parseFloat(phaseBack.getAttributeNS(null, 'x')) - 0.0035);
+    phaseBackClipRect.setAttributeNS(null, 'y', parseFloat(phaseBack.getAttributeNS(null, 'y')) - 0.0035);
+    phaseBackClipRect.setAttributeNS(null, 'width', parseFloat(phaseBack.getAttributeNS(null, 'width')) + 0.007);
+    phaseBackClipRect.setAttributeNS(null, 'height', parseFloat(phaseBack.getAttributeNS(null, 'height')) + 0.007);
     /*while (phaseBackClip.lastChild){
         phaseBackClip.removeChild(phaseBackClip.lastChild);
     }*/
     let phaseBackClipOriginRect = document.getElementById('phase-back-clip-origin-rect');
     //console.log(phaseBackClone, phaseBackClone.getAttributeNS(null, 'width'))
-    phaseBackClipOriginRect.setAttributeNS(null, 'x', parseFloat(phaseBack.getAttributeNS(null, 'x'))-0.0035);
-    phaseBackClipOriginRect.setAttributeNS(null, 'y', parseFloat(phaseBack.getAttributeNS(null, 'y'))-0.0035);
-    phaseBackClipOriginRect.setAttributeNS(null, 'width', parseFloat(phaseBack.getAttributeNS(null, 'width'))+1);
-    phaseBackClipOriginRect.setAttributeNS(null, 'height', parseFloat(phaseBack.getAttributeNS(null, 'height'))+1);
+    phaseBackClipOriginRect.setAttributeNS(null, 'x', parseFloat(phaseBack.getAttributeNS(null, 'x')) - 0.0035);
+    phaseBackClipOriginRect.setAttributeNS(null, 'y', parseFloat(phaseBack.getAttributeNS(null, 'y')) - 0.0035);
+    phaseBackClipOriginRect.setAttributeNS(null, 'width', parseFloat(phaseBack.getAttributeNS(null, 'width')) + 1);
+    phaseBackClipOriginRect.setAttributeNS(null, 'height', parseFloat(phaseBack.getAttributeNS(null, 'height')) + 1);
     setPhaseSlider();
 }
 
@@ -1728,7 +1734,7 @@ let toastTimer = null;
 
 function showToast(message) {
     let toast = document.getElementById('copy-toast');
-    
+
     if (!toast) {
         toast = document.createElement('div');
         toast.id = 'copy-toast';
@@ -1750,61 +1756,61 @@ function showToast(message) {
             if (toast.style.opacity === '0') {
                 toast.style.display = 'none';
             }
-        }, 200); 
+        }, 200);
     }, 5000);
 }
 
 
-function lineEqnToDot(line){
+function lineEqnToDot(line) {
     let [p0, p1, c2f, s2f] = line;
-    let [cf, sf] = [Math.sqrt((1 + c2f)/2), Math.sqrt((1 - c2f)/2)]
+    let [cf, sf] = [Math.sqrt((1 + c2f) / 2), Math.sqrt((1 - c2f) / 2)]
     cf *= s2f === 0 ? 1 : Math.sign(s2f);
-    return [[p0, p1], [cf, sf], p0*sf - p1*cf, [sf, -cf]]
+    return [
+        [p0, p1],
+        [cf, sf], p0 * sf - p1 * cf, [sf, -cf]
+    ]
 }
 
 
-function quadratic(a, b, c){
-    let discrim = b*b - 4*a*c;
+function quadratic(a, b, c) {
+    let discrim = b * b - 4 * a * c;
     if (discrim < -THRESHOLD) return [null, null];
     else if (discrim < THRESHOLD) discrim = 0;
-    let tP = (-b + Math.sqrt(discrim))/(2*a);
-    let tM = (-b - Math.sqrt(discrim))/(2*a);
+    let tP = (-b + Math.sqrt(discrim)) / (2 * a);
+    let tM = (-b - Math.sqrt(discrim)) / (2 * a);
     return [tP, tM];
 }
 
 
-function intersectLines(dot0, perp0, dot1, perp1){
-    let det = perp0[0]*perp1[1] - perp0[1]*perp1[0];
-    let intersection = [(perp1[1]*dot0-perp0[1]*dot1)/det, (-perp1[0]*dot0+perp0[0]*dot1)/det];
+function intersectLines(dot0, perp0, dot1, perp1) {
+    let det = perp0[0] * perp1[1] - perp0[1] * perp1[0];
+    let intersection = [(perp1[1] * dot0 - perp0[1] * dot1) / det, (-perp1[0] * dot0 + perp0[0] * dot1) / det];
     return intersection;
 }
 
 
-function phaseMouseToPoint(e){
+function phaseMouseToPoint(e) {
     phasePt.x = e.clientX; // https://stackoverflow.com/a/42711775
     phasePt.y = e.clientY;
     return phasePt.matrixTransform(phaseDomainG.getScreenCTM().inverse());
 }
 
 
-function hidePhaseDiagram(){
+function hidePhaseDiagram() {
     phaseDiagram.classList.add('hidden');
     let axisCounts = countAxes();
     let tooManySliders = axisCounts.length > 2;
     let tooFewSliders = axisCounts.length < 1;
-    let tooManyAxes = axisCounts.reduce((a,b)=>a+b, 0) > 60;
-    document.getElementById('phase-create').dataset.translate = 
-        tooManySliders ? 'other.create_phase_diagram.too_many_sliders' : 
-        tooFewSliders ? 'other.create_phase_diagram.too_few_sliders' : 
-        tooManyAxes ? 'other.create_phase_diagram.too_many_axes' : 
+    let tooManyAxes = axisCounts.reduce((a, b) => a + b, 0) > 60;
+    document.getElementById('phase-create').dataset.translate =
+        tooManySliders ? 'other.create_phase_diagram.too_many_sliders' :
+        tooFewSliders ? 'other.create_phase_diagram.too_few_sliders' :
+        tooManyAxes ? 'other.create_phase_diagram.too_many_axes' :
         'other.create_phase_diagram.good'
-    if (tooManySliders || tooFewSliders || tooManyAxes){
+    if (tooManySliders || tooFewSliders || tooManyAxes) {
         document.getElementById('phase-create').dataset.disabled = ''
     } else {
         delete document.getElementById('phase-create').dataset.disabled
     }
     singleSetTranslationHTML(document.getElementById('phase-create'))
 }
-
-
-
