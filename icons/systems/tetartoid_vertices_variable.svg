@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 50 50">
+  <!-- Generator: Adobe Illustrator 30.0.0, SVG Export Plug-In . SVG Version: 2.1.1 Build 123)  -->
+  <defs>
+    <style>
+      .st0 {
+        fill: none;
+        stroke: #000;
+        stroke-linecap: round;
+        stroke-miterlimit: 10;
+        stroke-width: 4px;
+      }
+    </style>
+  </defs>
+  <line class="st0" x1="18.59" y1="5.87" x2="29.74" y2="3.91"/>
+  <line class="st0" x1="5.87" y1="11.93" x2="18.59" y2="5.87"/>
+  <line class="st0" x1="5.87" y1="11.93" x2="4.83" y2="15.91"/>
+  <line class="st0" x1="4.83" y1="15.91" x2="7.37" y2="29.67"/>
+  <line class="st0" x1="7.37" y1="29.67" x2="11.15" y2="35.54"/>
+  <line class="st0" x1="11.15" y1="35.54" x2="25.27" y2="45.1"/>
+  <line class="st0" x1="25.27" y1="45.1" x2="34.37" y2="42.46"/>
+  <line class="st0" x1="34.37" y1="42.46" x2="42.37" y2="33.9"/>
+  <line class="st0" x1="42.37" y1="33.9" x2="44.05" y2="16.47"/>
+  <line class="st0" x1="41.41" y1="8.4" x2="44.08" y2="16.46"/>
+  <line class="st0" x1="29.74" y1="3.91" x2="41.41" y2="8.4"/>
+  <line class="st0" x1="18.59" y1="5.87" x2="31.62" y2="16.33"/>
+  <line class="st0" x1="31.62" y1="16.33" x2="43.89" y2="16.34"/>
+  <line class="st0" x1="26.64" y1="32.45" x2="31.62" y2="16.33"/>
+  <line class="st0" x1="26.64" y1="32.45" x2="34.37" y2="42.46"/>
+  <line class="st0" x1="10.4" y1="24.39" x2="26.64" y2="32.45"/>
+  <line class="st0" x1="10.4" y1="24.39" x2="5.87" y2="11.93"/>
+  <line class="st0" x1="10.4" y1="24.39" x2="11.38" y2="35.54"/>
+  <g fill='red'>
+    <circle cx='18.59' cy='5.87' r='2.5' />
+    <circle cx='29.74' cy='3.91' r='2.5' />
+    <circle cx='5.87' cy='11.93' r='2.5' />
+    <circle cx='4.83' cy='15.91' r='2.5' />
+    <circle cx='7.37' cy='29.67' r='2.5' />
+    <circle cx='11.15' cy='35.54' r='2.5' />
+    <circle cx='25.27' cy='45.1' r='2.5' />
+    <circle cx='34.37' cy='42.46' r='2.5' />
+    <circle cx='44.05' cy='16.47' r='2.5' />
+    <circle cx='41.41' cy='8.4' r='2.5' />
+    <circle cx='31.62' cy='16.33' r='2.5' />
+    <circle cx='43.89' cy='16.34' r='2.5' />
+    <circle cx='26.64' cy='32.45' r='2.5' />
+    <circle cx='10.4' cy='24.39' r='2.5' />
+  </g>
+</svg>

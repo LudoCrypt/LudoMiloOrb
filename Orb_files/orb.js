@@ -654,7 +654,14 @@ function setSystem(systemIcon, systemName, fromInput=false){
     systemUnit.dataset.system = systemName;
     systemUnit.dataset.jumbleConfig = listjumbleConfigsFromSystemUnit(systemUnit)[0];
     systemUnit.dataset.order = 5;
-    systemUnit.dataset.arbitraryConstant = 0.5;
+
+    for (let param of systemData[systemName].paramsRequired){
+
+        if (param.startsWith('arbitraryConstant')){
+            systemUnit.dataset[param] = 0.5;
+        }
+    }
+
     //systemUnit.getElementsByClassName('system-params')[0].innerHTML = systemUnit.dataset.jumbleConfig;
     setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
 
@@ -826,15 +833,27 @@ function removeChildren(element){
 
 const jumbleConfigDivTemplate = name => `<div class='jumble-config-option simple-option'>${name}</div>`
 const orderDivTemplate = name => `<div class='order-option simple-option'>${name}</div>`
-const arbitraryConstantTemplate = currentVal => `
+
+const arbitraryConstantTemplate = (currentVal, index) => `
     <div class='arbitrary-constant-option simple-option'>
-        <input type="number" min="0" max="1" step="0.01" value="${currentVal}" class="constant-input">
+        <label>${String.fromCharCode(97 + index)}</label>
+        <input
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+            value="${currentVal}"
+            class="constant-input"
+        >
     </div>`;
 
-function summonChangeDiv(targetButton, changeDiv){
+function summonChangeDiv(targetButton, changeDiv) {
     if (changeDiv === paramsChangeDiv){ // intentional: this will not run if we are just moving the div
         let systemUnit = targetButton.closest('.system-unit');
         Array.from(paramsChangeDiv.children[0].children).forEach(ch => ch.classList.add('hidden'));
+
+        removeChildren(arbitraryConstantChangeDiv);
+
         for (let param of systemData[systemUnit.dataset.system].paramsRequired){
             switch (param){
                 case 'order':
@@ -861,30 +880,43 @@ function summonChangeDiv(targetButton, changeDiv){
                         });
                     }
                     break;
-
-                case 'arbitraryConstant':
-                    removeChildren(arbitraryConstantChangeDiv);
-                    arbitraryConstantChangeDiv.classList.remove('hidden');
-
-                    let currentVal = systemUnit.dataset.arbitraryConstant || 0.5;
-
-                    arbitraryConstantChangeDiv.insertAdjacentHTML('beforeend', arbitraryConstantTemplate(currentVal));
-
-                    let inputField = arbitraryConstantChangeDiv.querySelector('.constant-input');
-
-                    inputField.addEventListener('change', function(e) {
-                        let val = parseFloat(e.target.value);
-                        if (isNaN(val)) val = 0.5;
-                        val = Math.max(0, Math.min(1, val));
-                        setSystemParam('arbitraryConstant', systemUnit, val);
-                        drawPuzzle();
-                    });
-
-                    break;
-
             }
+
+            if (param.startsWith('arbitraryConstant')) {
+
+                arbitraryConstantChangeDiv.classList.remove('hidden');
+
+                let index = parseInt(
+                    param.substring('arbitraryConstant'.length)
+                );
+
+                let currentVal = systemUnit.dataset[param] || 0.5;
+
+                arbitraryConstantChangeDiv.insertAdjacentHTML(
+                    'beforeend',
+                    arbitraryConstantTemplate(currentVal, index)
+                );
+
+                let inputField =
+                    arbitraryConstantChangeDiv.lastChild.querySelector('.constant-input');
+
+                inputField.addEventListener('change', function(e){
+
+                    let val = parseFloat(e.target.value);
+
+                    if (isNaN(val)) val = 0.5;
+
+                    setSystemParam(param, systemUnit, val);
+
+                    drawPuzzle();
+                });
+
+                continue;
+            }
+
         }
     }
+
     if (changeDiv){
         if (changeDiv !== activeChangeDiv){
             removeChangeDivs();
@@ -931,14 +963,20 @@ function setSystemParam(param, systemUnit, value){
             if (closeChangeDivsOnSelect) removeChangeDivs();
             //drawPuzzle();
             break;
-            
-        case 'arbitraryConstant':
-            systemUnit.dataset.arbitraryConstant = value;
-            setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
-            hidePhaseDiagram();
-            createPhasePlot();
-            updateSystemOpposite(systemUnit);
-            break;
+    }
+    if (param.startsWith('arbitraryConstant')){
+
+        systemUnit.dataset[param] = value;
+
+        setSystemParamInnerHTML(
+            systemUnit.getElementsByClassName('system-params')[0]
+        );
+
+        hidePhaseDiagram();
+
+        createPhasePlot();
+
+        updateSystemOpposite(systemUnit);
     }
 }
 

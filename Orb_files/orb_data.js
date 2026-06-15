@@ -587,9 +587,9 @@ addSystemCategory({
 
 addSystem({
     name: 'pyrito_variable',
-    paramsRequired: ['arbitraryConstant'],
+    paramsRequired: ['arbitraryConstant0'],
     getAxes: function(params){
-        let x = parseFloat(params.arbitraryConstant ?? 0.5);
+        let x = parseFloat(params.arbitraryConstant0 ?? 0.5);
 
         let v = 1.0 / Math.sqrt(1 + x * x);
         let c = x * v;
@@ -618,9 +618,9 @@ addSystem({
 
 addSystem({
     name: 'pyrito_vertices_variable',
-    paramsRequired: ['arbitraryConstant'],
+    paramsRequired: ['arbitraryConstant0'],
     getAxes: function(params){
-        let x = parseFloat(params.arbitraryConstant ?? 0.5);
+        let x = parseFloat(params.arbitraryConstant0 ?? 0.5);
 
         let b = Math.sqrt(((1+x)*(1+x))+((1-x*x)*(1-x*x)));
         let c = (1+x) / b;
@@ -662,9 +662,9 @@ addSystem({
 
 addSystem({
     name: 'pyrito_edges_variable',
-    paramsRequired: ['arbitraryConstant'],
+    paramsRequired: ['arbitraryConstant0'],
     getAxes: function(params){
-        let x = parseFloat(params.arbitraryConstant ?? 0.5);
+        let x = parseFloat(params.arbitraryConstant0 ?? 0.5);
 
         let babaisyou = (Math.sqrt(x * x + x + 1) * Math.sqrt(2) * (x + 1));
         let p = (x * x + x) / babaisyou;
@@ -703,6 +703,104 @@ addSystem({
             new Vector(-l, -p, -q),
             new Vector(-l, p, -q)
 
+        ];
+    },
+    symmetries: 0x0001,
+    transitiveSymmetries: 0x0000,
+});
+
+
+addSystem({
+    name: 'tetartoid_variable',
+    paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1'],
+    getAxes: function(params){
+        let a = parseFloat(params.arbitraryConstant0 ?? 0.5);
+        let b = parseFloat(params.arbitraryConstant1 ?? 0.5);
+
+        let px = -b * (b - 1);
+        let py = a * (b - 1);
+        let pz = b - a * a;
+
+        let nf = Math.sqrt(px * px + py * py + pz * pz);
+
+        let nx = px / nf;
+        let ny = py / nf;
+        let nz = pz / nf;
+
+        return [
+            new Vector(nx, ny, nz),
+            new Vector(-nx, -ny, nz),
+            new Vector(-ny, -nz, nx),
+            new Vector(nz, -nx, -ny),
+            new Vector(ny, -nz, -nx),
+            new Vector(-nz, -nx, ny),
+            new Vector(-nx, ny, -nz),
+            new Vector(-nz, nx, -ny),
+            new Vector(ny, nz, nx),
+            new Vector(nz, nx, ny),
+            new Vector(-ny, nz, -nx),
+            new Vector(nx, -ny, -nz),
+        ];
+    },
+    symmetries: 0x0001,
+    transitiveSymmetries: 0x0000,
+});
+
+
+addSystem({
+    name: 'tetartoid_vertices_variable',
+    paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1'],
+    getAxes: function(params){
+        let a = parseFloat(params.arbitraryConstant0 ?? 0.5);
+        let b = parseFloat(params.arbitraryConstant1 ?? 0.5);
+        let c = 1.0;
+
+        return [
+            new Vector(a, b, c).unit(),
+            new Vector(a, -b, -c).unit(),
+            new Vector(-a, b, -c).unit(),
+            new Vector(-a, -b, c).unit(),
+
+            new Vector(b, c, a).unit(),
+            new Vector(b, -c, -a).unit(),
+            new Vector(-b, c, -a).unit(),
+            new Vector(-b, -c, a).unit(),
+
+            new Vector(c, a, b).unit(),
+            new Vector(c, -a, -b).unit(),
+            new Vector(-c, a, -b).unit(),
+            new Vector(-c, -a, b).unit(),
+
+            new Vector(1, 1, 1).unit(),
+            new Vector(1, 1, -1).unit(),
+            new Vector(1, -1, 1).unit(),
+            new Vector(1, -1, -1).unit(),
+            new Vector(-1, 1, 1).unit(),
+            new Vector(-1, 1, -1).unit(),
+            new Vector(-1, -1, 1).unit(),
+            new Vector(-1, -1, -1).unit(),
+        ];
+    },
+    symmetries: 0x0001,
+    transitiveSymmetries: 0x0000,
+});
+
+addSystem({
+    name: 'variable_normal',
+    paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1', 'arbitraryConstant2'],
+    getAxes: function(params){
+        let a = parseFloat(params.arbitraryConstant0 ?? 0.5);
+        let b = parseFloat(params.arbitraryConstant1 ?? 0.5);
+        let c = parseFloat(params.arbitraryConstant2 ?? 0.5);
+
+        let nf = Math.sqrt(a * a + b * b + c * c);
+
+        let nx = a / nf;
+        let ny = b / nf;
+        let nz = c / nf;
+
+        return [
+            new Vector(nx, ny, nz),
         ];
     },
     symmetries: 0x0001,
@@ -749,6 +847,9 @@ const langs = {
         'system.pyrito_variable': 'Pyritohedron Faces',
         'system.pyrito_vertices_variable': 'Pyritohedron Vertices',
         'system.pyrito_edges_variable': 'Pyritohedron Edges',
+        'system.tetartoid_variable': 'Tetartoid Faces',
+        'system.tetartoid_vertices_variable': 'Tetartoid Vertices',
+        'system.variable_normal': 'Custom Normal',
 
         'other.create_phase_diagram.good': 'Create phase diagram',
         'other.create_phase_diagram.too_many_axes': 'Too many cuts to create phase diagram',

@@ -190,8 +190,8 @@ img {
     width: 110px;
     vertical-align: middle;
     text-align:center;
-    font-size: 30px;
-    line-height: 50px;
+    font-size: 20px;
+    line-height: 20px;
 }
 
 .system-params.system-params-in-use:hover {
@@ -199,7 +199,7 @@ img {
 }
 
 .system-params.small-text {
-    font-size: 25px;
+    font-size: 20px;
 }
 
 .slider-group {
