@@ -38,6 +38,8 @@ var sphereTransformation = Quaternion.ONE;
 var sphereDrag = false;
 var spherePrevE;
 
+var sphereZoom = 2.0
+
 var keysDown = [];
 
 var languageButton;
@@ -166,6 +168,17 @@ function initialize() {
         document.body.classList.add('dragging');
     });
 
+    sphereCanvas.addEventListener('wheel', function(e) {
+        e.preventDefault();
+
+        const zoomSensitivity = 0.001;
+        sphereZoom -= e.deltaY * zoomSensitivity;
+        sphereZoom = clamp(sphereZoom, 1, 100);
+        makeCanvasSize();
+        drawPuzzle();
+
+    }, { passive: false });
+
     document.getElementById('sphere-panel').addEventListener('click', function(e) {
         if (!e.keepLanguageChangeDiv_) {
             languageChangeDiv.classList.add('hidden');
@@ -203,7 +216,7 @@ function initialize() {
                 //console.log(newSliderX,e.target.parentNode);
                 let newValue = newSliderX / sliderWidth;
                 //console.log('e',sliderDrag)
-                setSlider(sliderDrag, Math.floor(newValue * 1000) / 1000);
+                setSlider(sliderDrag, newValue);
                 //setSlider(sliderDrag, newValue);
             }
         }
@@ -214,7 +227,7 @@ function initialize() {
             window.addEventListener('click', captureClick, true);
         }
         if (sliderDrag && sliderDrag !== phaseThumb) {
-            setSlider(sliderDrag, Math.floor(sliderDrag.closest('.slider-unit').dataset.depth * 1000.0001) / 1000);
+            setSlider(sliderDrag, sliderDrag.closest('.slider-unit').dataset.depth);
             //setSlider(sliderDrag, sliderDrag.closest('.slider-unit').dataset.depth);
         }
         sphereDrag = false;
@@ -242,11 +255,6 @@ function initialize() {
             }
         }
         keyMove(e.code);
-        /*keysDown.push(setTimeout(function(){
-            keysDown.push(setInterval(function(){
-                keyMove(e.code);
-            }, 200));
-        }, 900));*/ // this was supposed to implement autorepeat but apparently it already exists
     });
 
     document.addEventListener('keyup', function(e) {
@@ -418,7 +426,7 @@ function initialize() {
 
 function makeCanvasSize() {
     let spherePanelInnerStyle = window.getComputedStyle(document.getElementById('sphere-panel-inner'));
-    let canvasSide = parseInt((Math.min(parseFloat(spherePanelInnerStyle.height), parseFloat(spherePanelInnerStyle.height)) * .9) / 2) * 2;
+    let canvasSide = parseInt((Math.min(parseFloat(spherePanelInnerStyle.height), parseFloat(spherePanelInnerStyle.height)) * .9) / 2) * sphereZoom;
     sphereCanvas.width = canvasSide;
     sphereCanvas.height = canvasSide;
     sphereCanvasRadius = parseInt(sphereCanvas.width / (2 + 2 * sphereMargin));
@@ -629,8 +637,33 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, color = colorCho
         });
 
         let sliderInput = sliderUnit.getElementsByClassName('slider-input')[0];
+        let sliderAngleInput = sliderUnit.getElementsByClassName('slider-input-2')[0];
+
         sliderInput.addEventListener('change', function(e) {
-            setSlider(sliderThumb, parseFloat(sliderInput.value) / 1000, true);
+            setSlider(sliderThumb, parseFloat(sliderInput.value), true);
+            sliderAngleInput.value = Math.acos(parseFloat(sliderInput.value)) * 180.0 / Math.PI;
+        });
+
+        sliderAngleInput.addEventListener('change', function(e) {
+            var cosAngleInput = Math.cos(parseFloat(sliderAngleInput.value) * Math.PI / 180.0);
+            setSlider(sliderThumb, cosAngleInput, true);
+            sliderInput.value = cosAngleInput;
+        });
+
+        let buttons = sliderUnit.querySelectorAll('.adjust-btn');
+        buttons.forEach(button => {
+          button.addEventListener('click', function(e) {
+            const amount = parseFloat(this.getAttribute('data-step'));
+            
+            let currentValue = parseFloat(sliderAngleInput.value) || 0;
+            
+            let newValue = clamp(currentValue + amount, 0, parseFloat(sliderAngleInput.max));
+            
+            sliderAngleInput.value = newValue;
+            var cosAngleInput = Math.cos(parseFloat(sliderAngleInput.value) * Math.PI / 180.0);
+            setSlider(sliderThumb, cosAngleInput, true);
+            sliderInput.value = cosAngleInput;
+          });
         });
 
         let colorButton = sliderUnit.getElementsByClassName('slider-color-swatch')[0];
@@ -716,7 +749,9 @@ function setSlider(sliderThumb, depth, fromInput = false, fromExtern = false) { 
     }
     sliderUnit.dataset.depth = depth;
     if (!fromInput) {
-        sliderUnit.getElementsByClassName('slider-input')[0].value = clamp(Math.floor(depth * 1000.0001), isFullDepth ? -1000 : 0, 1000);
+        let calDepthVal = clamp(depth, isFullDepth ? -1 : 0, 1);
+        sliderUnit.getElementsByClassName('slider-input')[0].value = calDepthVal
+        sliderUnit.getElementsByClassName('slider-input-2')[0].value = clamp(Math.acos(calDepthVal) * 180.0 / Math.PI, 0, isFullDepth ? 180 : 90);
     }
 
     setPhaseSlider();
@@ -786,11 +821,13 @@ function updateSystemOpposite(systemUnit) {
         // update the opposite states of the sliders
         if (noOpposites) { // the axis system has unpaired axes
             updateWrongSign(sliderUnit);
-            sliderUnit.getElementsByClassName('slider-input')[0].min = -1000;
+            sliderUnit.getElementsByClassName('slider-input')[0].min = -1;
+            sliderUnit.getElementsByClassName('slider-input-2')[0].max = 180;
         } else {
             let sliderThumbs = Array.from(sliderUnit.querySelectorAll('.slider-thumb'));
             sliderThumbs.forEach(thumb => thumb.classList.remove('wrong-sign'));
             sliderUnit.getElementsByClassName('slider-input')[0].min = 0;
+            sliderUnit.getElementsByClassName('slider-input-2')[0].max = 90;
             let sliderDepth = parseFloat(sliderUnit.dataset.depth);
             if (sliderDepth < 0) {
                 setSlider(sliderThumbs[0], Math.abs(sliderDepth), false, true);

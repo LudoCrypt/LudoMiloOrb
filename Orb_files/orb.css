@@ -212,16 +212,9 @@ img {
 }
 
 .slider-input {
-    display: inline-block;
-    height: 24px;
-    width: 50px;
     float: left;
-    margin: 11px 30px 11px 0px; /* do not make top margins too big! their borders crash */
-    background-color: inherit;
-    color: white;
-    border: 1px solid #c0c0c0;
+    margin: 20px 5px -5px 0px;
 }
-
 
 .slider-input:focus {
     -moz-user-select: auto;
