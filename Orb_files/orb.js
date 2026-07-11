@@ -689,9 +689,9 @@ function setSystem(systemIcon, systemName, fromInput = false) {
     systemUnit.dataset.order = 5;
 
     for (let param of systemData[systemName].paramsRequired) {
-
-        if (param.startsWith('arbitraryConstant')) {
-            systemUnit.dataset[param] = 0.5;
+        if (param.startsWith("arbitraryConstant")) {
+            const index = parseInt(param.substring('arbitraryConstant'.length));
+            systemUnit.dataset[param] = getArbitraryConstantConfig(index).defaultValue;
         }
     }
 
@@ -871,18 +871,41 @@ function removeChildren(element) {
 const jumbleConfigDivTemplate = name => `<div class='jumble-config-option simple-option'>${name}</div>`
 const orderDivTemplate = name => `<div class='order-option simple-option'>${name}</div>`
 
-const arbitraryConstantTemplate = (currentVal, index) => `
+const arbitraryConstantConfigs = {
+    10: {
+        label: "Degrees",
+        min: 0,
+        max: 90,
+        step: 1,
+        defaultValue: 45
+    }
+};
+
+const getArbitraryConstantConfig = (index) => ({
+    label: String.fromCharCode(97 + index),
+    min: 0,
+    max: 1,
+    step: 0.01,
+    defaultValue: 0.5,
+    ...(arbitraryConstantConfigs[index] ?? {})
+});
+
+const arbitraryConstantTemplate = (currentVal, index) => {
+    const config = getArbitraryConstantConfig(index);
+
+    return `
     <div class='arbitrary-constant-option simple-option'>
-        <label>${String.fromCharCode(97 + index)}</label>
+        <label>${config.label}</label>
         <input
             type="number"
-            min="0"
-            max="1"
-            step="0.01"
+            min="${config.min}"
+            max="${config.max}"
+            step="${config.step}"
             value="${currentVal}"
             class="constant-input"
         >
     </div>`;
+};
 
 function summonChangeDiv(targetButton, changeDiv) {
     if (changeDiv === paramsChangeDiv) { // intentional: this will not run if we are just moving the div

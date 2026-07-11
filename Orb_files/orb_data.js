@@ -1443,6 +1443,45 @@ addSystem({
 });
 
 addSystem({
+    name: 'pseudo_deltoidal_icositetrahedron',
+    paramsRequired: ['arbitraryConstant10'],
+    getAxes: function(params) {
+        let x = parseFloat(params.arbitraryConstant10 ?? 45) * 0.5;
+
+        let tx = Math.tan(x * (Math.PI / 180.0));
+
+        return [
+            new Vector(1, tx, tx).unit(),
+            new Vector(-1, tx, tx).unit(),
+            new Vector(1, -tx, tx).unit(),
+            new Vector(-1, -tx, tx).unit(),
+            new Vector(1, -tx, -tx).unit(),
+            new Vector(-1, -tx, -tx).unit(),
+            new Vector(1, tx, -tx).unit(),
+            new Vector(-1, tx, -tx).unit(),
+            new Vector(tx, 1, tx).unit(),
+            new Vector(tx, -1, tx).unit(),
+            new Vector(tx, 1, -tx).unit(),
+            new Vector(tx, -1, -tx).unit(),
+            new Vector(-tx, 1, tx).unit(),
+            new Vector(-tx, -1, tx).unit(),
+            new Vector(-tx, 1, -tx).unit(),
+            new Vector(-tx, -1, -tx).unit(),
+            new Vector(tx, tx, 1).unit(),
+            new Vector(tx, tx, -1).unit(),
+            new Vector(tx, -tx, 1).unit(),
+            new Vector(tx, -tx, -1).unit(),
+            new Vector(-tx, tx, 1).unit(),
+            new Vector(-tx, tx, -1).unit(),
+            new Vector(-tx, -tx, 1).unit(),
+            new Vector(-tx, -tx, -1).unit(),
+        ];
+    },
+    symmetries: 0x0001,
+    transitiveSymmetries: 0x0000,
+});
+
+addSystem({
     name: 'variable_normal',
     paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1', 'arbitraryConstant2'],
     getAxes: function(params) {
@@ -1506,6 +1545,7 @@ const langs = {
         'system.pyrito_edges_variable': 'Pyritohedron Edges',
         'system.tetartoid_variable': 'Tetartoid Faces',
         'system.tetartoid_vertices_variable': 'Tetartoid Vertices',
+        'system.pseudo_deltoidal_icositetrahedron': 'Pseudo-Deltoidal Icositetrahedron',
         'system.variable_normal': 'Custom Normal',
 
         'other.create_phase_diagram.good': 'Create phase diagram',
