@@ -104,15 +104,25 @@
         </div>
     </div>
     <div class='slider-unit' id='template-slider-unit' data-depth='1' data-color='#a00000'>
-        <div class='depth-text-for-some-reason'>Depth:</div>
-        <input type='number' value='1' class='slider-input' min='0' max='1' step='0.001'></input>
-        <div>Angle:</div>
-        <input type='number' value='0' class='slider-input-2' min='0' max='90' step='0.1'></input>
-        
-        <button type="button" class="adjust-btn" data-step="+1">+1</button>
-        <button type="button" class="adjust-btn" data-step="+0.1">+0.1</button>
-        <button type="button" class="adjust-btn" data-step="-0.1">-0.1</button>
-        <button type="button" class="adjust-btn" data-step="-1">-1</button>
+
+        <div class="slider-top">
+            <div class="slider-flex-container-thing">
+                <div>Depth:</div>
+                <input type='number' value='1' class='slider-input' min='0' max='1' step='0.001'></input>
+            </div>
+
+            <div class="slider-flex-container-thing">
+                <div>Angle:</div>
+                <input type='number' value='0' class='slider-input-2' min='0' max='90' step='0.1'></input>
+            </div>
+
+            <button type="button" class="adjust-btn" data-step="+1">+1</button>
+            <button type="button" class="adjust-btn" data-step="+0.1">+0.1</button>
+            <button type="button" class="adjust-btn" data-step="-0.1">-0.1</button>
+            <button type="button" class="adjust-btn" data-step="-1">-1</button>
+
+            <span class="angle-delta">Δ: 0.0°</span>
+        </div>
 
         <div class='slider-color'>
             <div class='slider-color-swatch' style='background-color:#a00000;'></div>

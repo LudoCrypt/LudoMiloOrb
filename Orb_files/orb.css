@@ -211,9 +211,16 @@ img {
     visibility: hidden;
 }
 
-.slider-input {
-    float: left;
-    margin: 20px 5px -5px 0px;
+.slider-top {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.slider-flex-container-thing {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
 }
 
 .slider-input:focus {
@@ -221,6 +228,12 @@ img {
     -webkit-user-select: auto;
     -ms-user-select: auto;
     user-select: auto;
+}
+
+.angle-delta {
+    color: #888;
+    display: inline-block;
+    vertical-align: middle;
 }
 
 .slider-color {

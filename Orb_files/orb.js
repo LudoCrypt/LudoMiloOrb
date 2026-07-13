@@ -87,7 +87,10 @@ var activeChangeDiv = undefined;
 var targetOfChangeDiv = undefined; // which one has the change div
 const closeChangeDivsOnSelect = true;
 
-var colorChoices = ['#a00000', '#1f4bd1', '#167f18', '#965500', '#7528af', '#72751a', '#b51b98', '#595959', '#1d7a61', '#4c6b13'];
+var colorChoices = [
+    '#a00000', '#1f4bd1', '#167f18', '#965500', '#7528af', '#73536b', '#b51b98', '#595959', '#1d7a61', '#4c6b13',
+    '#a000005a', '#1f4bd15a', '#167f185a', '#9655005a', '#7528af5a', '#73536b5a', '#b51b985a', '#5959595a', '#1d7a615a', '#4c6b135a'
+];
 
 
 
@@ -464,11 +467,33 @@ function captureClick(e) { // https://stackoverflow.com/a/20290312
     window.removeEventListener('click', captureClick, true); // cleanup
 }
 
+function updateAngleDeltas(systemUnit) {
+    const systemUnits = systemUnit.querySelectorAll(".slider-group .slider-unit");
+
+    let previousAngle = null;
+
+    for (const systemUnit of systemUnits) {
+        const angle = parseFloat(systemUnit.querySelector(".slider-input-2").value);
+        const delta = systemUnit.querySelector(".angle-delta");
+
+        if (previousAngle === null) {
+            delta.textContent = "Δ: 0.0°";
+        } else {
+            delta.textContent = `Δ: ${(angle - previousAngle).toFixed(1)}°`;
+        }
+
+        previousAngle = angle;
+    }
+}
+
 
 function drawPuzzle() {
     drawSphere();
     for (let systemUnit of sliderPanel.children) {
         if (systemUnit.classList.contains('ghost-system')) continue;
+
+        updateAngleDeltas(systemUnit);
+
         let systemAxes = getAxesFromSystemUnit(systemUnit);
         for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children) {
             if (sliderUnit.classList.contains('ghost-slider')) continue;
@@ -681,6 +706,7 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, color = colorCho
     }
     hidePhaseDiagram();
 }
+
 
 function setSystem(systemIcon, systemName, fromInput = false) {
     let systemUnit = systemIcon.closest('.system-unit');
