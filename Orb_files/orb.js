@@ -472,9 +472,9 @@ function updateAngleDeltas(systemUnit) {
 
     let previousAngle = null;
 
-    for (const systemUnit of systemUnits) {
-        const angle = parseFloat(systemUnit.querySelector(".slider-input-2").value);
-        const delta = systemUnit.querySelector(".angle-delta");
+    for (const otherSystemUnit of systemUnits) {
+        const angle = parseFloat(otherSystemUnit.querySelector(".slider-input-2").value);
+        const delta = otherSystemUnit.querySelector(".angle-delta");
 
         if (previousAngle === null) {
             delta.textContent = "Δ: 0.0°";
