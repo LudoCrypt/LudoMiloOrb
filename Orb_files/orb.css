@@ -268,6 +268,11 @@ img {
     display: none;
 }
 
+.pin-button {
+    width: auto;
+    height: 20px;
+}
+
 .ghost-slider .slider-add {
     display: inline-block;
     visibility: visible;
@@ -354,6 +359,11 @@ img {
     left: 0%;
     height: 100%;
     width: 20%;
+    pointer-events: none;
+}
+
+#phase-create {
+    pointer-events: auto;
 }
 
 /* a bit off center */
@@ -376,12 +386,7 @@ img {
 }
 
 #phase-diagram {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translateX(-50%) translateY(-50%);
-    max-width: 200%;
-    max-height: 200%;
+    display: block;
 }
 
 #phase-back {
@@ -410,37 +415,44 @@ img {
     clip-path: url(#phase-back-clip-origin);
 }
 
-
 .phase-boundary {
     stroke: #000000;
-    stroke-width: 0.0049;
+    stroke-width: 1.2;
+    vector-effect: non-scaling-stroke;
     stroke-linecap: round;
-    pointer-events: none;
+    pointer-events: stroke;
     fill: none;
 }
 
-.full-depth .phase-boundary {
-    stroke-width: 0.0098;
-}
 
 .phase-boundary-hoverable {
-    stroke-width: 0.04;
+    stroke-width: 10.0;
+    vector-effect: non-scaling-stroke;
+    pointer-events: stroke;
     stroke-linecap: round;
     fill: none;
+}
+
+
+.phase-node-hoverable {
+    stroke-width: 20.0;
+    vector-effect: non-scaling-stroke;
+    pointer-events: stroke;
+    stroke-linecap: round;
+    fill: none;
+}
+
+/*.full-depth .phase-boundary {
+    stroke-width: 2.4;
 }
 
 .full-depth .phase-boundary-hoverable {
-    stroke-width: 0.08;
-}
-
-.phase-node-hoverable {
-    r: 0.03;
-    stroke: none;
+    stroke-width: 20.0;
 }
 
 .full-depth .phase-node-hoverable {
-    r: 0.06;
-}
+    stroke-width: 40.0;
+}*/
 
 #phase-thumb.being-dragged {
     pointer-events: none;
@@ -450,9 +462,9 @@ img {
     transform: scale(0.5, 0.5);
 }
 
-.full-depth #phase-thumb-scale {
+/*.full-depth #phase-thumb-scale {
     transform: scale(1, 1);
-}
+}*/
 
 
 #system-change {

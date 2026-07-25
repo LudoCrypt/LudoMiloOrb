@@ -6,14 +6,17 @@ things i want to do:
 disable parts of phase diagrams for large axis counts  √
 polyhedron edges
 opposites in phase diagrams (just show the whole [-1,1]x[-1,1]) √
-lock sliders for phase diagrams (hard)
+lock sliders for phase diagrams (hard) √
 url parameters  √
 jumble/order in url params √
 add fancy slider thumb svgs (maybe not)
-zoom in to phase diagram (very hard, numerical precision)
+zoom in to phase diagram (very hard, numerical precision) √
 fix center of regions in phase diagram √
 fix slider moving off of phase diagram √
-look at point
+look at point (<- i have no idea what this means)
+
+lock sliders for phase diagrams (2D edition) ((hard (scary)))
+constrain sliders to interact with other sliders (probably unecessary)
 
 if you're reading this take this all with a grain of salt
 
@@ -38,7 +41,9 @@ var sphereTransformation = Quaternion.ONE;
 var sphereDrag = false;
 var spherePrevE;
 
-var sphereZoom = 2.0
+var sphereZoom = 2.0;
+
+var phaseCamera;
 
 var keysDown = [];
 
@@ -56,6 +61,7 @@ var sliderGrabOffsetY; // only used for the 2d phase slider
 //var currentPuzzle = [['dodeca',0.99],['icosa',0.99],['r_triaconta',0.99]]
 
 var phasePanel;
+var phaseG;
 var phaseDiagram;
 var phaseDomainG;
 var phaseLineG;
@@ -68,6 +74,9 @@ var phaseBack;
 var slidersInPhase = [];
 
 var phasePt;
+var isPhase2D;
+
+var phaseBakedScale = 20.0;
 
 
 
@@ -132,6 +141,9 @@ function initialize() {
     phaseThumb = document.getElementById('phase-thumb');
     phaseBack = document.getElementById('phase-back');
 
+    phaseG = document.getElementById('phase-transform');
+    phaseCamera = new Viewport(phaseDiagram, phaseG, phaseBakedScale);
+
     phasePt = phaseDiagram.createSVGPoint(); // Created once for document
 
     languageChangeDiv = document.getElementById('language-change');
@@ -180,7 +192,9 @@ function initialize() {
         makeCanvasSize();
         drawPuzzle();
 
-    }, { passive: false });
+    }, {
+        passive: false
+    });
 
     document.getElementById('sphere-panel').addEventListener('click', function(e) {
         if (!e.keepLanguageChangeDiv_) {
@@ -194,9 +208,20 @@ function initialize() {
             spherePrevE = e;
         } else if (sliderDrag) {
             if (sliderDrag === phaseThumb) {
-                //console.log(cursorPt,sliderGrabOffsetX)
                 let hoveredDomain = phaseDomainG.querySelector('.phase-domain-hoverable:hover');
-                if (e.shiftKey && hoveredDomain) {
+
+                let snap = true;
+                if (hoveredDomain) {
+                    let typeName = hoveredDomain.tagName.toLowerCase();
+
+                    if (isPhase2D) {
+                        if (hoveredDomain.dataset.isActuallyACircle === "0") {
+                            snap = false;
+                        }
+                    }
+                }
+
+                if (snap && e.shiftKey && hoveredDomain) {
                     setSlider(slidersInPhase[0].getElementsByClassName('slider-thumb')[0], parseFloat(hoveredDomain.dataset.centerX), false, true);
                     if (slidersInPhase[1]) {
                         setSlider(slidersInPhase[1].getElementsByClassName('slider-thumb')[0], parseFloat(hoveredDomain.dataset.centerY), false, true);
@@ -204,14 +229,13 @@ function initialize() {
                 } else {
                     let cursorPt = phaseMouseToPoint(e);
                     let newValueX = cursorPt.x - sliderGrabOffsetX;
-                    //console.log('x',newValueX)
-                    setSlider(slidersInPhase[0].querySelector('.slider-thumb:not(.wrong-sign)'), newValueX, false, true);
+                    setSlider(slidersInPhase[0].querySelector('.slider-thumb:not(.wrong-sign)'), newValueX / phaseBakedScale, false, true);
                     if (slidersInPhase[1]) {
                         let newValueY = cursorPt.y - sliderGrabOffsetY;
-                        //console.log('y',newValueY)
-                        setSlider(slidersInPhase[1].querySelector('.slider-thumb:not(.wrong-sign)'), newValueY, false, true);
+                        setSlider(slidersInPhase[1].querySelector('.slider-thumb:not(.wrong-sign)'), newValueY / phaseBakedScale, false, true);
                     }
                 }
+
             } else {
                 let sliderContainerStyle = window.getComputedStyle(sliderDrag.parentNode);
                 let sliderWidth = parseFloat(sliderContainerStyle.getPropertyValue('width'));
@@ -374,12 +398,23 @@ function initialize() {
         createPhasePlot();
     });
 
+    document.addEventListener('click', (e) => {
+        const target = e.target;
+
+        if (target.classList.contains('phase-domain-hoverable')) {
+            let toast = target.toast(e.shiftKey);
+            if (toast) {
+                showToast(toast);
+            }
+        }
+    });
+
     phaseThumb.addEventListener('mousedown', function(e) {
         if (e.button !== 0) return;
         sliderDrag = phaseThumb;
         let cursorPt = phaseMouseToPoint(e);
-        sliderGrabOffsetX = cursorPt.x - parseFloat(slidersInPhase[0].dataset.depth);
-        sliderGrabOffsetY = cursorPt.y - parseFloat(slidersInPhase[1]?.dataset?.depth);
+        sliderGrabOffsetX = (cursorPt.x / phaseBakedScale - parseFloat(slidersInPhase[0].dataset.depth));
+        sliderGrabOffsetY = (cursorPt.y / phaseBakedScale - parseFloat(slidersInPhase[1]?.dataset?.depth));
         //console.log(sliderGrabOffsetX)
         phaseThumb.classList.add('being-dragged');
         document.body.classList.add('dragging');
@@ -559,7 +594,7 @@ function drawCircleOnSphere(centerRaw, depth, color) {
         sphereCtx.ellipse(center.x * depth, center.y * depth, circleRadius * center.z, circleRadius, Math.atan2(center.y, center.x), beginAngle, endAngle);
         //console.log(center.x*depth, center.y*depth, circleRadius*center.z, circleRadius, Math.atan2(center.y, center.x), beginAngle, endAngle);
         sphereCtx.strokeStyle = color;
-        sphereCtx.lineWidth = 0.005;
+        sphereCtx.lineWidth = 0.01 / sphereZoom;
         sphereCtx.stroke();
     }
 }
@@ -677,18 +712,18 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, color = colorCho
 
         let buttons = sliderUnit.querySelectorAll('.adjust-btn');
         buttons.forEach(button => {
-          button.addEventListener('click', function(e) {
-            const amount = parseFloat(this.getAttribute('data-step'));
-            
-            let currentValue = parseFloat(sliderAngleInput.value) || 0;
-            
-            let newValue = clamp(currentValue + amount, 0, parseFloat(sliderAngleInput.max));
-            
-            sliderAngleInput.value = newValue;
-            var cosAngleInput = Math.cos(parseFloat(sliderAngleInput.value) * Math.PI / 180.0);
-            setSlider(sliderThumb, cosAngleInput, true);
-            sliderInput.value = cosAngleInput;
-          });
+            button.addEventListener('click', function(e) {
+                const amount = parseFloat(this.getAttribute('data-step'));
+
+                let currentValue = parseFloat(sliderAngleInput.value) || 0;
+
+                let newValue = clamp(currentValue + amount, 0, parseFloat(sliderAngleInput.max));
+
+                sliderAngleInput.value = newValue;
+                var cosAngleInput = Math.cos(parseFloat(sliderAngleInput.value) * Math.PI / 180.0);
+                setSlider(sliderThumb, cosAngleInput, true);
+                sliderInput.value = cosAngleInput;
+            });
         });
 
         let colorButton = sliderUnit.getElementsByClassName('slider-color-swatch')[0];
@@ -697,6 +732,18 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, color = colorCho
                 summonChangeDiv(colorButton, colorChangeDiv);
                 e.keepChangeDivs_ = true; // otherwise it will close the div
             }
+        });
+
+        let pinButton = sliderUnit.getElementsByClassName('pin-button')[0];
+        pinButton.addEventListener('click', function() {
+            if (pinButton.dataset.isOn === "1") {
+                pinButton.dataset.isOn = 0;
+                pinButton.src = './icons/pin_off.svg';
+            } else {
+                pinButton.dataset.isOn = 1;
+                pinButton.src = './icons/pin_on.svg';
+            }
+            hidePhaseDiagram();
         });
 
         setSlider(sliderThumb, depth);
@@ -795,11 +842,10 @@ function setSliderColor(colorSwatch, color, fromInput = false) {
 
 
 function setPhaseSlider() {
-    let xDepth = slidersInPhase[0]?.dataset?.depth ?? 0
-    let yDepth = slidersInPhase[1]?.dataset?.depth ?? 0
-    //let transformRe = /^translate\(\s*([-0-9.]+)\s*,\s*([-0-9.]+)\s*\)/.exec(phaseThumb.getAttributeNS(null, 'transform'));
-    //let newTransform = `translate(${xDepth ?? transformRe[1]},${yDepth ?? transformRe[2]})`;
-    let newTransform = `translate(${xDepth},${yDepth})`;
+    let xDepth = slidersInPhase[0]?.dataset?.depth ?? 0;
+    let yDepth = slidersInPhase[1]?.dataset?.depth ?? 0;
+
+    let newTransform = `translate(${xDepth * phaseBakedScale},${yDepth * phaseBakedScale}),scale(${1.0 / (phaseCamera?.mat?.a ?? 1.0)},${1.0 / (phaseCamera?.mat?.a ?? 1.0)})`;
     phaseThumb.setAttributeNS(null, 'transform', newTransform);
 }
 
@@ -1037,7 +1083,8 @@ function setSystemParam(param, systemUnit, value) {
             systemUnit.dataset.order = value;
             systemUnit.dataset.jumbleConfig = listjumbleConfigsFromSystemUnit(systemUnit)[0];
             setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
-            hidePhaseDiagram();
+            //hidePhaseDiagram();
+            createPhasePlot();
             if (closeChangeDivsOnSelect) removeChangeDivs();
             updateSystemOpposite(systemUnit);
             //drawPuzzle();
@@ -1045,7 +1092,8 @@ function setSystemParam(param, systemUnit, value) {
         case 'jumbleConfig':
             systemUnit.dataset.jumbleConfig = value;
             setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
-            hidePhaseDiagram();
+            //hidePhaseDiagram();
+            createPhasePlot();
             if (closeChangeDivsOnSelect) removeChangeDivs();
             //drawPuzzle();
             break;
@@ -1058,7 +1106,7 @@ function setSystemParam(param, systemUnit, value) {
             systemUnit.getElementsByClassName('system-params')[0]
         );
 
-        hidePhaseDiagram();
+        //hidePhaseDiagram();
 
         createPhasePlot();
 
@@ -1083,6 +1131,10 @@ function countAxes() {
         if (systemUnit.classList.contains('ghost-system')) continue;
         for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children) {
             if (sliderUnit.classList.contains('ghost-slider')) continue;
+
+            // Skip the slider if its pinned
+            if (sliderUnit.getElementsByClassName('pin-button')[0].dataset.isOn === "1") continue;
+
             systemUnits.push(systemUnit);
         }
     }
@@ -1095,49 +1147,33 @@ function countAxes() {
     return systemsAxes.map(x => x.length);
 }
 
-
-function createPhasePlot() {
-    let systemUnits = [];
-    let overallSymmetry = -1; // all bits on
-    slidersInPhase = [];
-    for (let systemUnit of sliderPanel.children) {
-        if (systemUnit.classList.contains('ghost-system')) continue;
-        for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children) {
-            if (sliderUnit.classList.contains('ghost-slider')) continue;
-            // also skip it if the slider is locked
-            systemUnits.push(systemUnit);
-            slidersInPhase.push(sliderUnit);
-            overallSymmetry &= systemData[systemUnit.dataset.system].symmetries;
-        }
-    }
-
-    if (systemUnits.length > 2) return;
-    let is2D = systemUnits.length === 2;
-    let systemsAxes = []
+function systemPhaseLines(systemUnits) {
+    let systemsAxes = [];
+    let symmetry = -1;
     for (let systemUnit of systemUnits) {
         systemsAxes.push(getAxesFromSystemUnit(systemUnit));
+        symmetry &= systemData[systemUnit.dataset.system].symmetries;
     }
 
-    let axisCount = systemsAxes.flat().length;
-
     // NOT assuming there is only one system :)
-    let systemReducedIndex;
     let systemReducedAxes;
     let systemReducedAxesLen = Infinity;
-    for (let bit of allBits(overallSymmetry)) {
-        for (let reduced = 0; reduced < systemUnits.length; reduced++) {
-            let systemReducedAxesL = []
-            let reducedOffset = 0;
+    for (let bit of allBits(symmetry)) {
+        for (let i = 0; i < systemUnits.length; i++) {
+            let systemReducedAxesL = [];
+
             for (let systemUnit of systemUnits) {
                 systemReducedAxesL.push(getSymAxesFromSystemUnit(systemUnit, bit));
             }
+
             if (systemReducedAxesL.flat().length < systemReducedAxesLen) {
-                systemReducedIndex = reduced;
                 systemReducedAxes = systemReducedAxesL;
                 systemReducedAxesLen = systemReducedAxesL.flat().length;
             }
         }
     }
+
+    let is2D = systemUnits.length === 2;
 
     // assuming 1 or 2 systems, no fixed systems
     let axSetsSeen = new Set();
@@ -1152,14 +1188,13 @@ function createPhasePlot() {
     let lineClippingRaw = []; // [line vector, [lower bound, upper bound]]
     // where the bounds represent dir . endpoint
 
-
     for (let s0 = 0; s0 < systemUnits.length; s0++) {
         for (let i0 of systemReducedAxes[s0]) {
             for (let s1 = 0; s1 < systemUnits.length; s1++) {
                 for (let i1 = 0; i1 < systemsAxes[s1].length; i1++) {
                     if (s0 === s1 && i0 === i1) continue;
-                    if (axSetsSeen.has([pair(s0, i0), pair(s1, i1)].sort())) continue;
-                    axSetsSeen.add([pair(s0, i0), pair(s1, i1)].sort())
+                    if (axSetsSeen.has([pair(s0, i0), pair(s1, i1)].sort().join(","))) continue;
+                    axSetsSeen.add([pair(s0, i0), pair(s1, i1)].sort().join(","));
 
                     let axis0 = systemsAxes[s0][i0];
                     let axis1 = systemsAxes[s1][i1];
@@ -1167,6 +1202,7 @@ function createPhasePlot() {
                     // add tangency depth
                     let dot = axis0.dot(axis1);
                     let tangencyCoeff = Math.sqrt((1 + dot) / 2);
+
                     if (dot > 1 - THRESHOLD) {
                         if ((s0 === 0 && s1 === 1) || (s0 === 1 && s1 === 0)) lineEqns.add([0, 0, 0, 1]); // diagonal line
                         continue;
@@ -1174,20 +1210,21 @@ function createPhasePlot() {
                         if ((s0 === 0 && s1 === 1) || (s0 === 1 && s1 === 0)) lineEqns.add([0, 0, 0, -1]); // antidiagonal line
                         continue;
                     }
+
                     if (s0 === 0 && s1 === 0) {
                         lineEqns.add([tangencyCoeff, 0, -1, 0]).add([-tangencyCoeff, 0, -1, 0]);
                     } else if (s0 === 1 && s1 === 1) {
                         lineEqns.add([0, tangencyCoeff, 1, 0]).add([0, -tangencyCoeff, 1, 0]);
                     } else {
-                        let det = 1 - axis0.dot(axis1) ** 2
+                        let det = 1 - axis0.dot(axis1) ** 2;
                         ellipseMats.add([1 / det, -dot / det, 1 / det]);
                     }
-                    //console.log(i0,i1,tangencyDepth);
+
                     for (let s2 = 0; s2 < systemUnits.length; s2++) {
                         for (let i2 = 0; i2 < systemsAxes[s2].length; i2++) {
                             if ((s0 === s2 && i0 === i2) || (s1 === s2 && i1 === i2)) continue;
-                            if (axSetsSeen.has([pair(s0, i0), pair(s1, i1), pair(s2, i2)].sort())) continue;
-                            axSetsSeen.add([pair(s0, i0), pair(s1, i1), pair(s2, i2)].sort())
+                            if (axSetsSeen.has([pair(s0, i0), pair(s1, i1), pair(s2, i2)].sort().join(","))) continue;
+                            axSetsSeen.add([pair(s0, i0), pair(s1, i1), pair(s2, i2)].sort().join(","));
                             let sarr = [s0, s1, s2];
 
                             let axis2 = systemsAxes[s2][i2];
@@ -1198,8 +1235,6 @@ function createPhasePlot() {
                             // add triple depth
                             let detAxes = axis0.dot(axis1.cross(axis2)); // determinant of matrix formed by axes
                             if (Math.abs(detAxes) < THRESHOLD) {
-                                // definitely something should happen
-                                //console.log('zero det');
                                 let axesSystems = [
                                     [],
                                     []
@@ -1214,23 +1249,15 @@ function createPhasePlot() {
                                     let singleAxis = aarr[axesSystems[singleSystem][0]];
                                     let doubleAxis1 = aarr[axesSystems[doubleSystem][0]];
                                     let doubleAxis2 = aarr[axesSystems[doubleSystem][1]];
-                                    //console.log(axesSystems)
-                                    /*if (Math.abs(singleAxis.dot(doubleAxis1) + singleAxis.dot(doubleAxis2)) < THRESHOLD){
-                                        //console.log('needs clipping!');
-                                        /*     if (singleSystem === 0) lineEqns.add([0,0,-1,0]);
-                                        else if (singleSystem === 1) lineEqns.add([0,0,1,0]);* /
 
-                                    } else */
                                     if (Math.abs(singleAxis.dot(doubleAxis1.subtract(doubleAxis2))) < THRESHOLD) {
                                         // line needs to pass through [0,0] and [1,singleAxis.dot(doubleAxis1)] (with 1 in place of singleSystem)
-                                        //console.log('needs no clipping')
                                         let dir = [];
-                                        let norm = Math.sqrt(1 + singleAxis.dot(doubleAxis1) ** 2)
+                                        let norm = Math.sqrt(1 + singleAxis.dot(doubleAxis1) ** 2);
                                         dir[singleSystem] = 1 / norm;
                                         dir[doubleSystem] = singleAxis.dot(doubleAxis1) / norm;
                                         lineEqns.add([0, 0, dir[0] ** 2 - dir[1] ** 2, 2 * dir[0] * dir[1]]); // remember to complex square the direction
                                     } else {
-                                        //console.log('needs clipping!');
                                         let dirUnnorm = [];
                                         dirUnnorm[doubleSystem] = Math.sqrt((1 + doubleAxis1.dot(doubleAxis2)) / 2);
                                         dirUnnorm[singleSystem] = singleAxis.dot(doubleAxis1.add(doubleAxis2)) / Math.sqrt((1 + doubleAxis1.dot(doubleAxis2)) * 2);
@@ -1247,7 +1274,7 @@ function createPhasePlot() {
 
                             } else {
                                 let invAxes = [axis1.cross(axis2).divide(detAxes), axis2.cross(axis0).divide(detAxes), axis0.cross(axis1).divide(detAxes)]; // inverse of matrix formed by axes
-                                //let ellipsoidDepth = ; // the ellipsoid if all three axes had different ellipseMats
+                                // the ellipsoid if all three axes had different ellipseMats
                                 let tripleCoeffs = [0, 0, 0]; // inverse square root
                                 for (let k1 = 0; k1 < 3; k1++) {
                                     for (let k2 = 0; k2 < 3; k2++) {
@@ -1260,6 +1287,7 @@ function createPhasePlot() {
                                         }
                                     }
                                 }
+
                                 if (Math.abs(tripleCoeffs[1]) < THRESHOLD && Math.abs(tripleCoeffs[2]) < THRESHOLD) {
                                     lineEqns.add([tripleCoeffs[0] ** -0.5, 0, -1, 0]).add([-(tripleCoeffs[0] ** -0.5), 0, -1, 0]);
                                 } else if (Math.abs(tripleCoeffs[1]) < THRESHOLD && Math.abs(tripleCoeffs[0]) < THRESHOLD) {
@@ -1267,7 +1295,6 @@ function createPhasePlot() {
                                 } else {
                                     ellipseMats.add(tripleCoeffs);
                                 }
-                                //console.log(i0,i1,i2,'hi');
                             }
                         }
                     }
@@ -1276,110 +1303,281 @@ function createPhasePlot() {
         }
     }
 
-    let lowerRightX = -1;
-    let lowerRightY = -1;
-    if (getAnyOppositesFromSystemUnit(systemUnits[0])) {
-        lineEqns.add([0, 0, -1, 0]);
-        if (getOppositesFromSystemUnit(systemUnits[0])) {
-            lowerRightX = 0;
-        }
-    }
-    if (is2D && getAnyOppositesFromSystemUnit(systemUnits[1])) {
-        lineEqns.add([0, 0, 1, 0]);
-        if (getOppositesFromSystemUnit(systemUnits[1])) {
-            lowerRightY = 0;
-        }
-    }
-    //lowerRightX = -1;//DEBUG
-    //lowerRightY = -1;
-    //phaseDiagram.classList.toggle('full-depth', lowerRightX === -1 || lowerRightY === -1);
+    if (getAnyOppositesFromSystemUnit(systemUnits[0])) lineEqns.add([0, 0, -1, 0]);
+    if (is2D && getAnyOppositesFromSystemUnit(systemUnits[1])) lineEqns.add([0, 0, 1, 0]);
 
-    // add the lines from lineClippingRaw back into lineEqns
-    let linesClipped = new FloatSet(4);
-    let lineClipping = new Map();
-    for (let [lineEqnRaw, lineBounds] of lineClippingRaw) {
-        //console.log(lineEqnRaw)
-        if (!lineEqns.has(lineEqnRaw)) { // if it has it the bounds are infinite
-            let lineEqn = linesClipped.addWhich(lineEqnRaw);
-            if (!lineClipping.has(lineEqn)) lineClipping.set(lineEqn, [Infinity, -Infinity]);
-            let bounds = lineClipping.get(lineEqn);
-            bounds[0] = Math.min(bounds[0], lineBounds[0]);
-            bounds[1] = Math.max(bounds[1], lineBounds[1]);
-        }
+    return {
+        lineEqns,
+        ellipseMats,
+        lineClippingRaw,
+        systemsAxes
+    };
+}
+
+function pinnedSystemPhaseLines(s0unit, s1unit, s1slider, s2unit, s2slider) {
+    let systemsAxes = [];
+    let symmetry = -1;
+    for (let systemUnit of [s0unit, s1unit, s2unit]) {
+        systemsAxes.push(getAxesFromSystemUnit(systemUnit));
+        symmetry &= systemData[systemUnit.dataset.system].symmetries;
     }
 
-    for (let lineEqn of linesClipped) lineEqns.add(lineEqn);
+    // NOT assuming there is only one system :)
+    let systemReducedAxes;
+    let systemReducedAxesLen = Infinity;
+    for (let bit of allBits(symmetry)) {
+        for (let i = 0; i < 3; i++) {
+            let systemReducedAxesL = [];
+
+            systemReducedAxesL.push(getSymAxesFromSystemUnit(s0unit, bit));
+            systemReducedAxesL.push(getSymAxesFromSystemUnit(s1unit, bit));
+            systemReducedAxesL.push(getSymAxesFromSystemUnit(s2unit, bit));
+
+            if (systemReducedAxesL.flat().length < systemReducedAxesLen) {
+                systemReducedAxes = systemReducedAxesL;
+                systemReducedAxesLen = systemReducedAxesL.flat().length;
+            }
+        }
+    }
+
+    let points = [];
+
+    let s1value = parseFloat(s1slider.getElementsByClassName('slider-input')[0].value);
+    let s2value = parseFloat(s2slider.getElementsByClassName('slider-input')[0].value);
+
+    for (let i0 of systemReducedAxes[0]) {
+        let axis0 = systemsAxes[0][i0];
+
+        for (let i1 = 0; i1 < systemsAxes[1].length; i1++) {
+            let axis1 = systemsAxes[1][i1];
+
+            let dot01 = axis0.dot(axis1);
+
+            for (let i2 = 0; i2 < systemsAxes[2].length; i2++) {
+                let axis2 = systemsAxes[2][i2];
+
+                let dot02 = axis2.dot(axis0);
+                let dot12 = axis2.dot(axis1);
+
+                let q = (1 - dot12 * dot12);
+                let pc = (axis1.multiply((s1value - s2value * dot12) / q)).add(axis2.multiply((s2value - s1value * dot12) / q));
+
+                let detAxes = axis0.dot(axis1.cross(axis2));
+
+                let a = axis0.dot(pc);
+                let b = axis0.dot(axis1.cross(axis2).unit()) * Math.sqrt((1 - pc.dot(pc)));
+
+                points.push(a + b);
+                points.push(a - b);
+            }
+        }
+    }
+
+    return points;
+}
+
+function intersectLinesPinned(p0, p1, c, s, pinnedValue, bounds) {
+    let [point, dir, dot, perp] = lineEqnToDot([p0, p1, c, s]);
+    let intersection = intersectLines(dot, perp, pinnedValue, [0, 1]);
+
+    if (!intersection) return null;
+
+    let t = (intersection[0] - p0) / dir[0];
+    if (Math.abs(dir[0]) < THRESHOLD) {
+        t = (intersection[1] - p1) / dir[1];
+    }
+
+    if (bounds) {
+        if (!(t >= bounds[0] - THRESHOLD && t <= bounds[1] + THRESHOLD) && !(-t >= bounds[0] - THRESHOLD && -t <= bounds[1] + THRESHOLD)) return null;
+    }
+
+    return intersection[0];
+}
+
+function createPhasePlot() {
+    let systemUnits = [];
+    slidersInPhase = [];
+
+    let allSliders = [];
+    let freeSliderIndices = [];
+    let pinnedSliderIndices = [];
+
+    let freeSystemIndices = [];
+    let pinnedSystemsIndices = [];
+
+    for (let systemUnit of sliderPanel.children) {
+        if (systemUnit.classList.contains('ghost-system')) continue;
+        for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children) {
+            if (sliderUnit.classList.contains('ghost-slider')) continue;
+
+            if (sliderUnit.getElementsByClassName('pin-button')[0].dataset.isOn === "1") {
+                pinnedSliderIndices.push(allSliders.length);
+                pinnedSystemsIndices.push(systemUnits.length);
+            } else {
+                freeSliderIndices.push(allSliders.length);
+                freeSystemIndices.push(systemUnits.length);
+                slidersInPhase.push(sliderUnit);
+            }
+
+            allSliders.push(sliderUnit);
+            systemUnits.push(systemUnit);
+        }
+    }
+
+    // This should technically be fine from other parts of the code, but just in case.
+    if (freeSliderIndices.length === 0) return;
+    if (freeSliderIndices.length > 2) return;
+    if (freeSliderIndices.length === 2 && pinnedSliderIndices.length > 0) return;
+
+    let lineEqns, ellipseMats, linesClipped, lineClipping;
+    let lowerRightX = -1,
+        lowerRightY = -1;
+
+    if (freeSliderIndices.length === 2 || pinnedSliderIndices.length === 0) {
+        isPhase2D = freeSliderIndices.length === 2;
+        let freeUnits = isPhase2D ? [systemUnits[freeSystemIndices[0]], systemUnits[freeSystemIndices[1]]] : [systemUnits[freeSystemIndices[0]]];
+        let phaseLines = systemPhaseLines(freeUnits);
+
+        lineEqns = phaseLines.lineEqns;
+        ellipseMats = phaseLines.ellipseMats;
+
+        linesClipped = new FloatSet(4);
+        lineClipping = new Map();
+        for (let [lineEqnRaw, lineBounds] of phaseLines.lineClippingRaw) {
+            if (!lineEqns.has(lineEqnRaw)) { // if it has it the bounds are infinite
+                let lineEqn = linesClipped.addWhich(lineEqnRaw);
+                if (!lineClipping.has(lineEqn)) lineClipping.set(lineEqn, [Infinity, -Infinity]);
+                let bounds = lineClipping.get(lineEqn);
+                bounds[0] = Math.min(bounds[0], lineBounds[0]);
+                bounds[1] = Math.max(bounds[1], lineBounds[1]);
+            }
+        }
+
+        for (let lineEqn of linesClipped) lineEqns.add(lineEqn);
+
+        if (getOppositesFromSystemUnit(freeUnits[0])) lowerRightX = 0;
+        if (isPhase2D && getOppositesFromSystemUnit(freeUnits[1])) lowerRightY = 0;
+    } else {
+        isPhase2D = false;
+        let freeUnit = systemUnits[freeSystemIndices[0]];
+
+        lineEqns = new FloatSet(4);
+        lineEqns.add([1, 0, -1, 0]).add([-1, 0, -1, 0]);
+        if (getAnyOppositesFromSystemUnit(freeUnit)) lineEqns.add([0, 0, -1, 0]);
+        if (getOppositesFromSystemUnit(freeUnit)) lowerRightX = 0;
+
+        for (let i = 0; i < pinnedSystemsIndices.length; i++) {
+            let pinnedUnit = systemUnits[pinnedSystemsIndices[i]];
+            let pinnedValue = parseFloat(allSliders[pinnedSliderIndices[i]].getElementsByClassName('slider-input')[0].value);
+
+            let phaseLines = systemPhaseLines([freeUnit, pinnedUnit]);
+
+            // add the regular intersections
+            for (let [p0, p1, c, s] of phaseLines.lineEqns) {
+                if (Math.abs(c + 1) < THRESHOLD && Math.abs(s) < THRESHOLD) {
+                    lineEqns.add([p0, 0, -1, 0]);
+                } else if (Math.abs(c - 1) < THRESHOLD && Math.abs(s) < THRESHOLD) {
+                    continue;
+                } else {
+                    let x = intersectLinesPinned(p0, p1, c, s, pinnedValue);
+                    if (x !== null && x >= 0 && x <= 1) lineEqns.add([x, 0, -1, 0]);
+                }
+            }
+
+            // add the intersections from the scary hidden ones
+            for (let [lineEqn, bounds] of phaseLines.lineClippingRaw) {
+                let [p0, p1, c, s] = lineEqn;
+                let x = intersectLinesPinned(p0, p1, c, s, pinnedValue, bounds);
+                if (x !== null) lineEqns.add([x, 0, -1, 0]);
+            }
+
+            for (let [a0, a1, a2] of phaseLines.ellipseMats) {
+                let a = a0;
+                let b = 2 * a1 * pinnedValue;
+                let c = a2 * pinnedValue * pinnedValue - 1;
+
+                if (Math.abs(a) < THRESHOLD) {
+                    if (Math.abs(b) < THRESHOLD) continue;
+                    lineEqns.add([-c / b, 0, -1, 0]);
+                    continue;
+                }
+
+                let d = b * b - 4 * a * c;
+                if (d < -THRESHOLD) continue;
+                let sd = Math.sqrt(Math.max(0, d));
+                lineEqns.add([(-b + sd) / (2 * a), 0, -1, 0]);
+                if (sd > THRESHOLD) lineEqns.add([(-b - sd) / (2 * a), 0, -1, 0]);
+            }
+        }
+
+        // add the triple intersections
+        for (let i = 0; i < pinnedSliderIndices.length; i++) {
+            for (let j = i + 1; j < pinnedSliderIndices.length; j++) {
+                for (let x of pinnedSystemPhaseLines(freeUnit, systemUnits[pinnedSliderIndices[i]], allSliders[pinnedSliderIndices[i]], systemUnits[pinnedSliderIndices[j]], allSliders[pinnedSliderIndices[j]])) {
+                    lineEqns.add([x, 0, -1, 0]);
+                }
+            }
+        }
+    }
 
     phaseDiagram.classList.remove('hidden');
     for (let phaseDomainGChild of phaseDomainG.children) {
         removeChildren(phaseDomainGChild);
     }
 
-    let phaseDiagramMargin = 0.1;
+    let phaseDiagramMargin = 0.0026;
+    let rect = phasePanel.getBoundingClientRect();
 
-    //console.log(Array.from(ellipseMats));
-    if (!is2D) {
-        let phaseDiagramThickness = 0.26 * (1 - lowerRightX); // the width of the 1d phase diagram
-        phaseDiagram.setAttribute('viewBox', `${-phaseDiagramMargin+lowerRightX} ${-phaseDiagramThickness/2-phaseDiagramMargin} ${1-lowerRightX+2*phaseDiagramMargin} ${phaseDiagramThickness+2*phaseDiagramMargin}`);
-        phaseBack.setAttributeNS(null, 'x', lowerRightX);
-        phaseBack.setAttributeNS(null, 'y', -phaseDiagramThickness / 2);
-        phaseBack.setAttributeNS(null, 'width', 1 - lowerRightX);
-        phaseBack.setAttributeNS(null, 'height', phaseDiagramThickness);
+    if (!isPhase2D) {
+        let phaseDiagramThickness = 0.26 * (1 - lowerRightX); // the height of the phase diagram.
+        phaseDiagram.setAttribute('viewBox', `${-rect.width / 2 * phaseDiagramMargin + (1 - lowerRightX) / 2} ${-rect.height / 2 * phaseDiagramMargin} ${rect.width * phaseDiagramMargin} ${rect.height * phaseDiagramMargin}`);
+        //phaseDiagram.setAttribute('viewBox', `${-phaseDiagramMargin+lowerRightX} ${-phaseDiagramThickness/2-phaseDiagramMargin} ${1-lowerRightX+2*phaseDiagramMargin} ${phaseDiagramThickness+2*phaseDiagramMargin}`);
+        phaseBack.setAttributeNS(null, 'x', (lowerRightX) * phaseBakedScale);
+        phaseBack.setAttributeNS(null, 'y', (-phaseDiagramThickness / 2) * phaseBakedScale);
+        phaseBack.setAttributeNS(null, 'width', (1 - lowerRightX) * phaseBakedScale);
+        phaseBack.setAttributeNS(null, 'height', (phaseDiagramThickness) * phaseBakedScale);
 
         let depthsArr = Array.from(lineEqns).map(x => x[0]).filter(x => x >= lowerRightX - THRESHOLD).sort((a, b) => a - b);
         let hasZero = Math.abs(depthsArr[0]) < THRESHOLD || lowerRightX === -1
-        //hasZeroVLine = hasZero;
-        if (!hasZero) depthsArr.unshift(0);
-        //if (midLineV) depthsArr.unshift(0);
-        //console.log(depthsArr);
 
-        for (let i = 0; i < depthsArr.length - 1; i++) {
-            let rect = document.createElementNS(svgns, 'rect'); // https://stackoverflow.com/a/12786915
-            rect.setAttributeNS(null, 'x', depthsArr[i]);
-            rect.setAttributeNS(null, 'y', -phaseDiagramThickness / 2);
-            rect.setAttributeNS(null, 'width', depthsArr[i + 1] - depthsArr[i]);
-            rect.setAttributeNS(null, 'height', phaseDiagramThickness);
-            rect.dataset.centerX = (depthsArr[i + 1] + depthsArr[i]) / 2;
-            rect.dataset.centerY = 0;
-            rect.classList.add('phase-domain-hoverable', 'phase-region-hoverable');
-            phaseRegionG.appendChild(rect);
-        }
+        if (!hasZero) depthsArr.unshift(0);
 
         for (let i = hasZero ? 0 : 1; i < depthsArr.length; i++) {
             let lineHoverable = document.createElementNS(svgns, 'line'); // https://stackoverflow.com/a/12786915
-            lineHoverable.setAttributeNS(null, 'x1', depthsArr[i]);
-            lineHoverable.setAttributeNS(null, 'y1', -phaseDiagramThickness / 2);
-            lineHoverable.setAttributeNS(null, 'x2', depthsArr[i]);
-            lineHoverable.setAttributeNS(null, 'y2', phaseDiagramThickness / 2);
+            lineHoverable.setAttributeNS(null, 'x1', (depthsArr[i]) * phaseBakedScale);
+            lineHoverable.setAttributeNS(null, 'y1', (-phaseDiagramThickness / 2) * phaseBakedScale);
+            lineHoverable.setAttributeNS(null, 'x2', (depthsArr[i]) * phaseBakedScale);
+            lineHoverable.setAttributeNS(null, 'y2', (phaseDiagramThickness / 2) * phaseBakedScale);
             lineHoverable.dataset.centerX = depthsArr[i];
             lineHoverable.dataset.centerY = 0;
+            lineHoverable.dataset.isActuallyACircle = 0;
+            lineHoverable.toast = (shift) => `${shift ? depthsArr[i] : acosDegrees(depthsArr[i])}`
             lineHoverable.classList.add('phase-domain-hoverable', 'phase-boundary-hoverable');
             phaseBoundaryG.appendChild(lineHoverable);
 
             let line = document.createElementNS(svgns, 'line'); // https://stackoverflow.com/a/12786915
-            line.setAttributeNS(null, 'x1', depthsArr[i]);
-            line.setAttributeNS(null, 'y1', -phaseDiagramThickness / 2);
-            line.setAttributeNS(null, 'x2', depthsArr[i]);
-            line.setAttributeNS(null, 'y2', phaseDiagramThickness / 2);
+            line.setAttributeNS(null, 'x1', (depthsArr[i]) * phaseBakedScale);
+            line.setAttributeNS(null, 'y1', (-phaseDiagramThickness / 2) * phaseBakedScale);
+            line.setAttributeNS(null, 'x2', (depthsArr[i]) * phaseBakedScale);
+            line.setAttributeNS(null, 'y2', (phaseDiagramThickness / 2) * phaseBakedScale);
             line.classList.add('phase-boundary')
             phaseLineG.appendChild(line);
         }
-    } else { // it's 2d
-        //phaseDiagram.setAttribute('viewBox', `${-phaseDiagramMargin} ${-phaseDiagramMargin} ${1+2*phaseDiagramMargin} ${1+2*phaseDiagramMargin}`);
-        //let [lowerRightX, lowerRightY] = [0,0]; // [0,0]
-        phaseDiagram.setAttribute('viewBox', `${lowerRightX-phaseDiagramMargin} ${-1-phaseDiagramMargin} ${(1-lowerRightX)+2*phaseDiagramMargin} ${(1-lowerRightY)+2*phaseDiagramMargin}`); // prepare for scale() later
-        phaseBack.setAttributeNS(null, 'x', lowerRightX);
-        phaseBack.setAttributeNS(null, 'y', lowerRightY);
-        phaseBack.setAttributeNS(null, 'width', 1 - lowerRightX);
-        phaseBack.setAttributeNS(null, 'height', 1 - lowerRightY);
+    } else {
+        phaseDiagram.setAttribute('viewBox', `${-rect.width / 2 * phaseDiagramMargin + (1 - lowerRightX) / 2 + lowerRightX} ${-rect.height / 2 * phaseDiagramMargin - (1 - lowerRightY) / 2 - lowerRightY} ${rect.width * phaseDiagramMargin} ${rect.height * phaseDiagramMargin}`);
+        //phaseDiagram.setAttribute('viewBox', `${lowerRightX-phaseDiagramMargin} ${-1-phaseDiagramMargin} ${(1-lowerRightX)+2*phaseDiagramMargin} ${(1-lowerRightY)+2*phaseDiagramMargin}`); // prepare for scale() later
+        phaseBack.setAttributeNS(null, 'x', lowerRightX * phaseBakedScale);
+        phaseBack.setAttributeNS(null, 'y', lowerRightY * phaseBakedScale);
+        phaseBack.setAttributeNS(null, 'width', (1 - lowerRightX) * phaseBakedScale);
+        phaseBack.setAttributeNS(null, 'height', (1 - lowerRightY) * phaseBakedScale);
 
 
-        let renderRegions = axisCount <= 24 && ellipseMats.size <= 72;
+        //let renderRegions = axisCount <= 24 && ellipseMats.size <= 72;
+        let renderRegions = true;
 
         let ellipseArr = Array.from(ellipseMats);
         let lineArrOg = Array.from(lineEqns);
         let lineArr = lineArrOg.map(lineEqnToDot);
-        //console.log(lineArr,ellipseArr);
 
         let intersections = new FloatSet(2);
         let lineIntersections = lineArr.map(() => new Set()); // i: list of points on line i
@@ -1387,7 +1585,6 @@ function createPhasePlot() {
         // these are Set and not FloatSet(2) because i want to check ===
 
         // find intersection points of the ellipses and lines
-
         if (renderRegions) {
             for (let i = 0; i < lineArr.length; i++) { // lines and ...
                 let [
@@ -1403,11 +1600,31 @@ function createPhasePlot() {
 
                     let intersection = intersections.wouldAddWhich(intersectLines(dot, perp, dot1, perp1));
                     if (intersection) {
-                        //console.log(intersection[0]*d0+intersection[1]*d1, bounds, intersection[0]*d10+intersection[1]*d11, bounds1)
                         if ((intersection[0] * d0 + intersection[1] * d1 > bounds[0] - THRESHOLD && intersection[0] * d0 + intersection[1] * d1 < bounds[1] + THRESHOLD) &&
                             (intersection[0] * d10 + intersection[1] * d11 > bounds1[0] - THRESHOLD && intersection[0] * d10 + intersection[1] * d11 < bounds1[1] + THRESHOLD)) {
-                            lineIntersections[i].add(intersection);
-                            lineIntersections[j].add(intersection);
+
+                            let x = intersection[0];
+                            let y = intersection[1];
+
+                            let dx = intersection[0] * d0 + intersection[1] * d1;
+                            let dy = intersection[0] * d10 + intersection[1] * d11;
+
+                            let onEdge = (Math.abs(x + lowerRightX) < THRESHOLD || Math.abs(y + lowerRightY) < THRESHOLD || Math.abs(x) > 1 - THRESHOLD || Math.abs(y) > 1 - THRESHOLD);
+                            let onBound1 = Math.abs(dx - bounds[0]) < THRESHOLD || Math.abs(dx - bounds[1]) < THRESHOLD;
+                            let onBound2 = Math.abs(dy - bounds1[0]) < THRESHOLD || Math.abs(dy - bounds1[1]) < THRESHOLD;
+
+                            if (onEdge) {
+                                lineIntersections[i].add(intersection);
+                                lineIntersections[j].add(intersection);
+                            } else {
+                                if (onBound1) {
+                                    lineIntersections[i].add(intersection)
+                                }
+                                if (onBound2) {
+                                    lineIntersections[j].add(intersection)
+                                }
+                            }
+
                             intersections.add(intersection);
                         }
                     }
@@ -1417,16 +1634,40 @@ function createPhasePlot() {
                     let [tP, tM] = quadratic(a0 * d0 * d0 + 2 * a1 * d0 * d1 + a2 * d1 * d1, 2 * (a0 * p0 * d0 + a1 * p1 * d0 + a1 * p0 * d1 + a2 * p1 * d1), a0 * p0 * p0 + 2 * a1 * p0 * p1 + a2 * p1 * p1 - 1); // substitute parametric line into ellipse
                     if (tP === null) continue;
 
-                    //if (Math.abs(p1-1/3)<THRESHOLD) console.log('a third',p0,p1,d0,d1,a0,a1,a2);
-                    //console.log([p0+tP*d0, p1+tP*d1],[p0+tM*d0, p1+tM*d1])
                     for (let t of [tP, tM]) {
-                        let intersection = intersections.wouldAddWhich([p0 + t * d0, p1 + t * d1])
-                        //if (i===0) console.log('el',intersection);
+                        let intersection = intersections.wouldAddWhich([p0 + t * d0, p1 + t * d1]);
                         if (intersection) {
                             if (intersection[0] * d0 + intersection[1] * d1 > bounds[0] - THRESHOLD && intersection[0] * d0 + intersection[1] * d1 < bounds[1] + THRESHOLD) {
-                                lineIntersections[i].add(intersection);
-                                ellipseIntersections[j].add(intersection);
                                 intersections.add(intersection);
+
+                                let x = intersection[0];
+                                let y = intersection[1];
+
+                                let bottomBoundX = Math.abs(x + lowerRightX) < THRESHOLD;
+                                let topBoundX = Math.abs(x) > 1 - THRESHOLD;
+                                let bottomBoundY = Math.abs(y + lowerRightY) < THRESHOLD;
+                                let topBoundY = Math.abs(y) > 1 - THRESHOLD;
+
+                                let isXBoundary = bottomBoundX || topBoundX;
+                                let isYBoundary = bottomBoundY || topBoundY;
+
+                                // If you're on the edge
+                                if (isXBoundary || isYBoundary) {
+                                    lineIntersections[i].add(intersection);
+
+                                    let gx = 2 * a0 * x + 2 * a1 * y;
+                                    let gy = 2 * a1 * x + 2 * a2 * y;
+
+                                    // If you're at a corner
+                                    if (isXBoundary && isYBoundary) {
+                                        ellipseIntersections[j].add(intersection);
+                                    } else {
+                                        // ignore intersections at tangent boundaries
+                                        if (!((isXBoundary && Math.abs(gy) < THRESHOLD) || (isYBoundary && Math.abs(gx) < THRESHOLD))) {
+                                            ellipseIntersections[j].add(intersection);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -1439,20 +1680,11 @@ function createPhasePlot() {
                     let [b0, b1, b2] = ellipseArr[j]; // definitely will not have determinant 0
                     // also they're not the same so discrim is not 0
 
-                    /*let [testX, testY] = [0.915790, 0.535789]
-                    //console.log(Math.abs(a0*testX**2+2*a1*testX*testY+a2*testY**2-1))
-                    if (Math.abs(a0*testX**2+2*a1*testX*testY+a2*testY**2-1) < 1e-1 && Math.abs(b0*testX**2+2*b1*testX*testY+b2*testY**2-1) < 1e-1){
-                        console.log(i,j)
-                        debugger;
-                    }*/
-
                     let diffDet = (a0 - b0) * (a2 - b2) - (a1 - b1) ** 2;
-                    //console.log(diffDet)
                     if (diffDet > THRESHOLD) continue; // the ellipses do not intersect
 
                     let ts = quadratic(b0 * b2 - b1 * b1, a2 * b0 - 2 * a1 * b1 + a0 * b2, a0 * a2 - a1 * a1);
                     // det(A + t B) = 0
-                    //if (i===3&&j===0) console.log([a0, a1, a2],[b0, b1, b2],diffDet)
                     if (ts[0] === null) continue;
                     let lineParams = [] // dot0, perp0, dot1, perp1 
                     for (let t of ts) {
@@ -1462,25 +1694,18 @@ function createPhasePlot() {
                             c1 *= -1;
                             c2 *= -1;
                         }
-                        //console.log(c0,c1,c2)
                         let [v0, v1] = [Math.sqrt(c0), Math.sqrt(c2)];
                         if (c1 < 0) v1 *= -1;
                         let norm = Math.sqrt(v0 ** 2 + v1 ** 2);
-                        //if (i===3&&j===0) console.log(t,[c0,c1,c2],[v0,v1],Math.sqrt(Math.abs(1+t))/norm)
                         lineParams.push(Math.sqrt(Math.abs(1 + t)) / norm, [v0 / norm, v1 / norm]);
                     }
 
                     let [dot0, perp0, dot1, perp1] = lineParams;
-                    //console.log(ts, dot0, perp0, dot1, perp1)
-                    //console.log(intersectLines( dot0, perp0,  dot1, perp1),intersectLines( dot0, perp0, -dot1, perp1))
+
                     for (let k0 of [1, -1]) {
                         for (let k1 of [1, -1]) {
                             let intersection = intersections.wouldAddWhich(intersectLines(k0 * dot0, perp0, k1 * dot1, perp1));
-                            //if (i===31&&j===0) console.log('ee',intersection);
                             if (intersection) {
-                                //if (i===3&&j===0) console.log(k0*dot0, perp0, k1*dot1, perp1,intersection)
-                                ellipseIntersections[i].add(intersection);
-                                ellipseIntersections[j].add(intersection);
                                 intersections.add(intersection);
                             }
                         }
@@ -1509,10 +1734,10 @@ function createPhasePlot() {
             } else {
                 bounds = [-3, 3];
             }
-            line.setAttributeNS(null, 'x1', pt[0] + bounds[0] * d0);
-            line.setAttributeNS(null, 'y1', pt[1] + bounds[0] * d1);
-            line.setAttributeNS(null, 'x2', pt[0] + bounds[1] * d0);
-            line.setAttributeNS(null, 'y2', pt[1] + bounds[1] * d1);
+            line.setAttributeNS(null, 'x1', (pt[0] + bounds[0] * d0) * phaseBakedScale);
+            line.setAttributeNS(null, 'y1', (pt[1] + bounds[0] * d1) * phaseBakedScale);
+            line.setAttributeNS(null, 'x2', (pt[0] + bounds[1] * d0) * phaseBakedScale);
+            line.setAttributeNS(null, 'y2', (pt[1] + bounds[1] * d1) * phaseBakedScale);
             line.classList.add('phase-clip', 'phase-boundary');
             phaseLineG.appendChild(line);
 
@@ -1522,43 +1747,41 @@ function createPhasePlot() {
                     let [midpointX, midpointY] = [(end0[0] + end1[0]) / 2, (end0[1] + end1[1]) / 2];
                     if (midpointX > lowerRightX - THRESHOLD && midpointX < 1 + THRESHOLD && midpointY > lowerRightY - THRESHOLD && midpointY < 1 + THRESHOLD) {
                         let lineSeg = document.createElementNS(svgns, 'line'); // https://stackoverflow.com/a/12786915
-                        lineSeg.setAttributeNS(null, 'x1', end0[0]);
-                        lineSeg.setAttributeNS(null, 'y1', end0[1]);
-                        lineSeg.setAttributeNS(null, 'x2', end1[0]);
-                        lineSeg.setAttributeNS(null, 'y2', end1[1]);
+                        lineSeg.setAttributeNS(null, 'x1', end0[0] * phaseBakedScale);
+                        lineSeg.setAttributeNS(null, 'y1', end0[1] * phaseBakedScale);
+                        lineSeg.setAttributeNS(null, 'x2', end1[0] * phaseBakedScale);
+                        lineSeg.setAttributeNS(null, 'y2', end1[1] * phaseBakedScale);
                         lineSeg.classList.add('phase-domain-hoverable', 'phase-boundary-hoverable');
                         lineSeg.dataset.centerX = midpointX; // edit these maybe
                         lineSeg.dataset.centerY = midpointY;
+                        lineSeg.dataset.isActuallyACircle = 0;
+
+                        lineSeg.toast = (shift) => {
+                            const dx = end1[0] - end0[0];
+                            const dy = end1[1] - end0[1];
+
+                            if (Math.abs(dx) < THRESHOLD) {
+                                return `x = ${end0[0]}`;
+                            }
+
+                            if (Math.abs(dy) < THRESHOLD) {
+                                return `y = ${end0[1]}`;
+                            }
+
+                            const m = dy / dx;
+                            const b = end0[1] - m * end0[0];
+
+                            return `y =${(Math.abs(m) < THRESHOLD + 1 && Math.abs(m) > 1 - THRESHOLD) ? " " : ` ${m >= 0 ? "" : "-"}${Math.abs(m)}`}x${Math.abs(b) < THRESHOLD ? "" : ` ${b >= 0 ? "+" : "-"} ${Math.abs(b)}`}`;
+                        };
+
                         if (end0[0] * end1[0] < -(THRESHOLD ** 2) || end0[1] * end1[1] < -(THRESHOLD ** 2)) {
                             lineSeg.classList.add('phase-clip-origin');
                         }
                         phaseBoundaryG.appendChild(lineSeg);
                     }
-
-                    let end0ind = intersectionArr.indexOf(end0);
-                    let end1ind = intersectionArr.indexOf(end1);
-                    let end0angle = Math.atan2(midpointY - end0[1], midpointX - end0[0]);
-                    let end1angle = Math.atan2(midpointY - end1[1], midpointX - end1[0]);
-                    let end0path = `L ${end1[0]} ${end1[1]}`; // says to go from end0 to end1
-                    let end1path = `L ${end0[0]} ${end0[1]}`;
-                    let end0desc = [, end0angle, end0path, [end0]];
-                    let end1desc = [, end1angle, end1path, [end1]];
-                    //console.log(end0ind, end1ind);
-                    console.assert(end0ind >= 0 && end1ind >= 0);
-                    end0desc[0] = end1desc;
-                    end1desc[0] = end0desc;
-                    /*if (end0[0]===1&&end0[1]===0&&end0path==='L 1 0.3333333333333333'){
-                        console.log('hi0',end0desc,end1desc,end1ind);
-                        end1desc.push(999999)
-                    }
-                    if (end1[0]===1&&end1[1]===0&&end1path==='L 1 0.3333333333333333') console.log('hi1')*/
-                    intersectionSegs[end0ind].set(end0angle, end0desc);
-                    intersectionSegs[end1ind].set(end1angle, end1desc);
                 }
             }
         }
-
-        //console.log(intersectionSegs[0])
 
         for (let i = 0; i < ellipseArr.length; i++) { // change for non-centered ellipses
             let ellipseInts = Array.from(ellipseIntersections[i])
@@ -1576,6 +1799,7 @@ function createPhasePlot() {
             } else {
                 angle = Math.atan2(a1, (a0 - eigenP)); // not sure why
             }
+
             //console.log(a0,a1,a2,det,eigenSqrtDiscrim,eigenP,eigenM,axisX,axisY,angle)
 
             let ellipseG = document.createElementNS(svgns, 'g'); // https://stackoverflow.com/a/12786915
@@ -1583,231 +1807,109 @@ function createPhasePlot() {
             let ellipse = document.createElementNS(svgns, 'ellipse'); // https://stackoverflow.com/a/12786915
             ellipse.setAttributeNS(null, 'cx', 0);
             ellipse.setAttributeNS(null, 'cy', 0);
-            ellipse.setAttributeNS(null, 'rx', axisX);
-            ellipse.setAttributeNS(null, 'ry', axisY);
+            ellipse.setAttributeNS(null, 'rx', axisX * phaseBakedScale);
+            ellipse.setAttributeNS(null, 'ry', axisY * phaseBakedScale);
             ellipse.setAttributeNS(null, 'transform', `rotate(${angle * 180/Math.PI})`);
             ellipse.classList.add('phase-boundary', 'phase-boundary-ellipse');
             ellipseG.appendChild(ellipse);
             phaseLineG.appendChild(ellipseG);
 
             if (renderRegions) {
+
+                if (!getAnyOppositesFromSystemUnit(systemUnits[freeSystemIndices[0]]) && !getAnyOppositesFromSystemUnit(systemUnits[freeSystemIndices[1]])) {
+                    let ellipse = document.createElementNS(svgns, 'ellipse'); // https://stackoverflow.com/a/12786915
+                    ellipse.classList.add('phase-domain-hoverable', 'phase-boundary-hoverable');
+                    ellipse.setAttributeNS(null, 'cx', 0);
+                    ellipse.setAttributeNS(null, 'cy', 0);
+                    ellipse.setAttributeNS(null, 'rx', axisX * phaseBakedScale);
+                    ellipse.setAttributeNS(null, 'ry', axisY * phaseBakedScale);
+                    ellipse.setAttributeNS(null, 'transform', `rotate(${angle * 180/Math.PI})`);
+                    ellipse.dataset.centerX = 0; // edit these maybe
+                    ellipse.dataset.centerY = 0;
+                    ellipse.dataset.isActuallyACircle = 0;
+                    ellipse.toast = (shift) => `a = ${axisX}, b = ${axisY}, θ = ${angle * 180/Math.PI}`;
+                    phaseBoundaryG.appendChild(ellipse);
+                }
+
                 for (let j = 0; j < ellipseInts.length - 1; j++) {
                     let [end0, end1] = [ellipseInts[j], ellipseInts[j + 1]];
                     let angDiff = Math.atan2(end1[1], end1[0]) - Math.atan2(end0[1], end0[0]);
                     let largeArc = angDiff > Math.PI || (angDiff < 0 && angDiff > -Math.PI);
-                    let [midpointX, midpointY] = [(end0[0] + end1[0]) / 2, (end0[1] + end1[1]) / 2];
-                    let scaleFactor = Math.sqrt(a0 * midpointX ** 2 + 2 * a1 * midpointX * midpointY + a2 * midpointY ** 2);
-                    midpointX /= scaleFactor;
-                    midpointY /= scaleFactor;
-                    console.assert(Math.abs(a0 * midpointX ** 2 + 2 * a1 * midpointX * midpointY + a2 * midpointY ** 2 - 1) < THRESHOLD)
-                    let ellipsePath = (ori, end) => `A ${axisX} ${axisY} ${angle * 180/Math.PI} ${+largeArc} ${ori} ${end[0]} ${end[1]}`
-                    if (midpointX > lowerRightX - THRESHOLD && midpointX < 1 + THRESHOLD && midpointY > lowerRightY - THRESHOLD && midpointY < 1 + THRESHOLD) {
+                    //let [midpointX, midpointY] = [(end0[0] + end1[0]) / 2, (end0[1] + end1[1]) / 2];
+                    //let scaleFactor = Math.sqrt(a0 * midpointX ** 2 + 2 * a1 * midpointX * midpointY + a2 * midpointY ** 2);
+                    //midpointX /= scaleFactor;
+                    //midpointY /= scaleFactor;
+                    //console.assert(Math.abs(a0 * midpointX ** 2 + 2 * a1 * midpointX * midpointY + a2 * midpointY ** 2 - 1) < THRESHOLD)
+                    let ellipsePath = (ori, end) => `A ${axisX * phaseBakedScale} ${axisY * phaseBakedScale} ${angle * 180/Math.PI} ${+largeArc} ${ori} ${end[0] * phaseBakedScale} ${end[1] * phaseBakedScale}`
+                    //if (midpointX > lowerRightX - THRESHOLD && midpointX < 1 + THRESHOLD && midpointY > lowerRightY - THRESHOLD && midpointY < 1 + THRESHOLD) {
+
+                    let bottomBound0 = end0[0] > lowerRightX - THRESHOLD && end0[1] > lowerRightY - THRESHOLD;
+                    let bottomBound1 = end1[0] > lowerRightX - THRESHOLD && end1[1] > lowerRightY - THRESHOLD;
+                    let topBound0 = end0[0] < 1 + THRESHOLD && end0[1] < 1 + THRESHOLD;
+                    let topBound1 = end1[0] < 1 + THRESHOLD && end1[1] < 1 + THRESHOLD;
+
+                    if (bottomBound0 && bottomBound1 && topBound0 && topBound1 && (!getAnyOppositesFromSystemUnit(systemUnits[freeSystemIndices[0]]) ? end0[0] >= 0 : true) && (!getAnyOppositesFromSystemUnit(systemUnits[freeSystemIndices[1]]) ? end0[1] <= 0 : true)) {
                         let ellipseSeg = document.createElementNS(svgns, 'path'); // https://stackoverflow.com/a/12786915
-                        ellipseSeg.setAttributeNS(null, 'd', `M ${end0[0]} ${end0[1]} ` + ellipsePath(1, end1));
+                        ellipseSeg.setAttributeNS(null, 'd', `M ${end0[0] * phaseBakedScale} ${end0[1] * phaseBakedScale} ` + ellipsePath(1, end1));
                         ellipseSeg.classList.add('phase-domain-hoverable', 'phase-boundary-hoverable');
-                        ellipseSeg.dataset.centerX = midpointX; // edit these maybe
-                        ellipseSeg.dataset.centerY = midpointY;
+                        ellipseSeg.dataset.centerX = 0; // edit these maybe
+                        ellipseSeg.dataset.centerY = 0;
+                        ellipseSeg.dataset.isActuallyACircle = 0;
+                        ellipseSeg.toast = (shift) => `a = ${axisX}, b = ${axisY}, θ = ${angle * 180/Math.PI}`;
                         phaseBoundaryG.appendChild(ellipseSeg);
-                        //console.log(ellipseSeg)
                     }
-
-                    let end0ind = intersectionArr.indexOf(end0);
-                    let end1ind = intersectionArr.indexOf(end1);
-                    let end0angle = Math.atan2(midpointY - end0[1], midpointX - end0[0]);
-                    let end1angle = Math.atan2(midpointY - end1[1], midpointX - end1[0]);
-                    console.assert(end0angle != Math.PI / 2, end0, midpointX, midpointY)
-                    console.assert(end1angle != Math.PI / 2, end1, midpointX, midpointY)
-
-                    const ellipseSegCount = 10;
-                    let verts = Array(ellipseSegCount + 1).fill().map((_, i) => {
-                        let vx = end0[0] * (1 - i / ellipseSegCount) + end1[0] * i / ellipseSegCount;
-                        let vy = end0[1] * (1 - i / ellipseSegCount) + end1[1] * i / ellipseSegCount;
-                        let scaleFactor = Math.sqrt(a0 * vx ** 2 + 2 * a1 * vx * vy + a2 * vy ** 2);
-                        return [vx / scaleFactor, vy / scaleFactor];
-                    });
-
-                    let end0desc = [, end0angle, ellipsePath(1, end1), verts.slice(0, -1)];
-                    let end1desc = [, end1angle, ellipsePath(0, end0), verts.slice(1).reverse()];
-                    end0desc[0] = end1desc;
-                    end1desc[0] = end0desc;
-                    //console.log(end0ind, end1ind);
-                    //if (end0ind===0||end1ind===0) console.log(ellipse)
-                    //console.log(end1ind,end1,i,intersectionArr.filter(x=>Math.max(Math.abs(end1[0]-x[0]),Math.abs(end1[1]-x[1]))<0.05))
-                    console.assert(!intersectionSegs[end0ind].has(end0angle));
-                    console.assert(!intersectionSegs[end1ind].has(end1angle));
-                    intersectionSegs[end0ind].set(end0angle, end0desc);
-                    intersectionSegs[end1ind].set(end1angle, end1desc);
+                    //console.log(ellipseSeg)
+                    //}
                 }
+
+
             }
         }
 
         if (renderRegions) {
-            let segmentArcs = new Map(); // segment: the next segment in the region
-
             for (let i = 0; i < intersectionArr.length; i++) {
                 let intersection = intersectionArr[i];
-                if (!(intersection[0] > -1 - THRESHOLD && intersection[1] > -1 - THRESHOLD)) continue;
+                if (!(intersection[0] > lowerRightX - THRESHOLD && intersection[1] > lowerRightY - THRESHOLD)) continue;
                 if (!(intersection[0] < 1 + THRESHOLD && intersection[1] < 1 + THRESHOLD)) continue;
-                let nodeHoverable = document.createElementNS(svgns, 'circle'); // https://stackoverflow.com/a/12786915
-                nodeHoverable.setAttributeNS(null, 'cx', intersection[0]);
-                nodeHoverable.setAttributeNS(null, 'cy', intersection[1]);
+
+                let nodeHoverable = document.createElementNS(svgns, 'path'); // https://stackoverflow.com/a/12786915
+                let dr = 0.015;
+                nodeHoverable.setAttributeNS(null, 'd', `m ${intersection[0] * phaseBakedScale - dr} ${intersection[1] * phaseBakedScale} a ${dr} ${dr} 0 1 0 ${2 * dr} 0 a ${dr} ${dr} 0 1 0 ${-2 * dr} 0`);
                 nodeHoverable.dataset.centerX = intersection[0];
                 nodeHoverable.dataset.centerY = intersection[1];
-                nodeHoverable.setAttributeNS(null, 'r', 0.03);
+                nodeHoverable.dataset.isActuallyACircle = 1;
+                nodeHoverable.toast = (shift) => `(${shift ? intersection[0] : acosDegrees(intersection[0])}, ${shift ? intersection[1] : acosDegrees(intersection[1])})`;
                 nodeHoverable.classList.add('phase-domain-hoverable', 'phase-node-hoverable');
-                phaseNodeG.appendChild(nodeHoverable);
+                phaseBoundaryG.appendChild(nodeHoverable);
 
-                // assemble segments into arcs (chain of segment-end-segment that forms part of a region)
-                let segAngles = Array.from(intersectionSegs[i].keys()).sort((a, b) => a - b);
-                segAngles.push(segAngles[0]);
-                //if (i===0) console.log(intersectionSegs[i],segAngles,i);
-                for (let j = 0; j < segAngles.length - 1; j++) {
-                    let segPrev = intersectionSegs[i].get(segAngles[j]);
-                    let segNext = intersectionSegs[i].get(segAngles[j + 1]);
-                    let angDiff = segAngles[j + 1] - segAngles[j];
-                    //if (intersection[0]===1&&intersection[1]===0) console.log('n',segPrev);
-                    //if (segPrev[0][3][0]===1&&segPrev[0][3][1]===0) console.log('o',segPrev[0]);
-                    //if (i===0) console.log('aaaaaa',segNext,segAngles)
-                    // if it's greater than pi then it's on the outside of the box and should not become a region
-                    // THIS MIGHT BE WRONG if the ellipses are off center
-                    //console.log(angDiff, intersection, angDiff > Math.PI-THRESHOLD || (angDiff < 0 && angDiff > -Math.PI+THRESHOLD))
-                    ////if (angDiff > Math.PI-THRESHOLD || (angDiff < 0 && angDiff > -Math.PI+THRESHOLD)) continue;
-                    //console.assert(!segmentArcs.has(segPrev[0]));
-                    segmentArcs.set(segPrev[0], [segNext, angDiff > Math.PI - THRESHOLD || (angDiff < 0 && angDiff > -Math.PI + THRESHOLD)]); // segPrev[0] is its opposite segment
-                }
-            }
-
-            while (segmentArcs.size) {
-                let [firstSeg, [curSeg, big]] = segmentArcs.entries().next().value;
-                //let [firstSeg, curSeg] = Array.from(segmentArcs.entries())[1];
-                segmentArcs.delete(firstSeg);
-                //let regionSegments = [firstSeg];
-                let path = `M ${firstSeg[3][0][0]} ${firstSeg[3][0][1]} ${firstSeg[2]} `;
-                let vertices = firstSeg[3];
-                while (curSeg !== firstSeg) {
-                    //regionSegments.push(curSeg);
-                    //console.log(curSeg)
-                    path += curSeg[2] + ' ';
-                    vertices.push(...curSeg[3]);
-                    let [curSegNew, bigNew] = segmentArcs.get(curSeg);
-                    //console.log(curSeg,curSegNew)
-                    segmentArcs.delete(curSeg);
-                    curSeg = curSegNew;
-                    big ||= bigNew; // don't need this
-                } //;break;
-
-                /*let bigReal = true; // whether or not it spends all its time on the outside
-                for (let vert of vertices){
-                    if (vert[0] > lowerRightX+THRESHOLD && vert[0] < 1-THRESHOLD && vert[1] > lowerRightY+THRESHOLD && vert[1] < 1-THRESHOLD){
-                        bigReal = false;
-                        break;
-                    }
-                }*/
-                let corners = new FloatSet(2)
-                    .add([1, 1])
-                    .add([-1, 1])
-                    .add([-1, -1])
-                    .add([1, -1]);
-                for (let vert of vertices) {
-                    corners.delete(vert);
-                }
-                let bigReal = corners.size == 0;
-
-                // draw the guy
-                if (!bigReal) { //(!big){
-                    path += 'Z';
-                    let region = document.createElementNS(svgns, 'path'); // https://stackoverflow.com/a/12786915
-                    region.setAttributeNS(null, 'd', path);
-                    region.classList.add('phase-domain-hoverable', 'phase-region-hoverable', 'phase-clip');
-                    //let [midpointX, midpointY] = [0,1].map(i => vertices.reduce((x,y)=>x+y[i], 0)/vertices.length);
-                    let [midpointX, midpointY] = polylabel([vertices], 0.001);
-                    region.dataset.centerX = midpointX; // edit these maybe
-                    region.dataset.centerY = midpointY;
-                    phaseRegionG.appendChild(region);
-                }
-
-                //break; //debug
+                // I hate you.
+                // let nodeHoverable = document.createElementNS(svgns, 'circle'); // https://stackoverflow.com/a/12786915
+                // nodeHoverable.setAttributeNS(null, 'cx', intersection[0] * phaseBakedScale);
+                // nodeHoverable.setAttributeNS(null, 'cy', intersection[1] * phaseBakedScale);
+                // nodeHoverable.dataset.centerX = intersection[0];
+                // nodeHoverable.dataset.centerY = intersection[1];
+                // nodeHoverable.setAttributeNS(null, 'r', 0.015 * phaseBakedScale);
+                // nodeHoverable.classList.add('phase-domain-hoverable', 'phase-node-hoverable');
+                // phaseBoundaryG.appendChild(nodeHoverable);
             }
         }
     }
 
-    document.addEventListener('click', (e) => {
-        const target = e.target;
-
-        if (target.classList.contains('phase-domain-hoverable')) {
-            let toast = "";
-
-            const format = (v) => e.shiftKey ? v : acosDegrees(v);
-
-            const getAttr = (name) => parseFloat(target.getAttribute(name)) || 0;
-
-            switch (target.tagName.toLowerCase()) {
-                case 'rect':
-                    const rx1 = getAttr('x');
-                    const rx2 = rx1 + getAttr('width');
-
-                    toast = `${format(rx1)}, ${format(rx2)}`;
-                    break;
-
-                case 'line':
-                    if (is2D) {
-                        toast = `(${format(getAttr('x1'))}, ${format(getAttr('y1'))}), (${format(getAttr('x2'))}, ${format(getAttr('y2'))})`;
-                    } else {
-                        toast = `${format(getAttr('x1'))}`;
-                    }
-                    break;
-
-                case 'path':
-                    const d = target.getAttribute('d') || '';
-
-                    const sections = d.match(/[a-zA-Z][^a-zA-Z]*/g) || [];
-
-                    const points = [];
-
-                    for (const section of sections) {
-                        const nums = section.match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi)?.map(Number);
-
-                        if (nums && nums.length >= 2) {
-                            const x = nums[nums.length - 2];
-                            const y = nums[nums.length - 1];
-
-                            points.push(`(${format(x)}, ${format(y)})`);
-                        }
-                    }
-
-                    if (points.length > 1 && points[0] === points[points.length - 1]) {
-                        points.pop();
-                    }
-
-                    toast = points.join(', ');
-                    break;
-
-                case 'circle':
-                    toast = `(${format(getAttr('cx'))}, ${format(getAttr('cy'))})`;
-                    break;
-            }
-
-            if (toast) {
-                showToast(toast);
-            }
-        }
-    });
-
     let phaseBackClipRect = document.getElementById('phase-back-clip-rect');
     //console.log(phaseBackClone, phaseBackClone.getAttributeNS(null, 'width'))
-    phaseBackClipRect.setAttributeNS(null, 'x', parseFloat(phaseBack.getAttributeNS(null, 'x')) - 0.0035);
-    phaseBackClipRect.setAttributeNS(null, 'y', parseFloat(phaseBack.getAttributeNS(null, 'y')) - 0.0035);
-    phaseBackClipRect.setAttributeNS(null, 'width', parseFloat(phaseBack.getAttributeNS(null, 'width')) + 0.007);
-    phaseBackClipRect.setAttributeNS(null, 'height', parseFloat(phaseBack.getAttributeNS(null, 'height')) + 0.007);
+    phaseBackClipRect.setAttributeNS(null, 'x', (parseFloat(phaseBack.getAttributeNS(null, 'x')) - 0.0035 * phaseBakedScale));
+    phaseBackClipRect.setAttributeNS(null, 'y', (parseFloat(phaseBack.getAttributeNS(null, 'y')) - 0.0035 * phaseBakedScale));
+    phaseBackClipRect.setAttributeNS(null, 'width', (parseFloat(phaseBack.getAttributeNS(null, 'width')) + 0.007 * phaseBakedScale));
+    phaseBackClipRect.setAttributeNS(null, 'height', (parseFloat(phaseBack.getAttributeNS(null, 'height')) + 0.007 * phaseBakedScale));
     /*while (phaseBackClip.lastChild){
         phaseBackClip.removeChild(phaseBackClip.lastChild);
     }*/
     let phaseBackClipOriginRect = document.getElementById('phase-back-clip-origin-rect');
     //console.log(phaseBackClone, phaseBackClone.getAttributeNS(null, 'width'))
-    phaseBackClipOriginRect.setAttributeNS(null, 'x', parseFloat(phaseBack.getAttributeNS(null, 'x')) - 0.0035);
-    phaseBackClipOriginRect.setAttributeNS(null, 'y', parseFloat(phaseBack.getAttributeNS(null, 'y')) - 0.0035);
-    phaseBackClipOriginRect.setAttributeNS(null, 'width', parseFloat(phaseBack.getAttributeNS(null, 'width')) + 1);
-    phaseBackClipOriginRect.setAttributeNS(null, 'height', parseFloat(phaseBack.getAttributeNS(null, 'height')) + 1);
+    phaseBackClipOriginRect.setAttributeNS(null, 'x', (parseFloat(phaseBack.getAttributeNS(null, 'x')) - 0.0035 * phaseBakedScale));
+    phaseBackClipOriginRect.setAttributeNS(null, 'y', (parseFloat(phaseBack.getAttributeNS(null, 'y')) - 0.0035 * phaseBakedScale));
+    phaseBackClipOriginRect.setAttributeNS(null, 'width', (parseFloat(phaseBack.getAttributeNS(null, 'width')) + phaseBakedScale));
+    phaseBackClipOriginRect.setAttributeNS(null, 'height', (parseFloat(phaseBack.getAttributeNS(null, 'height')) + phaseBakedScale));
     setPhaseSlider();
 }
 
@@ -1898,5 +2000,6 @@ function hidePhaseDiagram() {
     } else {
         delete document.getElementById('phase-create').dataset.disabled
     }
-    singleSetTranslationHTML(document.getElementById('phase-create'))
+    singleSetTranslationHTML(document.getElementById('phase-create'));
+    phaseCamera = new Viewport(phaseDiagram, phaseG, phaseBakedScale);
 }
