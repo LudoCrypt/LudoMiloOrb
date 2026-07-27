@@ -1443,7 +1443,7 @@ addSystem({
 });
 
 addSystem({
-    name: 'pseudo_deltoidal_icositetrahedron',
+    name: 'deltoidal_icositetrahedron',
     paramsRequired: ['arbitraryConstant10'],
     getAxes: function(params) {
         let x = parseFloat(params.arbitraryConstant10 ?? 45) * 0.5;
@@ -1545,7 +1545,7 @@ const langs = {
         'system.pyrito_edges_variable': 'Pyritohedron Edges',
         'system.tetartoid_variable': 'Tetartoid Faces',
         'system.tetartoid_vertices_variable': 'Tetartoid Vertices',
-        'system.pseudo_deltoidal_icositetrahedron': 'Pseudo-Deltoidal Icositetrahedron',
+        'system.deltoidal_icositetrahedron': 'Deltoidal Icositetrahedron',
         'system.variable_normal': 'Custom Normal',
 
         'other.create_phase_diagram.good': 'Create phase diagram',
