@@ -362,6 +362,20 @@ img {
     pointer-events: none;
 }
 
+#phase-diagram-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+    pointer-events: auto;
+    position: absolute;
+    transform: translateY(50%);
+    top: 12%;
+    left: 10%;
+    right: 10%;
+    height: 74px;
+}
+
 #phase-create {
     pointer-events: auto;
 }
@@ -370,10 +384,10 @@ img {
 #phase-create { /* https://stackoverflow.com/a/22218694 */
     display: flex;
     position: absolute;
-    top: 50%;
+    top: 12%;
     left: 10%;
     right: 10%;
-    height: 74px;
+    height: 64px;
     text-align: center;
     transform: translateY(-50%);
 }
@@ -394,8 +408,8 @@ img {
 }
 
 .phase-domain-hoverable {
-    fill: #f00000;
-    stroke: #f00000;
+/*    fill: #f00000;
+    stroke: #f00000;*/
     opacity: 0;
 }
 
@@ -648,7 +662,3 @@ img {
 #hidden, .hidden:not(#_) { /* _ is a dummy id */
     display: none;
 }
-
-
-
-

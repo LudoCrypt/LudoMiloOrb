@@ -36,7 +36,10 @@
 
     <div id='phase-panel'>
         <div id='phase-controls'>
-            <div id='phase-create' class='translate gray-button' data-translate='other.create_phase_diagram.good'>
+            <div id='phase-create' class='translate gray-button' data-translate='other.create_phase_diagram.good'></div>
+            <div id='phase-diagram-controls'>
+                <label class="phase-tick-button"><input type="checkbox" id="tangent-lines" checked>Tangent Lines</label>
+                <label class="phase-tick-button"><input type="checkbox" id="coincident-lines" checked>Coincident Lines</label>
             </div>
         </div>
         <svg id='phase-diagram' class='hidden'>
