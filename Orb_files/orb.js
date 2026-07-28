@@ -728,10 +728,12 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, color = colorCho
         });
 
         document.getElementById("tangent-lines").addEventListener("change", e => {
+            if (document.getElementById('phase-create').dataset.disabled !== undefined) return;
             showTangents = e.target.checked;
             drawPhasePlot();
         });
         document.getElementById("coincident-lines").addEventListener("change", e => {
+            if (document.getElementById('phase-create').dataset.disabled !== undefined) return;
             showTriples = e.target.checked;
             drawPhasePlot();
         });
@@ -2111,8 +2113,7 @@ function hidePhaseDiagram() {
     let axisCounts = countAxes();
     let tooManySliders = axisCounts.length > 2;
     let tooFewSliders = axisCounts.length < 1;
-    //let tooManyAxes = axisCounts.reduce((a, b) => a + b, 0) > 60;
-    let tooManyAxes = false;
+    let tooManyAxes = axisCounts.reduce((a, b) => a + b, 0) > 60;
     document.getElementById('phase-create').dataset.translate =
         tooManySliders ? 'other.create_phase_diagram.too_many_sliders' :
         tooFewSliders ? 'other.create_phase_diagram.too_few_sliders' :
