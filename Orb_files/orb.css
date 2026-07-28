@@ -283,6 +283,22 @@ img {
     width: auto;
     height: 20px;
 }
+.ghost-button {
+    width: auto;
+    height: 20px;
+}
+.view-button {
+    width: auto;
+    height: 20px;
+}
+.copy-button {
+    width: auto;
+    height: 20px;
+}
+.remove-button {
+    width: auto;
+    height: 20px;
+}
 
 .ghost-slider .slider-add {
     display: inline-block;

@@ -336,11 +336,6 @@ function initialize() {
         document.getElementById('color-group').insertAdjacentHTML('beforeend', colorChoiceDivTemplate(color));
         let colorChoiceDiv = document.getElementById('color-group').lastChild;
         colorChoiceDiv.addEventListener('click', function() { // assuming colorChangeDiv is active
-            /*targetOfChangeDiv.closest('.slider-unit').dataset.color = color;
-            targetOfChangeDiv.style.backgroundColor = color;
-            let sliderThumbs = Array.from(targetOfChangeDiv.closest('.slider-unit').getElementsByClassName('slider-thumb'));
-            sliderThumbs.forEach(thumb => thumb.style.backgroundColor = color);
-            if (closeChangeDivsOnSelect) removeChangeDivs();*/
             setSliderColor(targetOfChangeDiv, color, true);
             drawPuzzle();
         });
@@ -513,6 +508,9 @@ function drawPuzzle() {
             if (sliderUnit.classList.contains('ghost-slider')) continue;
             let depth = sliderUnit.dataset.depth;
             let color = sliderUnit.dataset.color;
+
+            if (sliderUnit.getElementsByClassName('view-button')[0].dataset.isOn === "0") color = "#00000000";
+
             for (let axis of systemAxes) {
                 drawCircleOnSphere(axis, depth, color);
             }
@@ -636,9 +634,16 @@ function createSystemUnit(ghost = false, system = 'cube', params = [], systemDep
 }
 
 
-function createSliderUnit(systemUnit, ghost = false, depth = 1, color = colorChoices[0]) {
-    let sliderUnit = document.getElementById('template-slider-unit').cloneNode(true);
-    sliderUnit.removeAttribute('id');
+function createSliderUnit(systemUnit, ghost = false, depth = 1, color = colorChoices[0], clonedSliderUnit = null) {
+
+    var sliderUnit;
+    if (clonedSliderUnit === null) {
+        sliderUnit = document.getElementById('template-slider-unit').cloneNode(true);
+        sliderUnit.removeAttribute('id');
+    } else {
+        sliderUnit = clonedSliderUnit;
+    }
+
     let sliderGroup = systemUnit.getElementsByClassName('slider-group')[0];
     if (ghost) {
         sliderUnit.classList.add('ghost-slider');
@@ -647,7 +652,7 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, color = colorCho
         })
         sliderGroup.appendChild(sliderUnit);
     } else {
-        sliderGroup.insertBefore(sliderUnit, sliderGroup.lastChild);
+        if (clonedSliderUnit === null) sliderGroup.insertBefore(sliderUnit, sliderGroup.lastChild);
         updateWrongSign(sliderUnit);
 
 
@@ -733,7 +738,53 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, color = colorCho
                 pinButton.dataset.isOn = 1;
                 pinButton.src = './icons/pin_on.svg';
             }
-            hidePhaseDiagram();
+            hidePhaseDiagram(false);
+            createPhasePlot();
+        });
+
+        let ghostButton = sliderUnit.getElementsByClassName('ghost-button')[0];
+        ghostButton.addEventListener('click', function() {
+            if (ghostButton.dataset.isOn === "1") {
+                ghostButton.dataset.isOn = 0;
+                ghostButton.src = './icons/ghost_off.svg';
+                sliderUnit.dataset.color = sliderUnit.dataset.color.slice(0, 7);
+                setSliderColor(colorButton, sliderUnit.dataset.color, true);
+            } else {
+                ghostButton.dataset.isOn = 1;
+                ghostButton.src = './icons/ghost_on.svg';
+                sliderUnit.dataset.color = sliderUnit.dataset.color.slice(0, 7) + "5a";
+                setSliderColor(colorButton, sliderUnit.dataset.color, true);
+            }
+            hidePhaseDiagram(false);
+            createPhasePlot();
+            drawPuzzle();
+        });
+
+        let viewButton = sliderUnit.getElementsByClassName('view-button')[0];
+        viewButton.addEventListener('click', function() {
+            if (viewButton.dataset.isOn === "1") {
+                viewButton.dataset.isOn = 0;
+                viewButton.src = './icons/view_off.svg';
+                viewButton.title = "Show Slider";
+            } else {
+                viewButton.dataset.isOn = 1;
+                viewButton.src = './icons/view_on.svg';
+                viewButton.title = "Hide Slider";
+            }
+            drawPuzzle();
+        });
+
+        let copyButton = sliderUnit.getElementsByClassName('copy-button')[0];
+        copyButton.addEventListener('click', function() {
+            let cloneUnit = sliderUnit.cloneNode(true);
+            cloneUnit.removeAttribute('id');
+            sliderGroup.insertBefore(cloneUnit, sliderUnit.nextSibling);
+            createSliderUnit(systemUnit, false, sliderInput.value, color, cloneUnit);
+        });
+
+        let removeButton = sliderUnit.getElementsByClassName('remove-button')[0];
+        removeButton.addEventListener('click', function() {
+            removeSlider(sliderUnit);
         });
 
         setSlider(sliderThumb, depth);
@@ -1122,8 +1173,9 @@ function countAxes() {
         for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children) {
             if (sliderUnit.classList.contains('ghost-slider')) continue;
 
-            // Skip the slider if its pinned
+            // Skip the slider if its pinned or ghosted
             if (sliderUnit.getElementsByClassName('pin-button')[0].dataset.isOn === "1") continue;
+            if (sliderUnit.getElementsByClassName('ghost-button')[0].dataset.isOn === "1") continue;
 
             systemUnits.push(systemUnit);
         }
@@ -1409,6 +1461,9 @@ var tripleColor = "#008fa5";
 var tangentColor = "#d27b00";
 
 function createPhasePlot() {
+
+    if (document.getElementById('phase-create').dataset.disabled) return;
+
     let systemUnits = [];
     slidersInPhase = [];
 
@@ -1423,6 +1478,7 @@ function createPhasePlot() {
         if (systemUnit.classList.contains('ghost-system')) continue;
         for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children) {
             if (sliderUnit.classList.contains('ghost-slider')) continue;
+            if (sliderUnit.getElementsByClassName('ghost-button')[0].dataset.isOn === "1") continue;
 
             if (sliderUnit.getElementsByClassName('pin-button')[0].dataset.isOn === "1") {
                 pinnedSliderIndices.push(allSliders.length);
@@ -2086,7 +2142,7 @@ function phaseMouseToPoint(e) {
 }
 
 
-function hidePhaseDiagram() {
+function hidePhaseDiagram(resetCamera = true) {
     phaseDiagram.classList.add('hidden');
     let axisCounts = countAxes();
     let tooManySliders = axisCounts.length > 2;
@@ -2103,5 +2159,5 @@ function hidePhaseDiagram() {
         delete document.getElementById('phase-create').dataset.disabled
     }
     singleSetTranslationHTML(document.getElementById('phase-create'));
-    phaseCamera = new Viewport(phaseDiagram, phaseG, phaseBakedScale);
+    if (resetCamera) phaseCamera = new Viewport(phaseDiagram, phaseG, phaseBakedScale);
 }
