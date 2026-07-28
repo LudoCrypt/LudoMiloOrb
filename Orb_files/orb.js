@@ -310,31 +310,9 @@ function initialize() {
         for (let systemName of systemNames) {
             systemCategoryDiv.insertAdjacentHTML('beforeend', systemOptionDivTemplate(systemName));
             let systemOptionDiv = systemCategoryDiv.lastChild;
-            systemOptionDiv.addEventListener('click', function() { // assuming systemChangeDiv is active
-                setSystem(targetOfChangeDiv, systemName, true);
-                /*let systemUnit = targetOfChangeDiv.closest('.system-unit');
-                systemUnit.dataset.system = systemName;
-                systemUnit.dataset.jumbleConfig = listjumbleConfigsFromSystemUnit(systemUnit)[0];
-                systemUnit.dataset.order = 5;
-                //systemUnit.getElementsByClassName('system-params')[0].innerHTML = systemUnit.dataset.jumbleConfig;
-                setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
-
-                /*if (!getOppositesFromSystemUnit(systemUnit)){
-                    systemUnit.classList.add('no-opposites')
-                } else {
-                    systemUnit.classList.remove('no-opposites')
-                }* /
-                updateSystemOpposite(systemUnit);
-                /*if (sliderPanel.getElementsByClassName('no-opposites').length){
-                    //console.log(sliderPanel.getElementsByClassName('no-opposites'));
-                    controlPanel.classList.add('full-depth');
-                } else {
-                    controlPanel.classList.remove('full-depth');
-                }* /
-                targetOfChangeDiv.src = systemData[systemName].getIcon(); // change this to an image
-                targetOfChangeDiv.dataset.altTranslate = systemName;
-                hidePhaseDiagram();
-                if (closeChangeDivsOnSelect) removeChangeDivs();*/
+            systemOptionDiv.addEventListener('click', function(e) { // assuming systemChangeDiv is active
+                // I dont like this fix but meh
+                if (window.getSelection().toString().length == 0 && !e.altKey) setSystem(targetOfChangeDiv, systemName, true);
                 drawPuzzle();
             });
         }
