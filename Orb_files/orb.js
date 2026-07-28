@@ -2111,7 +2111,8 @@ function hidePhaseDiagram() {
     let axisCounts = countAxes();
     let tooManySliders = axisCounts.length > 2;
     let tooFewSliders = axisCounts.length < 1;
-    let tooManyAxes = axisCounts.reduce((a, b) => a + b, 0) > 60;
+    //let tooManyAxes = axisCounts.reduce((a, b) => a + b, 0) > 60;
+    let tooManyAxes = false;
     document.getElementById('phase-create').dataset.translate =
         tooManySliders ? 'other.create_phase_diagram.too_many_sliders' :
         tooFewSliders ? 'other.create_phase_diagram.too_few_sliders' :
