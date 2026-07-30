@@ -1260,7 +1260,7 @@ function systemPhaseLines(systemUnits) {
                     } else if (s0 === 1 && s1 === 1) {
                         lineEqnsTangent.add([0, tangencyCoeff, 1, 0]).add([0, -tangencyCoeff, 1, 0]);
                     } else {
-                        let det = 1 - axis0.dot(axis1) ** 2;
+                        let det = 1 - dot ** 2;
                         ellipseMatsTangent.add([1 / det, -dot / det, 1 / det]);
                     }
 
@@ -1398,18 +1398,13 @@ function pinnedSystemPhaseLines(s0unit, s1unit, s1slider, s2unit, s2slider) {
         for (let i1 = 0; i1 < systemsAxes[1].length; i1++) {
             let axis1 = systemsAxes[1][i1];
 
-            let dot01 = axis0.dot(axis1);
-
             for (let i2 = 0; i2 < systemsAxes[2].length; i2++) {
                 let axis2 = systemsAxes[2][i2];
 
-                let dot02 = axis2.dot(axis0);
                 let dot12 = axis2.dot(axis1);
 
                 let q = (1 - dot12 * dot12);
                 let pc = (axis1.multiply((s1value - s2value * dot12) / q)).add(axis2.multiply((s2value - s1value * dot12) / q));
-
-                let detAxes = axis0.dot(axis1.cross(axis2));
 
                 let a = axis0.dot(pc);
                 let b = axis0.dot(axis1.cross(axis2).unit()) * Math.sqrt((1 - pc.dot(pc)));
