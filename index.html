@@ -3,10 +3,12 @@
 <head>
     <meta charset='UTF-8'>
     <title>Orb</title>
-    <script>const require=()=>TinyQueue;module={};</script> <!--ultimate hack-->
+    <script type="module">
+        import quartic from "./Orb_files/quartic.js";
+        window.quartic = quartic;
+    </script>
     <script src="./Orb_files/quaternion.js" crossorigin=""></script>
-    <script src="./Orb_files/tinyqueue.js" crossorigin=""></script>
-    <script src="./Orb_files/polylabel.js" crossorigin=""></script>
+    <script type="text/javascript" src="./Orb_files/quartic.js"></script>
     <script type="text/javascript" src="./Orb_files/vector.js"></script>
     <script type="text/javascript" src="./Orb_files/floatset.js"></script>
     <script type="text/javascript" src="./Orb_files/orb_data.js"></script>

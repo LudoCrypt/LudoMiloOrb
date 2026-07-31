@@ -15,7 +15,7 @@ fix center of regions in phase diagram √
 fix slider moving off of phase diagram √
 look at point (<- i have no idea what this means)
 
-lock sliders for phase diagrams (2D edition) ((hard (scary)))
+lock sliders for phase diagrams (2D edition) ((hard (scary))) √
 constrain sliders to interact with other sliders (probably unecessary)
 
 if you're reading this take this all with a grain of salt
@@ -1219,8 +1219,8 @@ function systemPhaseLines(systemUnits) {
 
     // assuming 1 or 2 systems, no fixed systems
     let axSetsSeen = new Set();
-    let ellipseMatsTangent = new FloatSet(3);
-    let ellipseMatsTriple = new FloatSet(3);
+    let ellipseMatsTangent = new FloatSet(5);
+    let ellipseMatsTriple = new FloatSet(5);
     // format: [a0, a1, a2] => a0 x^2 + 2 a1 x y + a2 y^2 = 1
     let lineEqnsTangent = new FloatSet(4);
     let lineEqnsTriple = new FloatSet(4);
@@ -1261,7 +1261,7 @@ function systemPhaseLines(systemUnits) {
                         lineEqnsTangent.add([0, tangencyCoeff, 1, 0]).add([0, -tangencyCoeff, 1, 0]);
                     } else {
                         let det = 1 - dot ** 2;
-                        ellipseMatsTangent.add([1 / det, -dot / det, 1 / det]);
+                        ellipseMatsTangent.add([1 / det, -dot / det, 1 / det, 0, 0]);
                     }
 
                     for (let s2 = 0; s2 < systemUnits.length; s2++) {
@@ -1319,7 +1319,7 @@ function systemPhaseLines(systemUnits) {
                             } else {
                                 let invAxes = [axis1.cross(axis2).divide(detAxes), axis2.cross(axis0).divide(detAxes), axis0.cross(axis1).divide(detAxes)]; // inverse of matrix formed by axes
                                 // the ellipsoid if all three axes had different ellipseMats
-                                let tripleCoeffs = [0, 0, 0]; // inverse square root
+                                let tripleCoeffs = [0, 0, 0, 0, 0]; // inverse square root
                                 for (let k1 = 0; k1 < 3; k1++) {
                                     for (let k2 = 0; k2 < 3; k2++) {
                                         if (sarr[k1] === 0) {
@@ -1418,6 +1418,152 @@ function pinnedSystemPhaseLines(s0unit, s1unit, s1slider, s2unit, s2slider) {
     return points;
 }
 
+function pinned2DSystemPhaseLines(s0unit, s0slider, s1unit, s2unit) {
+    let systemsAxes = [];
+    let symmetry = -1;
+    for (let systemUnit of [s0unit, s1unit, s2unit]) {
+        systemsAxes.push(getAxesFromSystemUnit(systemUnit));
+        symmetry &= systemData[systemUnit.dataset.system].symmetries;
+    }
+
+    // NOT assuming there is only one system :)
+    let systemReducedAxes;
+    let systemReducedAxesLen = Infinity;
+    for (let bit of allBits(symmetry)) {
+        for (let i = 0; i < 3; i++) {
+            let systemReducedAxesL = [];
+
+            systemReducedAxesL.push(getSymAxesFromSystemUnit(s0unit, bit));
+            systemReducedAxesL.push(getSymAxesFromSystemUnit(s1unit, bit));
+            systemReducedAxesL.push(getSymAxesFromSystemUnit(s2unit, bit));
+
+            if (systemReducedAxesL.flat().length < systemReducedAxesLen) {
+                systemReducedAxes = systemReducedAxesL;
+                systemReducedAxesLen = systemReducedAxesL.flat().length;
+            }
+        }
+    }
+
+    let ellipseMats = new FloatSet(5);
+
+    let s0value = parseFloat(s0slider.getElementsByClassName('slider-input')[0].value);
+
+    for (let i0 of systemReducedAxes[0]) {
+        let axis0 = systemsAxes[0][i0];
+
+        for (let i1 = 0; i1 < systemsAxes[1].length; i1++) {
+            let axis1 = systemsAxes[1][i1];
+
+            for (let i2 = 0; i2 < systemsAxes[2].length; i2++) {
+                let axis2 = systemsAxes[2][i2];
+
+                let dot01 = axis0.dot(axis1);
+                let dot02 = axis0.dot(axis2);
+                let dot12 = axis1.dot(axis2);
+
+                let detAxes = axis0.dot(axis1.cross(axis2));
+
+                if (Math.abs(detAxes) < THRESHOLD) {
+
+                } else {
+                    let invAxes = [
+                        axis1.cross(axis2).divide(detAxes),
+                        axis2.cross(axis0).divide(detAxes),
+                        axis0.cross(axis1).divide(detAxes)
+                    ];
+
+                    let k = 1 - s0value * s0value;
+
+                    let a0 = invAxes[1].dot(invAxes[1]) / k;
+                    let a1 = invAxes[1].dot(invAxes[2]) / k;
+                    let a2 = invAxes[2].dot(invAxes[2]) / k;
+
+                    ellipseMats.add([a0, a1, a2, dot01 * s0value, dot02 * s0value]);
+                }
+            }
+        }
+    }
+
+    return ellipseMats;
+}
+
+function pinned1DSystemPhaseLines(freeUnit, pinnedUnit, pinnedValue) {
+    let lineEqnsTangent = new FloatSet(1);
+    let lineEqnsTriple = new FloatSet(1);
+
+    let phaseLines = systemPhaseLines([freeUnit, pinnedUnit]);
+
+    // add the regular intersections
+    for (let [p0, p1, c, s] of phaseLines.lineEqnsTangent) {
+        if (Math.abs(c + 1) < THRESHOLD && Math.abs(s) < THRESHOLD) {
+            lineEqnsTangent.add([p0]);
+        } else if (Math.abs(c - 1) < THRESHOLD && Math.abs(s) < THRESHOLD) {
+            continue;
+        } else {
+            let x = intersectLinesPinned(p0, p1, c, s, pinnedValue);
+            if (x !== null && x >= 0 && x <= 1) lineEqnsTangent.add([x]);
+        }
+    }
+
+    for (let [p0, p1, c, s] of phaseLines.lineEqnsTriple) {
+        if (Math.abs(c + 1) < THRESHOLD && Math.abs(s) < THRESHOLD) {
+            lineEqnsTriple.add([p0]);
+        } else if (Math.abs(c - 1) < THRESHOLD && Math.abs(s) < THRESHOLD) {
+            continue;
+        } else {
+            let x = intersectLinesPinned(p0, p1, c, s, pinnedValue);
+            if (x !== null && x >= 0 && x <= 1) lineEqnsTriple.add([x]);
+        }
+    }
+
+    // add the intersections from the scary hidden ones
+    for (let [lineEqn, bounds] of phaseLines.lineClippingRawTriple) {
+        let [p0, p1, c, s] = lineEqn;
+        let x = intersectLinesPinned(p0, p1, c, s, pinnedValue, bounds);
+        if (x !== null) lineEqnsTriple.add([x]);
+    }
+
+    for (let [a0, a1, a2] of phaseLines.ellipseMatsTangent) {
+        let a = a0;
+        let b = 2 * a1 * pinnedValue;
+        let c = a2 * pinnedValue * pinnedValue - 1;
+
+        if (Math.abs(a) < THRESHOLD) {
+            if (Math.abs(b) < THRESHOLD) continue;
+            lineEqnsTangent.add([-c / b]);
+            continue;
+        }
+
+        let d = b * b - 4 * a * c;
+        if (d < -THRESHOLD) continue;
+        let sd = Math.sqrt(Math.max(0, d));
+        lineEqnsTangent.add([(-b + sd) / (2 * a)]);
+        if (sd > THRESHOLD) lineEqnsTangent.add([(-b - sd) / (2 * a)]);
+    }
+
+    for (let [a0, a1, a2] of phaseLines.ellipseMatsTriple) {
+        let a = a0;
+        let b = 2 * a1 * pinnedValue;
+        let c = a2 * pinnedValue * pinnedValue - 1;
+
+        if (Math.abs(a) < THRESHOLD) {
+            if (Math.abs(b) < THRESHOLD) continue;
+            lineEqnsTriple.add([-c / b]);
+            continue;
+        }
+
+        let d = b * b - 4 * a * c;
+        if (d < -THRESHOLD) continue;
+        let sd = Math.sqrt(Math.max(0, d));
+        lineEqnsTriple.add([(-b + sd) / (2 * a)]);
+        if (sd > THRESHOLD) lineEqnsTriple.add([(-b - sd) / (2 * a)]);
+    }
+
+    return {
+        lineEqnsTangent, lineEqnsTriple
+    };
+}
+
 function intersectLinesPinned(p0, p1, c, s, pinnedValue, bounds) {
     let [point, dir, dot, perp] = lineEqnToDot([p0, p1, c, s]);
     let intersection = intersectLines(dot, perp, pinnedValue, [0, 1]);
@@ -1445,8 +1591,6 @@ var linesClippedTriple;
 var lineClippingTriple;
 var lowerRightPhaseX;
 var lowerRightPhaseY;
-var oppositesPhaseX;
-var oppositesPhaseY;
 
 var showTriples = true;
 var showTangents = true;
@@ -1492,12 +1636,12 @@ function createPhasePlot() {
     // This should technically be fine from other parts of the code, but just in case.
     if (freeSliderIndices.length === 0) return;
     if (freeSliderIndices.length > 2) return;
-    if (freeSliderIndices.length === 2 && pinnedSliderIndices.length > 0) return;
+    //if (freeSliderIndices.length === 2 && pinnedSliderIndices.length > 0) return;
 
     lowerRightPhaseX = -1;
     lowerRightPhaseY = -1;
 
-    if (freeSliderIndices.length === 2 || pinnedSliderIndices.length === 0) {
+    if (pinnedSliderIndices.length === 0) {
         isPhase2D = freeSliderIndices.length === 2;
         let freeUnits = isPhase2D ? [systemUnits[freeSystemIndices[0]], systemUnits[freeSystemIndices[1]]] : [systemUnits[freeSystemIndices[0]]];
         let phaseLines = systemPhaseLines(freeUnits);
@@ -1523,91 +1667,95 @@ function createPhasePlot() {
 
         if (getOppositesFromSystemUnit(freeUnits[0])) lowerRightPhaseX = 0;
         if (isPhase2D && getOppositesFromSystemUnit(freeUnits[1])) lowerRightPhaseY = 0;
+    } else if (freeSliderIndices.length === 2 && pinnedSliderIndices.length > 0) {
+
+        isPhase2D = true;
+        let freeUnits = [systemUnits[freeSystemIndices[0]], systemUnits[freeSystemIndices[1]]];
+        let phaseLines = systemPhaseLines(freeUnits);
+
+        lineEqnsTangent = phaseLines.lineEqnsTangent;
+        ellipseMatsTangent = phaseLines.ellipseMatsTangent;
+        lineEqnsTriple = phaseLines.lineEqnsTriple;
+        ellipseMatsTriple = phaseLines.ellipseMatsTriple;
+
+        linesClippedTriple = new FloatSet(4);
+        lineClippingTriple = new Map();
+        for (let [lineEqnRaw, lineBounds] of phaseLines.lineClippingRawTriple) {
+            if (!lineEqnsTriple.has(lineEqnRaw)) { // if it has it the bounds are infinite
+                let lineEqn = linesClippedTriple.addWhich(lineEqnRaw);
+                if (!lineClippingTriple.has(lineEqn)) lineClippingTriple.set(lineEqn, [Infinity, -Infinity]);
+                let bounds = lineClippingTriple.get(lineEqn);
+                bounds[0] = Math.min(bounds[0], lineBounds[0]);
+                bounds[1] = Math.max(bounds[1], lineBounds[1]);
+            }
+        }
+
+        for (let lineEqn of linesClippedTriple) lineEqnsTriple.add(lineEqn);
+
+        if (getOppositesFromSystemUnit(freeUnits[0])) lowerRightPhaseX = 0;
+        if (getOppositesFromSystemUnit(freeUnits[1])) lowerRightPhaseY = 0;
+
+        for (let i = 0; i < pinnedSliderIndices.length; i++) {
+            let pinnedUnit = systemUnits[pinnedSystemsIndices[i]];
+            let pinnedValue = parseFloat(allSliders[pinnedSliderIndices[i]].getElementsByClassName('slider-input')[0].value);
+
+            let phaseLines = pinned1DSystemPhaseLines(freeUnits[0], pinnedUnit, pinnedValue);
+
+            for (let x of phaseLines.lineEqnsTangent) {
+                lineEqnsTangent.add([x, 0, -1, 0]);
+            }
+
+            for (let x of phaseLines.lineEqnsTriple) {
+                lineEqnsTriple.add([x, 0, -1, 0]);
+            }
+
+            phaseLines = pinned1DSystemPhaseLines(freeUnits[1], pinnedUnit, pinnedValue);
+
+            for (let x of phaseLines.lineEqnsTangent) {
+                lineEqnsTangent.add([0, x, 1, 0]);
+            }
+
+            for (let x of phaseLines.lineEqnsTriple) {
+                lineEqnsTriple.add([0, x, 1, 0]);
+            }
+
+            for (let ellipse of pinned2DSystemPhaseLines(systemUnits[pinnedSystemsIndices[i]], allSliders[pinnedSliderIndices[i]], systemUnits[freeSystemIndices[0]], systemUnits[freeSystemIndices[1]])) {
+                ellipseMatsTriple.add(ellipse);
+            }
+
+            for (let j = i + 1; j < pinnedSliderIndices.length; j++) {
+                for (let x of pinnedSystemPhaseLines(freeUnits[0], systemUnits[pinnedSliderIndices[i]], allSliders[pinnedSliderIndices[i]], systemUnits[pinnedSliderIndices[j]], allSliders[pinnedSliderIndices[j]])) {
+                    lineEqnsTriple.add([x, 0, -1, 0]);
+                }
+                for (let x of pinnedSystemPhaseLines(freeUnits[1], systemUnits[pinnedSliderIndices[i]], allSliders[pinnedSliderIndices[i]], systemUnits[pinnedSliderIndices[j]], allSliders[pinnedSliderIndices[j]])) {
+                    lineEqnsTriple.add([0, x, 1, 0]);
+                }
+            }
+        }
+
     } else {
         isPhase2D = false;
         let freeUnit = systemUnits[freeSystemIndices[0]];
 
         lineEqnsTangent = new FloatSet(4);
         lineEqnsTriple = new FloatSet(4);
-        //lineEqns.add([1, 0, -1, 0]).add([-1, 0, -1, 0]);
-        //if (getAnyOppositesFromSystemUnit(freeUnit)) lineEqns.add([0, 0, -1, 0]);
+
         if (getOppositesFromSystemUnit(freeUnit)) lowerRightPhaseX = 0;
 
         for (let i = 0; i < pinnedSystemsIndices.length; i++) {
             let pinnedUnit = systemUnits[pinnedSystemsIndices[i]];
             let pinnedValue = parseFloat(allSliders[pinnedSliderIndices[i]].getElementsByClassName('slider-input')[0].value);
 
-            let phaseLines = systemPhaseLines([freeUnit, pinnedUnit]);
+            let phaseLines = pinned1DSystemPhaseLines(freeUnit, pinnedUnit, pinnedValue);
 
-            // add the regular intersections
-            for (let [p0, p1, c, s] of phaseLines.lineEqnsTangent) {
-                if (Math.abs(c + 1) < THRESHOLD && Math.abs(s) < THRESHOLD) {
-                    lineEqnsTangent.add([p0, 0, -1, 0]);
-                } else if (Math.abs(c - 1) < THRESHOLD && Math.abs(s) < THRESHOLD) {
-                    continue;
-                } else {
-                    let x = intersectLinesPinned(p0, p1, c, s, pinnedValue);
-                    if (x !== null && x >= 0 && x <= 1) lineEqnsTangent.add([x, 0, -1, 0]);
-                }
+            for (let x of phaseLines.lineEqnsTangent) {
+                lineEqnsTangent.add([x, 0, -1, 0]);
             }
 
-            for (let [p0, p1, c, s] of phaseLines.lineEqnsTriple) {
-                if (Math.abs(c + 1) < THRESHOLD && Math.abs(s) < THRESHOLD) {
-                    lineEqnsTriple.add([p0, 0, -1, 0]);
-                } else if (Math.abs(c - 1) < THRESHOLD && Math.abs(s) < THRESHOLD) {
-                    continue;
-                } else {
-                    let x = intersectLinesPinned(p0, p1, c, s, pinnedValue);
-                    if (x !== null && x >= 0 && x <= 1) lineEqnsTriple.add([x, 0, -1, 0]);
-                }
+            for (let x of phaseLines.lineEqnsTriple) {
+                lineEqnsTriple.add([x, 0, -1, 0]);
             }
 
-            // add the intersections from the scary hidden ones
-            for (let [lineEqn, bounds] of phaseLines.lineClippingRawTriple) {
-                let [p0, p1, c, s] = lineEqn;
-                let x = intersectLinesPinned(p0, p1, c, s, pinnedValue, bounds);
-                if (x !== null) lineEqnsTriple.add([x, 0, -1, 0]);
-            }
-
-            for (let [a0, a1, a2] of phaseLines.ellipseMatsTangent) {
-                let a = a0;
-                let b = 2 * a1 * pinnedValue;
-                let c = a2 * pinnedValue * pinnedValue - 1;
-
-                if (Math.abs(a) < THRESHOLD) {
-                    if (Math.abs(b) < THRESHOLD) continue;
-                    lineEqnsTangent.add([-c / b, 0, -1, 0]);
-                    continue;
-                }
-
-                let d = b * b - 4 * a * c;
-                if (d < -THRESHOLD) continue;
-                let sd = Math.sqrt(Math.max(0, d));
-                lineEqnsTangent.add([(-b + sd) / (2 * a), 0, -1, 0]);
-                if (sd > THRESHOLD) lineEqnsTangent.add([(-b - sd) / (2 * a), 0, -1, 0]);
-            }
-
-            for (let [a0, a1, a2] of phaseLines.ellipseMatsTriple) {
-                let a = a0;
-                let b = 2 * a1 * pinnedValue;
-                let c = a2 * pinnedValue * pinnedValue - 1;
-
-                if (Math.abs(a) < THRESHOLD) {
-                    if (Math.abs(b) < THRESHOLD) continue;
-                    lineEqnsTriple.add([-c / b, 0, -1, 0]);
-                    continue;
-                }
-
-                let d = b * b - 4 * a * c;
-                if (d < -THRESHOLD) continue;
-                let sd = Math.sqrt(Math.max(0, d));
-                lineEqnsTriple.add([(-b + sd) / (2 * a), 0, -1, 0]);
-                if (sd > THRESHOLD) lineEqnsTriple.add([(-b - sd) / (2 * a), 0, -1, 0]);
-            }
-        }
-
-        // add the triple intersections
-        for (let i = 0; i < pinnedSliderIndices.length; i++) {
             for (let j = i + 1; j < pinnedSliderIndices.length; j++) {
                 for (let x of pinnedSystemPhaseLines(freeUnit, systemUnits[pinnedSliderIndices[i]], allSliders[pinnedSliderIndices[i]], systemUnits[pinnedSliderIndices[j]], allSliders[pinnedSliderIndices[j]])) {
                     lineEqnsTriple.add([x, 0, -1, 0]);
@@ -1616,8 +1764,8 @@ function createPhasePlot() {
         }
     }
 
-    oppositesPhaseX = getAnyOppositesFromSystemUnit(systemUnits[freeSystemIndices[0]]);
-    oppositesPhaseY = isPhase2D ? getAnyOppositesFromSystemUnit(systemUnits[freeSystemIndices[1]]) : false;
+    let oppositesPhaseX = getAnyOppositesFromSystemUnit(systemUnits[freeSystemIndices[0]]);
+    let oppositesPhaseY = isPhase2D ? getAnyOppositesFromSystemUnit(systemUnits[freeSystemIndices[1]]) : false;
 
     lineEqnsTangent.add([oppositesPhaseX ? 0 : -1, 0, -1, 0]);
     lineEqnsTriple.add([oppositesPhaseX ? 0 : -1, 0, -1, 0]);
@@ -1625,8 +1773,8 @@ function createPhasePlot() {
     lineEqnsTangent.add([1, 0, -1, 0]);
     lineEqnsTriple.add([1, 0, -1, 0]);
 
-    if (isPhase2D) lineEqnsTangent.add([0, 1, 1, 1]);
-    if (isPhase2D) lineEqnsTriple.add([0, 1, 1, 1]);
+    if (isPhase2D) lineEqnsTangent.add([0, 1, 1, 0]);
+    if (isPhase2D) lineEqnsTriple.add([0, 1, 1, 0]);
 
     if (isPhase2D) lineEqnsTangent.add([1, oppositesPhaseY ? 0 : -1, 1, 0]);
     if (isPhase2D) lineEqnsTriple.add([1, oppositesPhaseY ? 0 : -1, 1, 0]);
@@ -1651,7 +1799,6 @@ function drawPhasePlot() {
         phaseBack.setAttributeNS(null, 'y', (-phaseDiagramThickness / 2) * phaseBakedScale);
         phaseBack.setAttributeNS(null, 'width', (1 - lowerRightPhaseX) * phaseBakedScale);
         phaseBack.setAttributeNS(null, 'height', (phaseDiagramThickness) * phaseBakedScale);
-
 
         function addPhaseLines(lineEqns, color) {
             let depthsArr = Array.from(lineEqns).map(x => x[0]).filter(x => x >= lowerRightPhaseX - THRESHOLD).sort((a, b) => a - b);
@@ -1785,13 +1932,22 @@ function drawPhasePlot() {
                         }
                     }
                     for (let j = 0; j < ellipseArr.length; j++) { // loop through ellipses
-                        let [a0, a1, a2] = ellipseArr[j];
-                        let [tP, tM] = quadratic(a0 * d0 * d0 + 2 * a1 * d0 * d1 + a2 * d1 * d1, 2 * (a0 * p0 * d0 + a1 * p1 * d0 + a1 * p0 * d1 + a2 * p1 * d1), a0 * p0 * p0 + 2 * a1 * p0 * p1 + a2 * p1 * p1 - 1); // substitute parametric line into ellipse
+                        let [a0, a1, a2, cx, cy] = ellipseArr[j];
+
+                        let rp0 = p0 - cx;
+                        let rp1 = p1 - cy;
+
+                        let [tP, tM] = quadratic(
+                            a0 * d0 * d0 + 2 * a1 * d0 * d1 + a2 * d1 * d1,
+                            2 * (a0 * rp0 * d0 + a1 * rp1 * d0 + a1 * rp0 * d1 + a2 * rp1 * d1),
+                            a0 * rp0 * rp0 + 2 * a1 * rp0 * rp1 + a2 * rp1 * rp1 - 1
+                        ); // substitute parametric line into ellipse
                         if (tP === null) continue;
 
                         for (let t of [tP, tM]) {
                             let intersection = intersections.wouldAddWhich([p0 + t * d0, p1 + t * d1]);
                             if (intersection) {
+
                                 if (intersection[0] * d0 + intersection[1] * d1 > bounds[0] - THRESHOLD && intersection[0] * d0 + intersection[1] * d1 < bounds[1] + THRESHOLD) {
                                     intersections.add(intersection);
 
@@ -1834,39 +1990,12 @@ function drawPhasePlot() {
                 if (!splitShape) {
                     for (let i = 0; i < ellipseArr.length; i++) { // KNOWN ISSUE: tangent ellipses
                         for (let j = 0; j < i; j++) { // loop through ellipses
-                            let [a0, a1, a2] = ellipseArr[i]; // definitely will not have determinant 0
-                            let [b0, b1, b2] = ellipseArr[j]; // definitely will not have determinant 0
+                            let [a0, a1, a2, cx0, cy0] = ellipseArr[i]; // definitely will not have determinant 0
+                            let [b0, b1, b2, cx1, cy1] = ellipseArr[j]; // definitely will not have determinant 0
                             // also they're not the same so discrim is not 0
 
-                            let diffDet = (a0 - b0) * (a2 - b2) - (a1 - b1) ** 2;
-                            if (diffDet > THRESHOLD) continue; // the ellipses do not intersect
-
-                            let ts = quadratic(b0 * b2 - b1 * b1, a2 * b0 - 2 * a1 * b1 + a0 * b2, a0 * a2 - a1 * a1);
-                            // det(A + t B) = 0
-                            if (ts[0] === null) continue;
-                            let lineParams = [] // dot0, perp0, dot1, perp1 
-                            for (let t of ts) {
-                                let [c0, c1, c2] = [a0 + t * b0, a1 + t * b1, a2 + t * b2].map(c => Math.abs(c) < THRESHOLD ? 0 : c); // without the zeroing sometimes you get incorrect negatives below
-                                if (c0 < 0 || c2 < 0) {
-                                    c0 *= -1;
-                                    c1 *= -1;
-                                    c2 *= -1;
-                                }
-                                let [v0, v1] = [Math.sqrt(c0), Math.sqrt(c2)];
-                                if (c1 < 0) v1 *= -1;
-                                let norm = Math.sqrt(v0 ** 2 + v1 ** 2);
-                                lineParams.push(Math.sqrt(Math.abs(1 + t)) / norm, [v0 / norm, v1 / norm]);
-                            }
-
-                            let [dot0, perp0, dot1, perp1] = lineParams;
-
-                            for (let k0 of [1, -1]) {
-                                for (let k1 of [1, -1]) {
-                                    let intersection = intersections.wouldAddWhich(intersectLines(k0 * dot0, perp0, k1 * dot1, perp1));
-                                    if (intersection) {
-                                        intersections.add(intersection);
-                                    }
-                                }
+                            for (let intersection of intersectEllipses(a0, a1, a2, cx0, cy0, b0, b1, b2, cx1, cy1)) {
+                                intersections.add(intersection);
                             }
                         }
                     }
@@ -1954,9 +2083,13 @@ function drawPhasePlot() {
             for (let i = 0; i < ellipseArr.length; i++) { // change for non-centered ellipses
                 let ellipseInts = Array.from(ellipseIntersections[i])
                     .sort((intA, intB) => Math.atan2(intA[1], intA[0]) - Math.atan2(intB[1], intB[0]));
+
+                let fullEllipse = ellipseInts.length <= 1;
+
                 ellipseInts.push(ellipseInts[0]);
 
-                let [a0, a1, a2] = ellipseArr[i]; // definitely will not have determinant 0
+                let [a0, a1, a2, cx, cy] = ellipseArr[i]; // definitely will not have determinant 0
+
                 // solve equation l^2 - (a0+a2)l + (a0 a2-a1^2) = 0 for eigenvalues l
                 let [eigenP, eigenM] = quadratic(1, -a0 - a2, a0 * a2 - a1 * a1); // it will be real
                 let axisX = eigenM ** -0.5;
@@ -1975,32 +2108,38 @@ function drawPhasePlot() {
                 ellipse.setAttributeNS(null, 'cy', 0);
                 ellipse.setAttributeNS(null, 'rx', axisX * phaseBakedScale);
                 ellipse.setAttributeNS(null, 'ry', axisY * phaseBakedScale);
-                ellipse.setAttributeNS(null, 'transform', `rotate(${angle * 180/Math.PI})`);
+                ellipse.setAttributeNS(null, 'transform', `translate(${cx * phaseBakedScale},${cy * phaseBakedScale}),rotate(${angle * 180/Math.PI})`);
                 ellipse.classList.add('phase-boundary', 'phase-boundary-ellipse');
                 ellipseG.appendChild(ellipse);
                 phaseLineG.appendChild(ellipseG);
 
                 if (renderRegions) {
-                    if (!oppositesPhaseX && !oppositesPhaseY) {
-                        let ellipse = document.createElementNS(svgns, 'ellipse'); // https://stackoverflow.com/a/12786915
-                        ellipse.classList.add('phase-domain-hoverable', 'phase-boundary-hoverable');
-                        ellipse.setAttribute("fill", color);
-                        ellipse.setAttribute("stroke", color);
-                        ellipse.setAttributeNS(null, 'cx', 0);
-                        ellipse.setAttributeNS(null, 'cy', 0);
-                        ellipse.setAttributeNS(null, 'rx', axisX * phaseBakedScale);
-                        ellipse.setAttributeNS(null, 'ry', axisY * phaseBakedScale);
-                        ellipse.setAttributeNS(null, 'transform', `rotate(${angle * 180/Math.PI})`);
-                        ellipse.dataset.centerX = 0;
-                        ellipse.dataset.centerY = 0;
-                        ellipse.dataset.isActuallyACircle = 0;
-                        ellipse.toast = (shift) => `a = ${axisX}, b = ${axisY}, θ = ${angle * 180/Math.PI}`;
-                        phaseBoundaryG.appendChild(ellipse);
+                    if (fullEllipse) {
+                        let bottomBound = cx > lowerRightPhaseX - THRESHOLD && cy > lowerRightPhaseY - THRESHOLD;
+                        let topBound = cy < 1 + THRESHOLD && cy < 1 + THRESHOLD;
+
+                        // because this is already known to be a full ellipse (doesnt intersect the boarder) its by definition either fully inside or fully outside
+                        if (bottomBound && topBound) {
+                            let ellipse = document.createElementNS(svgns, 'ellipse'); // https://stackoverflow.com/a/12786915
+                            ellipse.classList.add('phase-domain-hoverable', 'phase-boundary-hoverable');
+                            ellipse.setAttribute("fill", color);
+                            ellipse.setAttribute("stroke", color);
+                            ellipse.setAttributeNS(null, 'cx', 0);
+                            ellipse.setAttributeNS(null, 'cy', 0);
+                            ellipse.setAttributeNS(null, 'rx', axisX * phaseBakedScale);
+                            ellipse.setAttributeNS(null, 'ry', axisY * phaseBakedScale);
+                            ellipse.setAttributeNS(null, 'transform', `translate(${cx * phaseBakedScale},${cy * phaseBakedScale}),rotate(${angle * 180/Math.PI})`);
+                            ellipse.dataset.centerX = cx;
+                            ellipse.dataset.centerY = cy;
+                            ellipse.dataset.isActuallyACircle = 0;
+                            ellipse.toast = (shift) => `${Math.abs(cx) < THRESHOLD && Math.abs(cy) < THRESHOLD ? "" : `cx = ${cx}\ncy = ${cy}\n` }a = ${axisX}\nb = ${axisY}\nθ = ${angle * 180/Math.PI}`;
+                            phaseBoundaryG.appendChild(ellipse);
+                        }
                     }
 
                     for (let j = 0; j < ellipseInts.length - 1; j++) {
                         let [end0, end1] = [ellipseInts[j], ellipseInts[j + 1]];
-                        let angDiff = Math.atan2(end1[1], end1[0]) - Math.atan2(end0[1], end0[0]);
+                        let angDiff = Math.atan2(end1[1] - cy, end1[0] - cx) - Math.atan2(end0[1] - cy, end0[0] - cx);
                         let largeArc = angDiff > Math.PI || (angDiff < 0 && angDiff > -Math.PI);
 
                         let ellipsePath = (ori, end) => `A ${axisX * phaseBakedScale} ${axisY * phaseBakedScale} ${angle * 180/Math.PI} ${+largeArc} ${ori} ${end[0] * phaseBakedScale} ${end[1] * phaseBakedScale}`
@@ -2010,16 +2149,24 @@ function drawPhasePlot() {
                         let topBound0 = end0[0] < 1 + THRESHOLD && end0[1] < 1 + THRESHOLD;
                         let topBound1 = end1[0] < 1 + THRESHOLD && end1[1] < 1 + THRESHOLD;
 
-                        if (bottomBound0 && bottomBound1 && topBound0 && topBound1 && (!oppositesPhaseX ? end0[0] >= 0 : true) && (!oppositesPhaseY ? end0[1] <= 0 : true)) {
+                        let cc = true;
+
+                        if (Math.abs(end0[0]) < THRESHOLD && Math.abs(end1[0]) < THRESHOLD) {
+                            cc = end1[1] > end0[1];
+                        } else if (Math.abs(end0[1]) < THRESHOLD && Math.abs(end1[1]) < THRESHOLD) {
+                            cc = end1[0] < end0[0];
+                        }
+
+                        if (bottomBound0 && bottomBound1 && topBound0 && topBound1 && cc) {
                             let ellipseSeg = document.createElementNS(svgns, 'path'); // https://stackoverflow.com/a/12786915
                             ellipseSeg.setAttributeNS(null, 'd', `M ${end0[0] * phaseBakedScale} ${end0[1] * phaseBakedScale} ` + ellipsePath(1, end1));
                             ellipseSeg.classList.add('phase-domain-hoverable', 'phase-boundary-hoverable');
-                            ellipseSeg.dataset.centerX = 0; // edit these maybe
-                            ellipseSeg.dataset.centerY = 0;
+                            ellipseSeg.dataset.centerX = cx;
+                            ellipseSeg.dataset.centerY = cy;
                             ellipseSeg.dataset.isActuallyACircle = 0;
                             ellipseSeg.setAttribute("fill", color);
                             ellipseSeg.setAttribute("stroke", color);
-                            ellipseSeg.toast = (shift) => `a = ${axisX}, b = ${axisY}, θ = ${angle * 180/Math.PI}`;
+                            ellipseSeg.toast = (shift) => `${Math.abs(cx) < THRESHOLD && Math.abs(cy) < THRESHOLD ? "" : `cx = ${cx}\ncy = ${cy}\n` }a = ${axisX}\nb = ${axisY}\nθ = ${angle * 180/Math.PI}`;
                             phaseBoundaryG.appendChild(ellipseSeg);
                         }
                     }
@@ -2066,9 +2213,8 @@ function drawPhasePlot() {
     setPhaseSlider();
 }
 
-function acosDegrees(value) {
-    const radians = Math.acos(value);
-    return radians * (180 / Math.PI);
+function acosDegrees(x) {
+    return Math.acos(x) * (180.0 / Math.PI);
 }
 
 let toastTimer = null;
@@ -2079,7 +2225,7 @@ function showToast(message) {
     if (!toast) {
         toast = document.createElement('div');
         toast.id = 'copy-toast';
-        toast.style = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:10px 20px; border-radius:5px; z-index:1000; transition: opacity 0.2s ease-in-out;";
+        toast.style = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:10px 20px; border-radius:5px; z-index:1000; transition: opacity 0.2s ease-in-out; white-space: pre-line;";
         document.body.appendChild(toast);
     }
 
@@ -2129,6 +2275,53 @@ function intersectLines(dot0, perp0, dot1, perp1) {
     return intersection;
 }
 
+
+function intersectEllipses(a0, a1, a2, cx1, cy1, b0, b1, b2, cx2, cy2) {
+    const dx = cx1 - cx2;
+    const dy = cy1 - cy2;
+
+    const bb = 2 * (b1 * dx + b2 * dy);
+    const ab = 2 * (b0 * dx + b1 * dy);
+    const abc = b0 * dx * dx + 2 * b1 * dx * dy + b2 * dy * dy - 1;
+    const i1 = a2 * b0 - b2 * a0;
+    const i2 = a2 * ab;
+    const i3 = a2 * abc + b2;
+    const j1 = 2 * a1 * b0 - 2 * b1 * a0;
+    const j2 = 2 * a1 * ab - bb * a0;
+    const j3 = 2 * a1 * abc + 2 * b1;
+    const k1 = a2 * 2 * b1 - b2 * (2 * a1);
+    const k2 = a2 * bb;
+
+    const a = i1 * i1 - k1 * j1;
+    const b = 2 * i1 * i2 - k1 * j2 - k2 * j1;
+    const c = i2 * i2 + 2 * i1 * i3 - k1 * j3 - k2 * j2;
+    const d = 2 * i2 * i3 - k1 * bb - k2 * j3;
+    const e = i3 * i3 - k2 * bb;
+
+    const roots = [];
+
+    for (const z of quartic([a, b, c, d, e])) {
+        if (Math.abs(z.im) < THRESHOLD) {
+            roots.push(z.re);
+        }
+    }
+
+    const points = [];
+
+    for (const x of roots) {
+        for (const y of quadratic(a2, 2 * a1 * x, a0 * x * x - 1)) {
+            if (y !== null) {
+                const ddx = x + dx
+                const ddy = y + dy;
+                if (Math.abs(a0 * x * x + 2 * a1 * x * y + a2 * y * y - 1) < THRESHOLD && Math.abs(b0 * ddx * ddx + 2 * b1 * ddx * ddy + b2 * ddy * ddy - 1) < THRESHOLD) {
+                  points.push([x + cx1, y + cy1]);
+                }
+            }
+        }
+    }
+
+    return points;
+}
 
 function phaseMouseToPoint(e) {
     phasePt.x = e.clientX; // https://stackoverflow.com/a/42711775
