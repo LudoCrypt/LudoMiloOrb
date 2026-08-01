@@ -443,8 +443,6 @@ function initialize() {
         currentLanguage = window.localStorage.getItem('lang') ?? 'en_us';
     } catch (e) {} // not sure if there's a better way to do this
     setTranslationHTML(); // has to be at the bottom!
-
-
 }
 
 function makeCanvasSize() {
@@ -918,7 +916,9 @@ function removeSlider(sliderUnit) {
 }
 
 function updateFullDepth() {
-    controlPanel.classList.toggle('full-depth', (minPhaseX === -1 || (isPhase2D && minPhaseY === -1)));
+    controlPanel.classList.toggle('full-depth',
+        controlPanel.getElementsByClassName('no-opposites').length
+    );
 }
 
 function removeSystem(systemUnit) {
@@ -1679,6 +1679,8 @@ var tangentColor = "#d27b00";
 function createPhasePlot() {
     if (document.getElementById('phase-create').dataset.disabled !== undefined) return;
 
+    updateFullDepth();
+
     let systemUnits = [];
     slidersInPhase = [];
 
@@ -1854,8 +1856,6 @@ function createPhasePlot() {
 
     if (isPhase2D) lineEqnsTangent.add([1, oppositesPhaseY ? 0 : -1, 1, 0]);
     if (isPhase2D) lineEqnsTriple.add([1, oppositesPhaseY ? 0 : -1, 1, 0]);
-
-    updateFullDepth();
 
     renderRegions = false;
     drawPhasePlot();
@@ -2454,4 +2454,5 @@ function hidePhaseDiagram(resetCamera = true) {
     singleSetTranslationHTML(document.getElementById('phase-create'));
     if (resetCamera) phaseCamera = new Viewport(phaseDiagram, phaseG, phaseBakedScale);
     renderRegions = false;
+    updateFullDepth();
 }
