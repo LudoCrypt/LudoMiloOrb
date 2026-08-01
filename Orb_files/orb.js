@@ -2018,15 +2018,14 @@ function drawPhasePlot() {
                             2 * (a0 * rp0 * d0 + a1 * rp1 * d0 + a1 * rp0 * d1 + a2 * rp1 * d1),
                             a0 * rp0 * rp0 + 2 * a1 * rp0 * rp1 + a2 * rp1 * rp1 - 1
                         ); // substitute parametric line into ellipse
+
                         if (tP === null) continue;
 
                         for (let t of [tP, tM]) {
                             let intersection = intersections.wouldAddWhich([p0 + t * d0, p1 + t * d1]);
                             if (intersection) {
-
                                 if (intersection[0] * d0 + intersection[1] * d1 > bounds[0] - THRESHOLD && intersection[0] * d0 + intersection[1] * d1 < bounds[1] + THRESHOLD) {
                                     intersections.add(intersection);
-
                                     if (splitShape) {
                                         let x = intersection[0];
                                         let y = intersection[1];
@@ -2039,23 +2038,30 @@ function drawPhasePlot() {
                                         let hi = Math.abs(perp[0]) < THRESHOLD;
                                         let vi = Math.abs(perp[1]) < THRESHOLD;
 
-                                        let isXBoundary = (bottomBoundX || topBoundX) && vi;
-                                        let isYBoundary = (bottomBoundY || topBoundY) && hi;
+                                        let isXBoundary = bottomBoundX || topBoundX;
+                                        let isYBoundary = bottomBoundY || topBoundY;
 
                                         // If you're on the edge
-                                        if (isXBoundary || isYBoundary) {
-                                            //lineIntersections[i].add(intersection);
-
+                                        if ((isXBoundary && vi) || (isYBoundary && hi)) {
+                                            // gradient at edge
                                             let gx = 2 * a0 * x + 2 * a1 * y;
                                             let gy = 2 * a1 * x + 2 * a2 * y;
 
                                             // If you're at a corner
+                                            // hi and vi cannot both be true at the same time so just use the regular check.
                                             if (isXBoundary && isYBoundary) {
                                                 ellipseIntersections[j].add(intersection);
                                             } else {
-                                                // ignore intersections at tangent boundaries
-                                                if (!((isXBoundary && Math.abs(gy) < THRESHOLD) || (isYBoundary && Math.abs(gx) < THRESHOLD))) {
+                                                // this check is already assuming that youre on the edge and not on a corner
+                                                // if the gradient is not horizontal or vertical whatsoever
+                                                if (Math.abs(gx) > THRESHOLD && Math.abs(gy) > THRESHOLD) {
                                                     ellipseIntersections[j].add(intersection);
+                                                } else {
+                                                    // otherwise if there IS a flat gradient,
+                                                    // ignore intersections at tangent boundaries
+                                                    if (!((isXBoundary && vi && Math.abs(gy) < THRESHOLD) || (isYBoundary && hi && Math.abs(gx) < THRESHOLD))) {
+                                                        ellipseIntersections[j].add(intersection);
+                                                    }
                                                 }
                                             }
                                         }
@@ -2159,15 +2165,15 @@ function drawPhasePlot() {
         if (showTriples) straightPhaseLines(lineArrOgTriple, lineArrTriple, lineIntersectionsTriple, lineClippingTriple, linesClippedTriple, tripleColor);
 
         function curvedPhaseLines(ellipseArr, ellipseIntersections, color) {
-            for (let i = 0; i < ellipseArr.length; i++) { // change for non-centered ellipses
+            for (let i = 0; i < ellipseArr.length; i++) {
+                let [a0, a1, a2, cx, cy] = ellipseArr[i]; // definitely will not have determinant 0
+
                 let ellipseInts = Array.from(ellipseIntersections[i])
-                    .sort((intA, intB) => Math.atan2(intA[1], intA[0]) - Math.atan2(intB[1], intB[0]));
+                    .sort((intA, intB) => Math.atan2(intA[1] - cy, intA[0] - cx) - Math.atan2(intB[1] - cy, intB[0] - cx));
 
                 let fullEllipse = ellipseInts.length <= 1;
 
                 ellipseInts.push(ellipseInts[0]);
-
-                let [a0, a1, a2, cx, cy] = ellipseArr[i]; // definitely will not have determinant 0
 
                 // solve equation l^2 - (a0+a2)l + (a0 a2-a1^2) = 0 for eigenvalues l
                 let [eigenP, eigenM] = quadratic(1, -a0 - a2, a0 * a2 - a1 * a1); // it will be real
