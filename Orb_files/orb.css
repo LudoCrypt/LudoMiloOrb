@@ -126,12 +126,15 @@ img {
 }
 
 .system-unit {
-    margin: 40px;
+    margin-top: 20px;
+    margin-bottom: 0px;
+    margin-left: 40px;
+    margin-right: 40px;
     /*width: 100%;*/
 }
 
 .ghost-system.system-unit {
-    margin: 40px;
+    margin: 0px 40px;
     visibility: hidden;
 }
 
@@ -226,6 +229,10 @@ img {
     display: flex;
     align-items: flex-end;
     gap: 10px;
+}
+
+.slider-unit.ghost-slider .slider-top {
+    height: 0px;
 }
 
 .slider-flex-container-thing {
