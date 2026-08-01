@@ -2044,8 +2044,8 @@ function drawPhasePlot() {
                                         // If you're on the edge
                                         if ((isXBoundary && vi) || (isYBoundary && hi)) {
                                             // gradient at edge
-                                            let gx = 2 * a0 * x + 2 * a1 * y;
-                                            let gy = 2 * a1 * x + 2 * a2 * y;
+                                            let gx = 2 * a0 * (x - cx) + 2 * a1 * (y - cy);
+                                            let gy = 2 * a1 * (x - cx) + 2 * a2 * (y - cy);
 
                                             // If you're at a corner
                                             // hi and vi cannot both be true at the same time so just use the regular check.
