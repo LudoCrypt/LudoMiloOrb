@@ -918,11 +918,8 @@ function removeSlider(sliderUnit) {
 }
 
 function updateFullDepth() {
-    controlPanel.classList.toggle('full-depth',
-        controlPanel.getElementsByClassName('no-opposites').length
-    );
+    controlPanel.classList.toggle('full-depth', (minPhaseX === -1 || (isPhase2D && minPhaseY === -1)));
 }
-
 
 function removeSystem(systemUnit) {
     systemUnit.remove();
@@ -1836,6 +1833,8 @@ function createPhasePlot() {
 
     if (isPhase2D) lineEqnsTangent.add([1, oppositesPhaseY ? 0 : -1, 1, 0]);
     if (isPhase2D) lineEqnsTriple.add([1, oppositesPhaseY ? 0 : -1, 1, 0]);
+
+    updateFullDepth();
 
     renderRegions = false;
     drawPhasePlot();
