@@ -875,7 +875,7 @@ function setSlider(sliderThumb, depth, fromInput = false, fromExtern = false) { 
     sliderUnit.dataset.depth = depth;
     if (!fromInput) {
         let calDepthVal = clamp(depth, isFullDepth ? -1 : 0, 1);
-        sliderUnit.getElementsByClassName('slider-input')[0].value = calDepthVal
+        sliderUnit.getElementsByClassName('slider-input')[0].value = calDepthVal;
         sliderUnit.getElementsByClassName('slider-input-2')[0].value = clamp(Math.acos(calDepthVal) * 180.0 / Math.PI, 0, isFullDepth ? 180 : 90);
     }
 
@@ -1499,7 +1499,7 @@ function pinned2DSystemPhaseLines(s0unit, s0slider, s1unit, s2unit) {
     let k = (1 - s0value * s0value);
 
     if (Math.abs(k) < THRESHOLD) {
-        return;
+        return ellipseMats;
     }
 
     for (let i0 of systemReducedAxes[0]) {
