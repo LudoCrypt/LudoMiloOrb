@@ -170,6 +170,15 @@ function initialize() {
         drawPuzzle();
     });
 
+    phasePanel.addEventListener('mouseenter', (event) => {
+        if (!renderRegions) {
+            createPhasePlot();
+            renderRegions = true;
+            drawPhasePlot();
+        }
+        renderRegions = true;
+    });
+
     sphereCanvas.addEventListener('mousedown', function(e) {
         if (e.button !== 0) return;
         let rect = sphereCanvas.getBoundingClientRect();
@@ -369,7 +378,9 @@ function initialize() {
     document.getElementById('phase-create').addEventListener('click', function() {
         if (document.getElementById('phase-create').dataset.disabled !== undefined) return;
         createPhasePlot();
-        phaseCamera = new Viewport(phaseDiagram, phaseG, phaseBakedScale)
+        phaseCamera = new Viewport(phaseDiagram, phaseG, phaseBakedScale);
+        renderRegions = true;
+        drawPhasePlot();
     });
 
     document.addEventListener('click', (e) => {
@@ -871,6 +882,8 @@ function setSlider(sliderThumb, depth, fromInput = false, fromExtern = false) { 
     setPhaseSlider();
     if (fromInput) removeChangeDivs();
     drawPuzzle(); // not quite sure i want this in this function
+
+    if (sliderUnit.getElementsByClassName('pin-button')[0].dataset.isOn === "1") createPhasePlot();    
 }
 
 function setSliderColor(colorSwatch, color, fromInput = false) {
@@ -1398,19 +1411,54 @@ function pinnedSystemPhaseLines(s0unit, s1unit, s1slider, s2unit, s2slider) {
         for (let i1 = 0; i1 < systemsAxes[1].length; i1++) {
             let axis1 = systemsAxes[1][i1];
 
+            let dot01 = axis0.dot(axis1);
+
+            if (dot01 > 1 - THRESHOLD) {
+                continue;
+            } else if (dot01 < -1 + THRESHOLD) {
+                continue;
+            }
+
             for (let i2 = 0; i2 < systemsAxes[2].length; i2++) {
                 let axis2 = systemsAxes[2][i2];
 
-                let dot12 = axis2.dot(axis1);
+                let dot02 = axis0.dot(axis2);
+                let dot12 = axis1.dot(axis2);
 
-                let q = (1 - dot12 * dot12);
-                let pc = (axis1.multiply((s1value - s2value * dot12) / q)).add(axis2.multiply((s2value - s1value * dot12) / q));
+                if (dot02 > 1 - THRESHOLD) {
+                    continue;
+                } else if (dot02 < -1 + THRESHOLD) {
+                    continue;
+                }
 
-                let a = axis0.dot(pc);
-                let b = axis0.dot(axis1.cross(axis2).unit()) * Math.sqrt((1 - pc.dot(pc)));
+                if (dot12 > 1 - THRESHOLD) {
+                    continue;
+                } else if (dot12 < -1 + THRESHOLD) {
+                    continue;
+                }
 
-                points.push(a + b);
-                points.push(a - b);
+                let detAxes = axis0.dot(axis1.cross(axis2));
+
+                if (Math.abs(detAxes) < THRESHOLD) {
+                    let q = (1 - dot12 * dot12);
+
+                    if (Math.abs(q) < THRESHOLD) {
+                        continue;
+                    }
+
+                    let pc = (axis1.multiply((s1value - s2value * dot12) / q)).add(axis2.multiply((s2value - s1value * dot12) / q));
+                    let d = pc.dot(pc);
+
+                    let a = axis0.dot(pc);
+                    let b = 0;
+
+                    if (Math.abs(d - 1) > THRESHOLD) {
+                        b = axis0.dot(axis1.cross(axis2).unit()) * Math.sqrt((1 - d));
+                    }
+
+                    points.push(a + b);
+                    points.push(a - b);
+                }
             }
         }
     }
@@ -1448,16 +1496,29 @@ function pinned2DSystemPhaseLines(s0unit, s0slider, s1unit, s2unit) {
 
     let s0value = parseFloat(s0slider.getElementsByClassName('slider-input')[0].value);
 
+    let k = (1 - s0value * s0value);
+
+    if (Math.abs(k) < THRESHOLD) {
+        return;
+    }
+
     for (let i0 of systemReducedAxes[0]) {
         let axis0 = systemsAxes[0][i0];
 
         for (let i1 = 0; i1 < systemsAxes[1].length; i1++) {
             let axis1 = systemsAxes[1][i1];
 
+            let dot01 = axis0.dot(axis1);
+
+            if (dot01 > 1 - THRESHOLD) {
+                continue;
+            } else if (dot01 < -1 + THRESHOLD) {
+                continue;
+            }
+
             for (let i2 = 0; i2 < systemsAxes[2].length; i2++) {
                 let axis2 = systemsAxes[2][i2];
 
-                let dot01 = axis0.dot(axis1);
                 let dot02 = axis0.dot(axis2);
                 let dot12 = axis1.dot(axis2);
 
@@ -1471,8 +1532,6 @@ function pinned2DSystemPhaseLines(s0unit, s0slider, s1unit, s2unit) {
                         axis2.cross(axis0).divide(detAxes),
                         axis0.cross(axis1).divide(detAxes)
                     ];
-
-                    let k = 1 - s0value * s0value;
 
                     let a0 = invAxes[1].dot(invAxes[1]) / k;
                     let a1 = invAxes[1].dot(invAxes[2]) / k;
@@ -1501,7 +1560,7 @@ function pinned1DSystemPhaseLines(freeUnit, pinnedUnit, pinnedValue) {
             continue;
         } else {
             let x = intersectLinesPinned(p0, p1, c, s, pinnedValue);
-            if (x !== null && x >= 0 && x <= 1) lineEqnsTangent.add([x]);
+            if (x !== null && x > minPhaseX - THRESHOLD && x < 1 + THRESHOLD) lineEqnsTangent.add([x]);
         }
     }
 
@@ -1512,7 +1571,7 @@ function pinned1DSystemPhaseLines(freeUnit, pinnedUnit, pinnedValue) {
             continue;
         } else {
             let x = intersectLinesPinned(p0, p1, c, s, pinnedValue);
-            if (x !== null && x >= 0 && x <= 1) lineEqnsTriple.add([x]);
+            if (x !== null && x > minPhaseX - THRESHOLD && x < 1 + THRESHOLD) lineEqnsTriple.add([x]);
         }
     }
 
@@ -1589,8 +1648,8 @@ var ellipseMatsTangent;
 var ellipseMatsTriple;
 var linesClippedTriple;
 var lineClippingTriple;
-var lowerRightPhaseX;
-var lowerRightPhaseY;
+var minPhaseX;
+var minPhaseY;
 
 var showTriples = true;
 var showTangents = true;
@@ -1600,8 +1659,7 @@ var tripleColor = "#008fa5";
 var tangentColor = "#d27b00";
 
 function createPhasePlot() {
-
-    if (document.getElementById('phase-create').dataset.disabled) return;
+    if (document.getElementById('phase-create').dataset.disabled !== undefined) return;
 
     let systemUnits = [];
     slidersInPhase = [];
@@ -1638,8 +1696,8 @@ function createPhasePlot() {
     if (freeSliderIndices.length > 2) return;
     //if (freeSliderIndices.length === 2 && pinnedSliderIndices.length > 0) return;
 
-    lowerRightPhaseX = -1;
-    lowerRightPhaseY = -1;
+    minPhaseX = -1;
+    minPhaseY = -1;
 
     if (pinnedSliderIndices.length === 0) {
         isPhase2D = freeSliderIndices.length === 2;
@@ -1665,8 +1723,8 @@ function createPhasePlot() {
 
         for (let lineEqn of linesClippedTriple) lineEqnsTriple.add(lineEqn);
 
-        if (getOppositesFromSystemUnit(freeUnits[0])) lowerRightPhaseX = 0;
-        if (isPhase2D && getOppositesFromSystemUnit(freeUnits[1])) lowerRightPhaseY = 0;
+        if (getOppositesFromSystemUnit(freeUnits[0])) minPhaseX = 0;
+        if (isPhase2D && getOppositesFromSystemUnit(freeUnits[1])) minPhaseY = 0;
     } else if (freeSliderIndices.length === 2 && pinnedSliderIndices.length > 0) {
 
         isPhase2D = true;
@@ -1692,8 +1750,8 @@ function createPhasePlot() {
 
         for (let lineEqn of linesClippedTriple) lineEqnsTriple.add(lineEqn);
 
-        if (getOppositesFromSystemUnit(freeUnits[0])) lowerRightPhaseX = 0;
-        if (getOppositesFromSystemUnit(freeUnits[1])) lowerRightPhaseY = 0;
+        if (getOppositesFromSystemUnit(freeUnits[0])) minPhaseX = 0;
+        if (getOppositesFromSystemUnit(freeUnits[1])) minPhaseY = 0;
 
         for (let i = 0; i < pinnedSliderIndices.length; i++) {
             let pinnedUnit = systemUnits[pinnedSystemsIndices[i]];
@@ -1740,7 +1798,7 @@ function createPhasePlot() {
         lineEqnsTangent = new FloatSet(4);
         lineEqnsTriple = new FloatSet(4);
 
-        if (getOppositesFromSystemUnit(freeUnit)) lowerRightPhaseX = 0;
+        if (getOppositesFromSystemUnit(freeUnit)) minPhaseX = 0;
 
         for (let i = 0; i < pinnedSystemsIndices.length; i++) {
             let pinnedUnit = systemUnits[pinnedSystemsIndices[i]];
@@ -1779,10 +1837,14 @@ function createPhasePlot() {
     if (isPhase2D) lineEqnsTangent.add([1, oppositesPhaseY ? 0 : -1, 1, 0]);
     if (isPhase2D) lineEqnsTriple.add([1, oppositesPhaseY ? 0 : -1, 1, 0]);
 
+    renderRegions = false;
     drawPhasePlot();
 }
 
+let renderRegions = false;
+
 function drawPhasePlot() {
+    if (document.getElementById('phase-create').dataset.disabled !== undefined) return;
 
     phaseDiagram.classList.remove('hidden');
     for (let phaseDomainGChild of phaseDomainG.children) {
@@ -1792,17 +1854,32 @@ function drawPhasePlot() {
     let phaseDiagramMargin = 0.0026;
     let rect = phasePanel.getBoundingClientRect();
 
+    // I hate this btw
+    var viewWidth = rect.width * (1 - minPhaseX) * phaseDiagramMargin;
+    var viewHeight = rect.height * (1 - minPhaseX) * phaseDiagramMargin;
+
+    if (isPhase2D) {
+        if (minPhaseX === 0 && minPhaseY === -1) {
+            viewHeight *= 2;
+            viewWidth *= 2;
+        }
+    }
+
+    var minX = (minPhaseX + 1) / 2 - viewWidth / 2;
+    var minY = -(minPhaseY + 1) / 2 - viewHeight / 2;
+
+    phaseDiagram.setAttribute('viewBox', `${minX} ${minY} ${viewWidth} ${viewHeight}`);
+
     if (!isPhase2D) {
-        let phaseDiagramThickness = 0.26 * (1 - lowerRightPhaseX);
-        phaseDiagram.setAttribute('viewBox', `${-rect.width / 2 * phaseDiagramMargin + (1 - lowerRightPhaseX) / 2} ${-rect.height / 2 * phaseDiagramMargin} ${rect.width * phaseDiagramMargin} ${rect.height * phaseDiagramMargin}`);
-        phaseBack.setAttributeNS(null, 'x', (lowerRightPhaseX) * phaseBakedScale);
+        let phaseDiagramThickness = 0.26 * (1 - minPhaseX);
+        phaseBack.setAttributeNS(null, 'x', (minPhaseX) * phaseBakedScale);
         phaseBack.setAttributeNS(null, 'y', (-phaseDiagramThickness / 2) * phaseBakedScale);
-        phaseBack.setAttributeNS(null, 'width', (1 - lowerRightPhaseX) * phaseBakedScale);
+        phaseBack.setAttributeNS(null, 'width', (1 - minPhaseX) * phaseBakedScale);
         phaseBack.setAttributeNS(null, 'height', (phaseDiagramThickness) * phaseBakedScale);
 
         function addPhaseLines(lineEqns, color) {
-            let depthsArr = Array.from(lineEqns).map(x => x[0]).filter(x => x >= lowerRightPhaseX - THRESHOLD).sort((a, b) => a - b);
-            let hasZero = Math.abs(depthsArr[0]) < THRESHOLD || lowerRightPhaseX === -1
+            let depthsArr = Array.from(lineEqns).map(x => x[0]).filter(x => x >= minPhaseX - THRESHOLD).sort((a, b) => a - b);
+            let hasZero = Math.abs(depthsArr[0]) < THRESHOLD || minPhaseX === -1
 
             if (!hasZero) depthsArr.unshift(0);
 
@@ -1834,14 +1911,13 @@ function drawPhasePlot() {
         if (showTriples) addPhaseLines(lineEqnsTriple, tripleColor);
         if (showTangents) addPhaseLines(lineEqnsTangent, tangentColor);
     } else {
-        phaseDiagram.setAttribute('viewBox', `${-rect.width / 2 * phaseDiagramMargin + (1 - lowerRightPhaseX) / 2 + lowerRightPhaseX} ${-rect.height / 2 * phaseDiagramMargin - (1 - lowerRightPhaseY) / 2 - lowerRightPhaseY} ${rect.width * phaseDiagramMargin} ${rect.height * phaseDiagramMargin}`);
-        phaseBack.setAttributeNS(null, 'x', lowerRightPhaseX * phaseBakedScale);
-        phaseBack.setAttributeNS(null, 'y', lowerRightPhaseY * phaseBakedScale);
-        phaseBack.setAttributeNS(null, 'width', (1 - lowerRightPhaseX) * phaseBakedScale);
-        phaseBack.setAttributeNS(null, 'height', (1 - lowerRightPhaseY) * phaseBakedScale);
+        phaseBack.setAttributeNS(null, 'x', minPhaseX * phaseBakedScale);
+        phaseBack.setAttributeNS(null, 'y', minPhaseY * phaseBakedScale);
+        phaseBack.setAttributeNS(null, 'width', (1 - minPhaseX) * phaseBakedScale);
+        phaseBack.setAttributeNS(null, 'height', (1 - minPhaseY) * phaseBakedScale);
 
         //let renderRegions = axisCount <= 24 && ellipseMats.size <= 72;
-        let renderRegions = true;
+        //let renderRegions = true;
 
         let ellipseArrTangent = Array.from(ellipseMatsTangent);
         let lineArrOgTangent = Array.from(lineEqnsTangent);
@@ -1895,8 +1971,8 @@ function drawPhasePlot() {
                                     let x = intersection[0];
                                     let y = intersection[1];
 
-                                    let onEdgeX = (Math.abs(x + lowerRightPhaseX) < THRESHOLD || Math.abs(x) > 1 - THRESHOLD);
-                                    let onEdgeY = (Math.abs(y + lowerRightPhaseY) < THRESHOLD || Math.abs(y) > 1 - THRESHOLD);
+                                    let onEdgeX = (Math.abs(x + minPhaseX) < THRESHOLD || Math.abs(x) > 1 - THRESHOLD);
+                                    let onEdgeY = (Math.abs(y + minPhaseY) < THRESHOLD || Math.abs(y) > 1 - THRESHOLD);
                                     let onBound1 = Math.abs(dx - bounds[0]) < THRESHOLD || Math.abs(dx - bounds[1]) < THRESHOLD;
                                     let onBound2 = Math.abs(dy - bounds1[0]) < THRESHOLD || Math.abs(dy - bounds1[1]) < THRESHOLD;
 
@@ -1955,13 +2031,16 @@ function drawPhasePlot() {
                                         let x = intersection[0];
                                         let y = intersection[1];
 
-                                        let bottomBoundX = Math.abs(x + lowerRightPhaseX) < THRESHOLD;
-                                        let topBoundX = Math.abs(x) > 1 - THRESHOLD;
-                                        let bottomBoundY = Math.abs(y + lowerRightPhaseY) < THRESHOLD;
-                                        let topBoundY = Math.abs(y) > 1 - THRESHOLD;
+                                        let bottomBoundX = Math.abs(x + minPhaseX) < THRESHOLD;
+                                        let topBoundX = Math.abs(x - 1) < THRESHOLD;
+                                        let bottomBoundY = Math.abs(y + minPhaseY) < THRESHOLD;
+                                        let topBoundY = Math.abs(y - 1) < THRESHOLD;
 
-                                        let isXBoundary = bottomBoundX || topBoundX;
-                                        let isYBoundary = bottomBoundY || topBoundY;
+                                        let hi = Math.abs(perp[0]) < THRESHOLD;
+                                        let vi = Math.abs(perp[1]) < THRESHOLD;
+
+                                        let isXBoundary = (bottomBoundX || topBoundX) && vi;
+                                        let isYBoundary = (bottomBoundY || topBoundY) && hi;
 
                                         // If you're on the edge
                                         if (isXBoundary || isYBoundary) {
@@ -2035,7 +2114,7 @@ function drawPhasePlot() {
                     for (let j = 0; j < lineInts.length - 1; j++) {
                         let [end0, end1] = [lineInts[j], lineInts[j + 1]];
                         let [midpointX, midpointY] = [(end0[0] + end1[0]) / 2, (end0[1] + end1[1]) / 2];
-                        if (midpointX > lowerRightPhaseX - THRESHOLD && midpointX < 1 + THRESHOLD && midpointY > lowerRightPhaseY - THRESHOLD && midpointY < 1 + THRESHOLD) {
+                        if (midpointX > minPhaseX - THRESHOLD && midpointX < 1 + THRESHOLD && midpointY > minPhaseY - THRESHOLD && midpointY < 1 + THRESHOLD) {
                             let lineSeg = document.createElementNS(svgns, 'line'); // https://stackoverflow.com/a/12786915
                             lineSeg.setAttributeNS(null, 'x1', end0[0] * phaseBakedScale);
                             lineSeg.setAttributeNS(null, 'y1', end0[1] * phaseBakedScale);
@@ -2115,7 +2194,7 @@ function drawPhasePlot() {
 
                 if (renderRegions) {
                     if (fullEllipse) {
-                        let bottomBound = cx > lowerRightPhaseX - THRESHOLD && cy > lowerRightPhaseY - THRESHOLD;
+                        let bottomBound = cx > minPhaseX - THRESHOLD && cy > minPhaseY - THRESHOLD;
                         let topBound = cy < 1 + THRESHOLD && cy < 1 + THRESHOLD;
 
                         // because this is already known to be a full ellipse (doesnt intersect the boarder) its by definition either fully inside or fully outside
@@ -2144,8 +2223,8 @@ function drawPhasePlot() {
 
                         let ellipsePath = (ori, end) => `A ${axisX * phaseBakedScale} ${axisY * phaseBakedScale} ${angle * 180/Math.PI} ${+largeArc} ${ori} ${end[0] * phaseBakedScale} ${end[1] * phaseBakedScale}`
 
-                        let bottomBound0 = end0[0] > lowerRightPhaseX - THRESHOLD && end0[1] > lowerRightPhaseY - THRESHOLD;
-                        let bottomBound1 = end1[0] > lowerRightPhaseX - THRESHOLD && end1[1] > lowerRightPhaseY - THRESHOLD;
+                        let bottomBound0 = end0[0] > minPhaseX - THRESHOLD && end0[1] > minPhaseY - THRESHOLD;
+                        let bottomBound1 = end1[0] > minPhaseX - THRESHOLD && end1[1] > minPhaseY - THRESHOLD;
                         let topBound0 = end0[0] < 1 + THRESHOLD && end0[1] < 1 + THRESHOLD;
                         let topBound1 = end1[0] < 1 + THRESHOLD && end1[1] < 1 + THRESHOLD;
 
@@ -2181,7 +2260,7 @@ function drawPhasePlot() {
         if (renderRegions) {
             for (let i = 0; i < intersectionArr.length; i++) {
                 let intersection = intersectionArr[i];
-                if (!(intersection[0] > lowerRightPhaseX - THRESHOLD && intersection[1] > lowerRightPhaseY - THRESHOLD)) continue;
+                if (!(intersection[0] > minPhaseX - THRESHOLD && intersection[1] > minPhaseY - THRESHOLD)) continue;
                 if (!(intersection[0] < 1 + THRESHOLD && intersection[1] < 1 + THRESHOLD)) continue;
 
                 let nodeHoverable = document.createElementNS(svgns, 'path'); // https://stackoverflow.com/a/12786915
@@ -2348,4 +2427,5 @@ function hidePhaseDiagram(resetCamera = true) {
     }
     singleSetTranslationHTML(document.getElementById('phase-create'));
     if (resetCamera) phaseCamera = new Viewport(phaseDiagram, phaseG, phaseBakedScale);
+    renderRegions = false;
 }
