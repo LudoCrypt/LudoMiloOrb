@@ -1001,6 +1001,27 @@ const arbitraryConstantConfigs = {
         max: 90,
         step: 1,
         defaultValue: 45
+    },
+    7: {
+        label: "nx",
+        min: -1,
+        max: 1,
+        step: 0.01,
+        defaultValue: 0.5
+    },
+    8: {
+        label: "ny",
+        min: -1,
+        max: 1,
+        step: 0.01,
+        defaultValue: 0.5
+    },
+    9: {
+        label: "nz",
+        min: -1,
+        max: 1,
+        step: 0.01,
+        defaultValue: 0.5
     }
 };
 

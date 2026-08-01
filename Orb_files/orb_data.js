@@ -1483,11 +1483,11 @@ addSystem({
 
 addSystem({
     name: 'variable_normal',
-    paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1', 'arbitraryConstant2'],
+    paramsRequired: ['arbitraryConstant7', 'arbitraryConstant8', 'arbitraryConstant9'],
     getAxes: function(params) {
-        let a = parseFloat(params.arbitraryConstant0 ?? 0.5);
-        let b = parseFloat(params.arbitraryConstant1 ?? 0.5);
-        let c = parseFloat(params.arbitraryConstant2 ?? 0.5);
+        let a = parseFloat(params.arbitraryConstant7 ?? 0.5);
+        let b = parseFloat(params.arbitraryConstant8 ?? 0.5);
+        let c = parseFloat(params.arbitraryConstant9 ?? 0.5);
 
         let nf = Math.sqrt(a * a + b * b + c * c);
 
@@ -1499,6 +1499,7 @@ addSystem({
             new Vector(nx, ny, nz),
         ];
     },
+    opposites: false,
     symmetries: 0x0001,
     transitiveSymmetries: 0x0000,
 });
