@@ -1651,7 +1651,7 @@ const langs = {
         'system.deltoidal_icositetrahedron': 'Deltoidal Icositetrahedron',
         'system.variable_normal': 'Custom Normal',
 
-        'category.archimedean_catalan_hulls': 'Archimedean Catalan Hulls',
+        'category.archimedean_catalan_hulls': 'Archimedean-\nCatalan Hulls',
         'system.jt_tetrahedron': 'Joined Truncated Tetrahedron',
         'system.j_cubeoctahedron': 'Joined Cubeoctahedron',
         'system.jt_octahedron': 'Joined Truncated Octahedron',

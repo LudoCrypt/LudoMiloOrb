@@ -538,6 +538,7 @@ img {
 }
 
 #category-options {
+    white-space: pre-line;
 }
 
 .category-option {
