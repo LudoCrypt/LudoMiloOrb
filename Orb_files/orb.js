@@ -88,6 +88,7 @@ var paramsChangeDiv;
 var orderChangeDiv;
 var jumbleConfigChangeDiv;
 var arbitraryConstantChangeDiv;
+var stringInputChangeDiv;
 var languageChangeDiv;
 
 var colorChangeDiv;
@@ -339,6 +340,7 @@ function initialize() {
     orderChangeDiv = document.getElementById('order-change');
     jumbleConfigChangeDiv = document.getElementById('jumble-config-change');
     arbitraryConstantChangeDiv = document.getElementById('arbitrary-constant-change');
+    stringInputChangeDiv = document.getElementById('string-input-change');
 
     colorChangeDiv = document.getElementById('color-change');
     for (let color of colorChoices) {
@@ -810,6 +812,7 @@ function setSystem(systemIcon, systemName, fromInput = false) {
     systemUnit.dataset.system = systemName;
     systemUnit.dataset.jumbleConfig = listjumbleConfigsFromSystemUnit(systemUnit)[0];
     systemUnit.dataset.order = 5;
+    systemUnit.dataset.stringInput = " ";
 
     for (let param of systemData[systemName].paramsRequired) {
         if (param.startsWith("arbitraryConstant")) {
@@ -993,6 +996,7 @@ function removeChildren(element) {
 
 const jumbleConfigDivTemplate = name => `<div class='jumble-config-option simple-option'>${name}</div>`
 const orderDivTemplate = name => `<div class='order-option simple-option'>${name}</div>`
+const stringInputTemplate = name => `<input class="string-input-option" type="text" value="${name}">`;
 
 const arbitraryConstantConfigs = {
     10: {
@@ -1084,6 +1088,20 @@ function summonChangeDiv(targetButton, changeDiv) {
                         });
                     }
                     break;
+                case 'stringInput':
+                    removeChildren(stringInputChangeDiv);
+                    stringInputChangeDiv.classList.remove('hidden');
+                    stringInputChangeDiv.insertAdjacentHTML('beforeend', stringInputTemplate(systemUnit.dataset.stringInput ?? ' '));
+
+                    let input = stringInputChangeDiv.lastChild;
+
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            setSystemParam(param, systemUnit, " " + input.value);
+                            drawPuzzle();
+                        }
+                    });
+                    break;
             }
 
             if (param.startsWith('arbitraryConstant')) {
@@ -1168,6 +1186,13 @@ function setSystemParam(param, systemUnit, value) {
             createPhasePlot();
             if (closeChangeDivsOnSelect) removeChangeDivs();
             //drawPuzzle();
+            break;
+        case 'stringInput':
+            systemUnit.dataset.stringInput = value;
+            setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
+            createPhasePlot();
+            if (closeChangeDivsOnSelect) removeChangeDivs();
+            updateSystemOpposite(systemUnit);
             break;
     }
     if (param.startsWith('arbitraryConstant')) {

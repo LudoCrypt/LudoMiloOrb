@@ -1606,6 +1606,32 @@ addSystem({
     transitiveSymmetries: 0x0000,
 });
 
+addSystem({
+    name: 'axis_system',
+    paramsRequired: ['stringInput'],
+    getAxes: function(params) {
+
+        const axes = [];
+
+        const vectorRegex = /\[\s*([+-]?(?:\d*\.?\d+|\d+\.?)(?:[eE][+-]?\d+)?)\s*,\s*([+-]?(?:\d*\.?\d+|\d+\.?)(?:[eE][+-]?\d+)?)\s*,\s*([+-]?(?:\d*\.?\d+|\d+\.?)(?:[eE][+-]?\d+)?)\s*\]/g;
+
+        let match;
+        while ((match = vectorRegex.exec(params.stringInput)) !== null) {
+            axes.push(new Vector(parseFloat(match[1]), parseFloat(match[2]), parseFloat(match[3])).unit());
+        }
+
+        return axes;
+    },
+    getOpposites: function(params) {
+        return /^\s*o/i.test(params.stringInput);
+    },
+    getAnyOpposites: function(params) {
+        return /^\s*o/i.test(params.stringInput);
+    },
+    symmetries: 0x0001,
+    transitiveSymmetries: 0x0000,
+});
+
 const langs = {
     en_us: {
         'category.regular': 'Regular',
@@ -1650,6 +1676,7 @@ const langs = {
         'system.tetartoid_vertices_variable': 'Tetartoid Vertices',
         'system.deltoidal_icositetrahedron': 'Deltoidal Icositetrahedron',
         'system.variable_normal': 'Custom Normal',
+        'system.axis_system': 'Custom Axis System',
 
         'category.archimedean_catalan_hulls': 'Archimedean-\nCatalan Hulls',
         'system.jt_tetrahedron': 'Joined Truncated Tetrahedron',
