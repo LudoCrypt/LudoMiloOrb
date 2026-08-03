@@ -89,6 +89,8 @@ var orderChangeDiv;
 var jumbleConfigChangeDiv;
 var arbitraryConstantChangeDiv;
 var stringInputChangeDiv;
+var baseAxesIncludedChangeDiv;
+
 var languageChangeDiv;
 
 var colorChangeDiv;
@@ -341,6 +343,7 @@ function initialize() {
     jumbleConfigChangeDiv = document.getElementById('jumble-config-change');
     arbitraryConstantChangeDiv = document.getElementById('arbitrary-constant-change');
     stringInputChangeDiv = document.getElementById('string-input-change');
+    baseAxesIncludedChangeDiv = document.getElementById('base-axes-included-change');
 
     colorChangeDiv = document.getElementById('color-change');
     for (let color of colorChoices) {
@@ -813,6 +816,7 @@ function setSystem(systemIcon, systemName, fromInput = false) {
     systemUnit.dataset.jumbleConfig = listjumbleConfigsFromSystemUnit(systemUnit)[0];
     systemUnit.dataset.order = 5;
     systemUnit.dataset.stringInput = "o[1,0,0]";
+    systemUnit.dataset.baseAxesIncluded = "true";
 
     for (let param of systemData[systemName].paramsRequired) {
         if (param.startsWith("arbitraryConstant")) {
@@ -997,6 +1001,7 @@ function removeChildren(element) {
 const jumbleConfigDivTemplate = name => `<div class='jumble-config-option simple-option'>${name}</div>`
 const orderDivTemplate = name => `<div class='order-option simple-option'>${name}</div>`
 const stringInputTemplate = name => `<input class="string-input-option" type="text" value="${name}">`;
+const toggleInputTemplate = name => `<label class="toggle-input-option"><input type="checkbox" ${name}>Include Base Axes</label>`
 
 const arbitraryConstantConfigs = {
     10: {
@@ -1102,6 +1107,17 @@ function summonChangeDiv(targetButton, changeDiv) {
                         }
                     });
                     break;
+                case 'baseAxesIncluded':
+                    removeChildren(baseAxesIncludedChangeDiv);
+                    baseAxesIncludedChangeDiv.classList.remove('hidden');
+                    baseAxesIncludedChangeDiv.insertAdjacentHTML('beforeend', toggleInputTemplate(systemUnit.dataset.baseAxesIncluded == "true" ? "checked" : ""));
+
+                    baseAxesIncludedChangeDiv.lastChild.addEventListener("change", e => {
+                        setSystemParam(param, systemUnit, e.target.checked);
+                        drawPuzzle();
+                    });
+
+                    break;
             }
 
             if (param.startsWith('arbitraryConstant')) {
@@ -1193,6 +1209,12 @@ function setSystemParam(param, systemUnit, value) {
             createPhasePlot();
             if (closeChangeDivsOnSelect) removeChangeDivs();
             updateSystemOpposite(systemUnit);
+            break;
+        case 'baseAxesIncluded':
+            systemUnit.dataset.baseAxesIncluded = value;
+            setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
+            createPhasePlot();
+            if (closeChangeDivsOnSelect) removeChangeDivs();
             break;
     }
     if (param.startsWith('arbitraryConstant')) {
