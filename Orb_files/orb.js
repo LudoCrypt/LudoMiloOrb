@@ -812,7 +812,7 @@ function setSystem(systemIcon, systemName, fromInput = false) {
     systemUnit.dataset.system = systemName;
     systemUnit.dataset.jumbleConfig = listjumbleConfigsFromSystemUnit(systemUnit)[0];
     systemUnit.dataset.order = 5;
-    systemUnit.dataset.stringInput = "[1,0,0]";
+    systemUnit.dataset.stringInput = "o[1,0,0]";
 
     for (let param of systemData[systemName].paramsRequired) {
         if (param.startsWith("arbitraryConstant")) {
