@@ -2070,7 +2070,7 @@ addSystem({
 
 addSystem({
     name: 'pyrito_vertices_variable',
-    paramsRequired: ['arbitraryConstant0'],
+    paramsRequired: ['arbitraryConstant0', 'baseAxesIncluded'],
     getAxes: function(params) {
         let x = parseFloat(params.arbitraryConstant0 ?? 0.5);
 
@@ -2080,7 +2080,7 @@ addSystem({
 
         let v13 = Math.sqrt(1 / 3);
 
-        return [
+        let systemAxes = [
             new Vector(c, 0, v),
             new Vector(-c, 0, v),
             new Vector(c, 0, -v),
@@ -2091,13 +2091,13 @@ addSystem({
             new Vector(0, v, -c),
             new Vector(0, -v, -c),
 
-
             new Vector(v, c, 0),
             new Vector(-v, c, 0),
             new Vector(-v, -c, 0),
             new Vector(v, -c, 0),
+        ];
 
-
+        let newAxes = [
             new Vector(v13, v13, v13),
             new Vector(-v13, v13, v13),
             new Vector(-v13, -v13, v13),
@@ -2107,6 +2107,8 @@ addSystem({
             new Vector(-v13, -v13, -v13),
             new Vector(v13, -v13, -v13)
         ];
+
+        return [...systemAxes, ...(params.baseAxesIncluded == "true" ? newAxes : [])];
     },
     symmetries: 0x0001,
     transitiveSymmetries: 0x0000,
@@ -2201,13 +2203,13 @@ addSystem({
 
 addSystem({
     name: 'tetartoid_vertices_variable',
-    paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1'],
+    paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1', 'baseAxesIncluded'],
     getAxes: function(params) {
         let a = parseFloat(params.arbitraryConstant0 ?? 0.5);
         let b = parseFloat(params.arbitraryConstant1 ?? 0.5);
         let c = 1.0;
 
-        return [
+        let systemAxes = [
             new Vector(a, b, c).unit(),
             new Vector(a, -b, -c).unit(),
             new Vector(-a, b, -c).unit(),
@@ -2222,7 +2224,9 @@ addSystem({
             new Vector(c, -a, -b).unit(),
             new Vector(-c, a, -b).unit(),
             new Vector(-c, -a, b).unit(),
+        ];
 
+        let newAxes = [
             new Vector(1, 1, 1).unit(),
             new Vector(1, 1, -1).unit(),
             new Vector(1, -1, 1).unit(),
@@ -2232,6 +2236,8 @@ addSystem({
             new Vector(-1, -1, 1).unit(),
             new Vector(-1, -1, -1).unit(),
         ];
+
+        return [...systemAxes, ...(params.baseAxesIncluded == "true" ? newAxes : [])];
     },
     symmetries: 0x0001,
     transitiveSymmetries: 0x0000,
@@ -2271,6 +2277,92 @@ addSystem({
             new Vector(-tx, -tx, 1).unit(),
             new Vector(-tx, -tx, -1).unit(),
         ];
+    },
+    symmetries: 0x0001,
+    transitiveSymmetries: 0x0000,
+});
+
+addSystem({
+    name: 'icositetrapyritohedron_variable',
+    paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1'],
+    getAxes: function(params) {
+        let a = parseFloat(params.arbitraryConstant0 ?? 0.5);
+        let b = parseFloat(params.arbitraryConstant1 ?? 0.5);
+
+        return [
+            new Vector(a, b, 1).unit(),
+            new Vector(b, 1, a).unit(),
+            new Vector(1, a, b).unit(),
+            new Vector(a, b, -1).unit(),
+            new Vector(b, 1, -a).unit(),
+            new Vector(1, a, -b).unit(),
+            new Vector(a, -b, -1).unit(),
+            new Vector(b, -1, -a).unit(),
+            new Vector(1, -a, -b).unit(),
+            new Vector(-a, b, -1).unit(),
+            new Vector(-b, 1, -a).unit(),
+            new Vector(-1, a, -b).unit(),
+            new Vector(-a, -b, -1).unit(),
+            new Vector(-b, -1, -a).unit(),
+            new Vector(-1, -a, -b).unit(),
+            new Vector(-a, -b, 1).unit(),
+            new Vector(-b, -1, a).unit(),
+            new Vector(-1, -a, b).unit(),
+            new Vector(-a, b, 1).unit(),
+            new Vector(-b, 1, a).unit(),
+            new Vector(-1, a, b).unit(),
+            new Vector(a, -b, 1).unit(),
+            new Vector(b, -1, a).unit(),
+            new Vector(1, -a, b).unit(),
+        ];
+    },
+    symmetries: 0x0001,
+    transitiveSymmetries: 0x0000,
+});
+
+addSystem({
+    name: 'icositetrapyritohedron_vertices_variable',
+    paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1', 'baseAxesIncluded'],
+    getAxes: function(params) {
+        let a = parseFloat(params.arbitraryConstant0 ?? 0.5);
+        let b = parseFloat(params.arbitraryConstant1 ?? 0.5);
+
+        let p = (1-a) * (1+a+b) / (1-a*b);
+        let q = (1-b) * (1+a+b) / (1-a*b);
+
+        let systemAxes = [
+            new Vector(0, p, q).unit(),
+            new Vector(0, -p, -q).unit(),
+            new Vector(q, 0, p).unit(),
+            new Vector(-q, 0, -p).unit(),
+            new Vector(p, q, 0).unit(),
+            new Vector(-p, -q, 0).unit(),
+            new Vector(0, -p, q).unit(),
+            new Vector(q, 0, -p).unit(),
+            new Vector(-p, q, 0).unit(),
+            new Vector(0, p, -q).unit(),
+            new Vector(-q, 0, p).unit(),
+            new Vector(p, -q, 0).unit(),
+        ];
+
+        let newAxes = [
+            new Vector(1, 1, 1).unit(),
+            new Vector(1, 1, -1).unit(),
+            new Vector(1, -1, -1).unit(),
+            new Vector(1, -1, 1).unit(),
+            new Vector(-1, 1, 1).unit(),
+            new Vector(-1, 1, -1).unit(),
+            new Vector(-1, -1, -1).unit(),
+            new Vector(-1, -1, 1).unit(),
+            new Vector(1, 0, 0).unit(),
+            new Vector(0, 1, 0).unit(),
+            new Vector(0, 0, 1).unit(),
+            new Vector(-1, 0, 0).unit(),
+            new Vector(0, -1, 0).unit(),
+            new Vector(0, 0, -1).unit(),
+        ];
+
+        return [...systemAxes, ...(params.baseAxesIncluded == "true" ? newAxes : [])];
     },
     symmetries: 0x0001,
     transitiveSymmetries: 0x0000,
@@ -2367,6 +2459,8 @@ const langs = {
         'system.pyrito_edges_variable': 'Pyritohedron Edges',
         'system.tetartoid_variable': 'Tetartoid Faces',
         'system.tetartoid_vertices_variable': 'Tetartoid Vertices',
+        'system.icositetrapyritohedron_variable': 'Icositetrapyritohedron',
+        'system.icositetrapyritohedron_vertices_variable': 'Icositetrapyritohedron Vertices',
         'system.deltoidal_icositetrahedron': 'Deltoidal Icositetrahedron',
         'system.variable_normal': 'Custom Normal',
         'system.axis_system': 'Custom Axis System',

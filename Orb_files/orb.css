@@ -213,9 +213,13 @@ img {
 }
 
 .system-params.small-text {
-    font-size: 20px;
-    max-width: 200px;
+    font-size: 15px;
     white-space: nowrap;
+}
+
+.toggle-input-option {
+    font-size: 15px;
+    white-space: pre-line;
 }
 
 .slider-group {
