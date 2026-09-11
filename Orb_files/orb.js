@@ -793,7 +793,7 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, color = colorCho
             let cloneUnit = sliderUnit.cloneNode(true);
             cloneUnit.removeAttribute('id');
             sliderGroup.insertBefore(cloneUnit, sliderUnit.nextSibling);
-            createSliderUnit(systemUnit, false, sliderInput.value, color, cloneUnit);
+            createSliderUnit(systemUnit, false, sliderInput.value, sliderUnit.dataset.color, cloneUnit);
         });
 
         let removeButton = sliderUnit.getElementsByClassName('remove-button')[0];
@@ -2412,6 +2412,7 @@ function lineEqnToDot(line) {
 
 
 function quadratic(a, b, c) {
+    if (Math.abs(a) < THRESHOLD) return [-c/b, -c/b];
     let discrim = b * b - 4 * a * c;
     if (discrim < -THRESHOLD) return [null, null];
     else if (discrim < THRESHOLD) discrim = 0;
