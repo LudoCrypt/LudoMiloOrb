@@ -903,7 +903,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
 
                 if (ts.length === 0) {
                     ts.push(0);
-                    ts.push(0); // this can be anything except 2npi?
+                    ts.push(1); // this can be anything except 2npi?
                 }
 
                 ts.sort((x, y) => x - y);
