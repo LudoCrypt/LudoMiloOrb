@@ -609,7 +609,7 @@ async function drawPuzzle() {
     if (drawIcon) {
         if (drawIcon.dataset.system != "sphere") {
             if (!currentDrawShape) {
-                currentDrawShape = polyhedronFromJson(await readLocalJson(getJsonFromDrawUnit(drawIcon.dataset.system)));
+                currentDrawShape = polyhedronFromJson(await readLocalJson('./' + getJsonFromDrawUnit(drawIcon.dataset.system)));
 
                 shapeTransformScale = currentDrawShape.infos.closestFaceInverse;
                 projectDrawScale = currentDrawShape.infos.closestFace * currentDrawShape.infos.furthestVertexInverse;
