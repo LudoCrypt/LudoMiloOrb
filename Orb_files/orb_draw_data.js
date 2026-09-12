@@ -129,18 +129,81 @@ addDrawShape({
 });
 
 addDrawShapeCategory({
-    name: 'archimedean_catalan_hulls',
+    name: 'archimedean',
 });
 
+addDrawShape({
+    name: 't_tetrahedron',
+    shapePath: 'Archimedean/Truncated_Tetrahedron'
+});
+
+addDrawShape({
+    name: 't_octahedron',
+    shapePath: 'Archimedean/Truncated_Octahedron'
+});
+
+addDrawShape({
+    name: 't_cube',
+    shapePath: 'Archimedean/Truncated_Cube'
+});
+
+addDrawShape({
+    name: 't_dodecahedron',
+    shapePath: 'Archimedean/Truncated_Dodecahedron'
+});
+
+addDrawShape({
+    name: 't_icosahedron',
+    shapePath: 'Archimedean/Truncated_Icosahedron'
+});
+
+addDrawShape({
+    name: 'cubeoctahedron',
+    shapePath: 'Archimedean/Cubeoctahedron'
+});
+
+addDrawShape({
+    name: 't_cubeoctahedron',
+    shapePath: 'Archimedean/Truncated_Cubeoctahedron'
+});
+
+addDrawShape({
+    name: 'rhombicubeoctahedron',
+    shapePath: 'Archimedean/Rhombicubeoctahedron'
+});
+
+addDrawShape({
+    name: 'icosidodecahedron',
+    shapePath: 'Archimedean/Icosidodecahedron'
+});
+
+addDrawShape({
+    name: 't_icosidodecahedron',
+    shapePath: 'Archimedean/Truncated_Icosidodecahedron'
+});
+
+addDrawShape({
+    name: 'rhombicosidodecahedron',
+    shapePath: 'Archimedean/Rhombicosidodecahedron'
+});
+
+addDrawShape({
+    name: 's_cube',
+    shapePath: 'Archimedean/Snub_Cube_dextro'
+});
+
+addDrawShape({
+    name: 's_dodecahedron',
+    shapePath: 'Archimedean/Snub_Dodecahedron_dextro'
+});
+
+addDrawShapeCategory({
+    name: 'archimedean_catalan_hulls',
+});
 
 addDrawShape({
     name: 'jt_tetrahedron',
     shapePath: 'Archimedean-Catalan Hulls/Joined_Truncated_Tetrahedron'
-});
-
-addDrawShape({
-    name: 'j_cubeoctahedron',
-    shapePath: 'Archimedean-Catalan Hulls/Joined_Cuboctahedron'
 });
 
 addDrawShape({
@@ -154,23 +217,8 @@ addDrawShape({
 });
 
 addDrawShape({
-    name: 'j_rhombicuboctahedron',
-    shapePath: 'Archimedean-Catalan Hulls/Joined_Rhombicuboctahedron'
-});
-
-addDrawShape({
-    name: 'js_cube',
-    shapePath: 'Archimedean-Catalan Hulls/Joined_Snub_Cube_dextro'
-});
-
-addDrawShape({
-    name: 'j_icosidodecahedron',
-    shapePath: 'Archimedean-Catalan Hulls/Joined_Icosidodecahedron'
-});
-
-addDrawShape({
-    name: 'jt_cubeoctahedron',
-    shapePath: 'Archimedean-Catalan Hulls/Joined_Truncated_Cuboctahedron'
+    name: 'jt_dodecahedron',
+    shapePath: 'Archimedean-Catalan Hulls/Joined_Truncated_Dodecahedron'
 });
 
 addDrawShape({
@@ -179,8 +227,28 @@ addDrawShape({
 });
 
 addDrawShape({
-    name: 'jt_dodecahedron',
-    shapePath: 'Archimedean-Catalan Hulls/Joined_Truncated_Dodecahedron'
+    name: 'j_cubeoctahedron',
+    shapePath: 'Archimedean-Catalan Hulls/Joined_Cubeoctahedron'
+});
+
+addDrawShape({
+    name: 'jt_cubeoctahedron',
+    shapePath: 'Archimedean-Catalan Hulls/Joined_Truncated_Cubeoctahedron'
+});
+
+addDrawShape({
+    name: 'j_rhombicubeoctahedron',
+    shapePath: 'Archimedean-Catalan Hulls/Joined_Rhombicubeoctahedron'
+});
+
+addDrawShape({
+    name: 'j_icosidodecahedron',
+    shapePath: 'Archimedean-Catalan Hulls/Joined_Icosidodecahedron'
+});
+
+addDrawShape({
+    name: 'jt_icosidodecahedron',
+    shapePath: 'Archimedean-Catalan Hulls/Joined_Truncated_Icosidodecahedron'
 });
 
 addDrawShape({
@@ -189,11 +257,12 @@ addDrawShape({
 });
 
 addDrawShape({
+    name: 'js_cube',
+    shapePath: 'Archimedean-Catalan Hulls/Joined_Snub_Cube_dextro'
+});
+
+addDrawShape({
     name: 'js_dodecahedron',
     shapePath: 'Archimedean-Catalan Hulls/Joined_Snub_Dodecahedron_dextro'
 });
 
-addDrawShape({
-    name: 'jt_icosidodecahedron',
-    shapePath: 'Archimedean-Catalan Hulls/Joined_Truncated_Icosidodecahedron'
-});

@@ -2439,8 +2439,8 @@ function createPhasePlot() {
         }
     }
 
-    let oppositesPhaseX = getAnyOppositesFromSystemUnit(systemUnits[freeSystemIndices[0]]);
-    let oppositesPhaseY = isPhase2D ? getAnyOppositesFromSystemUnit(systemUnits[freeSystemIndices[1]]) : false;
+    let oppositesPhaseX = getOppositesFromSystemUnit(systemUnits[freeSystemIndices[0]]);
+    let oppositesPhaseY = isPhase2D ? getOppositesFromSystemUnit(systemUnits[freeSystemIndices[1]]) : false;
 
     lineEqnsTangent.add([oppositesPhaseX ? 0 : -1, 0, -1, 0]);
     lineEqnsTriple.add([oppositesPhaseX ? 0 : -1, 0, -1, 0]);

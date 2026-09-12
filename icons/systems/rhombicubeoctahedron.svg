@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 50 50">
+  <defs>
+    <style>
+      .st0 {
+        fill: none;
+        stroke: #231f20;
+        stroke-linecap: round;
+        stroke-miterlimit: 10;
+        stroke-width: 3.5px;
+      }
+    </style>
+  </defs>
+  <line class="st0" x1="25.74" y1="20.43" x2="9.81" y2="19.69"/>
+  <line class="st0" x1="9.81" y1="19.69" x2="10.1" y2="36.41"/>
+  <line class="st0" x1="10.1" y1="36.41" x2="26.03" y2="37.15"/>
+  <line class="st0" x1="26.03" y1="37.15" x2="25.74" y2="20.43"/>
+  <line class="st0" x1="41.15" y1="18.95" x2="41.44" y2="35.67"/>
+  <line class="st0" x1="41.44" y1="35.67" x2="47.3" y2="32.84"/>
+  <line class="st0" x1="47.3" y1="32.84" x2="47.02" y2="16.11"/>
+  <line class="st0" x1="47.02" y1="16.11" x2="41.15" y2="18.95"/>
+  <line class="st0" x1="2.98" y1="33.89" x2="2.7" y2="17.16"/>
+  <line class="st0" x1="29.68" y1="6.6" x2="35.55" y2="3.77"/>
+  <line class="st0" x1="35.55" y1="3.77" x2="19.62" y2="3.03"/>
+  <line class="st0" x1="19.62" y1="3.03" x2="13.75" y2="5.86"/>
+  <line class="st0" x1="13.75" y1="5.86" x2="29.68" y2="6.6"/>
+  <line class="st0" x1="30.38" y1="46.97" x2="14.45" y2="46.23"/>
+  <line class="st0" x1="36.25" y1="44.14" x2="30.38" y2="46.97"/>
+  <line class="st0" x1="26.03" y1="37.15" x2="41.44" y2="35.67"/>
+  <line class="st0" x1="41.15" y1="18.95" x2="25.74" y2="20.43"/>
+  <line class="st0" x1="25.74" y1="20.43" x2="29.68" y2="6.6"/>
+  <line class="st0" x1="13.75" y1="5.86" x2="9.81" y2="19.69"/>
+  <line class="st0" x1="41.44" y1="35.67" x2="30.38" y2="46.97"/>
+  <line class="st0" x1="36.25" y1="44.14" x2="47.3" y2="32.84"/>
+  <line class="st0" x1="2.98" y1="33.89" x2="10.1" y2="36.41"/>
+  <line class="st0" x1="9.81" y1="19.69" x2="2.7" y2="17.16"/>
+  <line class="st0" x1="2.7" y1="17.16" x2="13.75" y2="5.86"/>
+  <line class="st0" x1="29.68" y1="6.6" x2="41.15" y2="18.95"/>
+  <line class="st0" x1="47.02" y1="16.11" x2="35.55" y2="3.77"/>
+  <line class="st0" x1="14.45" y1="46.23" x2="2.98" y2="33.89"/>
+  <line class="st0" x1="30.38" y1="46.97" x2="26.03" y2="37.15"/>
+  <line class="st0" x1="10.1" y1="36.41" x2="14.45" y2="46.23"/>
+</svg>
