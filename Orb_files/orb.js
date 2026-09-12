@@ -2028,9 +2028,7 @@ function pinnedSystemPhaseLines(s0unit, s1unit, s1slider, s2unit, s2slider) {
 
             let dot01 = axis0.dot(axis1);
 
-            if (dot01 > 1 - THRESHOLD) {
-                continue;
-            } else if (dot01 < -1 + THRESHOLD) {
+            if (Math.abs(dot01) - 1 > THRESHOLD) {
                 continue;
             }
 
@@ -2040,40 +2038,32 @@ function pinnedSystemPhaseLines(s0unit, s1unit, s1slider, s2unit, s2slider) {
                 let dot02 = axis0.dot(axis2);
                 let dot12 = axis1.dot(axis2);
 
-                if (dot02 > 1 - THRESHOLD) {
-                    continue;
-                } else if (dot02 < -1 + THRESHOLD) {
+                if (Math.abs(dot02) - 1 > THRESHOLD) {
                     continue;
                 }
 
-                if (dot12 > 1 - THRESHOLD) {
-                    continue;
-                } else if (dot12 < -1 + THRESHOLD) {
+                if (Math.abs(dot12) - 1 > THRESHOLD) {
                     continue;
                 }
 
-                let detAxes = axis0.dot(axis1.cross(axis2));
+                let q = (1 - dot12 * dot12);
 
-                if (Math.abs(detAxes) < THRESHOLD) {
-                    let q = (1 - dot12 * dot12);
-
-                    if (Math.abs(q) < THRESHOLD) {
-                        continue;
-                    }
-
-                    let pc = (axis1.multiply((s1value - s2value * dot12) / q)).add(axis2.multiply((s2value - s1value * dot12) / q));
-                    let d = pc.dot(pc);
-
-                    let a = axis0.dot(pc);
-                    let b = 0;
-
-                    if (Math.abs(d - 1) > THRESHOLD) {
-                        b = axis0.dot(axis1.cross(axis2).unit()) * Math.sqrt((1 - d));
-                    }
-
-                    points.push(a + b);
-                    points.push(a - b);
+                if (Math.abs(q) < THRESHOLD) {
+                    continue;
                 }
+
+                let pc = (axis1.multiply((s1value - s2value * dot12) / q)).add(axis2.multiply((s2value - s1value * dot12) / q));
+                let d = pc.dot(pc);
+
+                let a = axis0.dot(pc);
+                let b = 0;
+
+                if (Math.abs(d - 1) > THRESHOLD) {
+                    b = axis0.dot(axis1.cross(axis2).unit()) * Math.sqrt((1 - d));
+                }
+
+                points.push(a + b);
+                points.push(a - b);
             }
         }
     }
