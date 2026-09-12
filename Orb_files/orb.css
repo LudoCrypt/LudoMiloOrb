@@ -543,6 +543,44 @@ img {
     margin: 0;
 }
 
+.draw-icon {
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    width: 40px;
+    height: 40px;
+}
+
+#draw-change {
+    display: inline-flex;
+    flex-direction: row;
+    position: absolute;
+    height: 400px;
+    left: 30px;
+    z-index: 99;
+    overflow: hidden;
+}
+
+#draw-sidebar {
+    position: relative;
+    height: 100%;
+    width: auto;
+    background-color: #4070c0;
+    margin: 0;
+}
+
+#draw-category-options {
+    white-space: pre-line;
+}
+
+.draw-category-option {
+    margin: 10px;
+}
+
+.draw-category-option:hover {
+    background-color: #6090d0;
+}
+
 #category-options {
     white-space: pre-line;
 }
@@ -597,6 +635,51 @@ img {
 .system-option-name {
     display: inline;
 }
+
+#draw-options {
+    height: 100%;
+    overflow: auto;
+    background-color: #c0c0c0;
+    color: black;
+    margin: 0;
+}
+
+.draw-option {
+    margin: 10px;
+    vertical-align: middle;
+    text-align: middle;
+}
+
+#draw-shape-options {
+    height: 100%;
+    overflow: auto;
+    background-color: #c0c0c0;
+    color: black;
+    margin: 0;
+}
+
+.draw-shape-option {
+    margin: 10px;
+    vertical-align: middle;
+    text-align: middle;
+}
+
+.draw-shape-option:hover {
+    background-color: #d0d0d0;
+}
+
+.draw-shape-option-icon {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    vertical-align: middle;
+    /*background-color: #6080a0;*/
+}
+
+.draw-shape-option-name {
+    display: inline;
+}
+
 
 
 #params-change {

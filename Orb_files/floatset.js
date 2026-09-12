@@ -6,7 +6,7 @@ const THRESHOLD = 1e-6; // would feel a bit better if this were smaller
 function FloatSet(dimension=1, threshold){
     // update this to accommodate box-crossing
     this.dimension = dimension;
-    this.threshold = threshold || THRESHOLD;
+    this.threshold = threshold;
     this.boxWidth = 0.00028182845904523534; // e mod 1/10000, hopefully a nice irrational number
     this.boxFloat = x => Math.floor(x / this.boxWidth + 0.5); // the 0.5 puts 0 in the middle of a box
     this.boxArray = arr => arr.map(x => this.boxFloat(x));

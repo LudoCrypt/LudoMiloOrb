@@ -6,12 +6,20 @@
     <script type="module">
         import quartic from "./Orb_files/quartic.js";
         window.quartic = quartic;
+
+        async function readLocalJson(path) {
+          let response = await fetch(path);
+          return await response.json();
+        }
+        
+        window.readLocalJson = readLocalJson;
     </script>
     <script src="./Orb_files/quaternion.js" crossorigin=""></script>
     <script type="text/javascript" src="./Orb_files/quartic.js"></script>
     <script type="text/javascript" src="./Orb_files/vector.js"></script>
     <script type="text/javascript" src="./Orb_files/floatset.js"></script>
     <script type="text/javascript" src="./Orb_files/orb_data.js"></script>
+    <script type="text/javascript" src="./Orb_files/orb_draw_data.js"></script>
     <script type="text/javascript" src="./Orb_files/orb.js"></script>
     <script type="text/javascript" src="./Orb_files/camera.js"></script>
     <link rel="stylesheet" type="text/css" href="./Orb_files/orb.css">
@@ -30,6 +38,7 @@
     </div>
     <img id='language-button' class='svg-dark-bg svg-hoverable' src='./icons/lang.svg'>
     <div id='language-change' class='hidden'></div>
+    <img class='draw-icon svg-dark-bg svg-hoverable translate' data-system='sphere' data-alt-translate='system.sphere' src='./icons/systems/sphere.svg'>
 </div>
 
 <div id='control-panel'>
@@ -96,6 +105,13 @@
         <div id='color-settings'>
             <img id='color-remove' class='svg-light-bg svg-hoverable' src='./icons/remove.svg'>
         </div>
+    </div>
+
+    <div id='draw-change' class='hidden'>
+        <div id='draw-sidebar'>
+            <div id='draw-category-options'></div>
+        </div>
+        <div id='draw-options'></div>
     </div>
 </div>
 

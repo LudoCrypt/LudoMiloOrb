@@ -2423,6 +2423,7 @@ const langs = {
         'category.catalan': 'Catalan',
         'category.axial': 'Axial',
         'category.variable': 'Variable',
+        'system.sphere': 'Sphere',
         'system.tetra': 'Tetrahedron',
         'system.cube': 'Cube',
         'system.octa': 'Octahedron',

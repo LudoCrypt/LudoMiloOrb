@@ -41,7 +41,7 @@ var sphereTransformation = Quaternion.ONE;
 var sphereDrag = false;
 var spherePrevE;
 
-var sphereZoom = 2.0;
+var sphereZoom = 3.0;
 
 var phaseCamera;
 
@@ -83,6 +83,8 @@ var phaseBakedScale = 20.0;
 var changeDivs;
 
 var systemChangeDiv;
+var drawChangeDiv;
+var drawIcon;
 
 var paramsChangeDiv;
 var orderChangeDiv;
@@ -112,10 +114,17 @@ function transform(quat, vec) {
 
 
 const categoryOptionDivTemplate = category => `<div class='category-option simple-option translate' data-translate='category.${category}'></div>`
+const drawCategoryOptionDivTemplate = category => `<div class='draw-category-option simple-option translate' data-translate='category.${category}'></div>`
+
 const systemOptionDivTemplate = name => `<div class='system-option'>
     <img class='system-option-icon' src='${systemData[name].getIcon()}'>
     <div class='system-option-name translate' data-translate='system.${name}'></div>
 </div>`
+const drawShapeOptionDivTemplate = name => `<div class='draw-shape-option'>
+    <img class='draw-shape-option-icon' src='${drawShapeData[name].getIcon()}'>
+    <div class='draw-shape-option-name translate' data-translate='system.${name}'></div>
+</div>`
+
 const colorChoiceDivTemplate = color => `<div class='color-choice' style='background-color:${color};'></div>`
 const languageChoiceDivTemplate = name => `<div class='language-option simple-option'>${name}</div>`
 
@@ -158,11 +167,16 @@ function initialize() {
         let urlSystemDepths = urlParams.getAll('depths');
         let urlSystemColors = urlParams.getAll('colors');
         for (let i = 0; i < urlSystems.length; i++) {
-            createSystemUnit(false, urlSystems[i].split('-')[0], urlSystems[i].split('-').slice(1), urlSystemDepths[i].split('_').map(parseFloat), urlSystemColors[i].split('_').map(x => '#' + x))
+            let systemName = urlSystems[i].split('-')[0];
+            let systemParams = urlSystems[i].split('-').slice(1);
+            let decodedParams = systemParams.map((value, j) => systemData[systemName].paramsRequired[j] == "stringInput" ? atob(value) : value);
+            createSystemUnit(false, systemName, decodedParams, urlSystemDepths[i].split('_').map(parseFloat), urlSystemColors[i].split('_').map(x => '#' + x))
         }
     } else {
         createSystemUnit();
     }
+
+
 
     document.getElementById('color-remove').addEventListener('click', function() {
         removeSlider(targetOfChangeDiv.closest('.slider-unit'));
@@ -359,6 +373,12 @@ function initialize() {
         e.keepChangeDivs_ = true; // this might be bad practice but i guess it works
     });
 
+    document.getElementById('sphere-panel').addEventListener('click', function(e) {
+        if (!e.keepChangeDivs_) {
+            removeChangeDivs();
+        }
+    });
+
     controlPanel.addEventListener('click', function(e) {
         if (!e.keepChangeDivs_) {
             removeChangeDivs();
@@ -379,6 +399,42 @@ function initialize() {
         });
     }
 
+    drawIcon = document.getElementsByClassName('draw-icon')[0];
+    drawIcon.addEventListener('click', function(e) {
+        if (drawIcon !== targetOfChangeDiv) {
+            summonChangeDiv(drawIcon, drawChangeDiv);
+            e.keepChangeDivs_ = true; // otherwise it will close the div
+        }
+    });
+
+    if (urlParams.has('draw-shape')) {
+        setDrawShape(drawIcon, urlParams.getAll('draw-shape')[0], true);
+    }
+
+    drawChangeDiv = document.getElementById('draw-change');
+    for (let [shapeCategory, shapeNames] of drawShapeCategories) {
+        document.getElementById('draw-category-options').insertAdjacentHTML('beforeend', drawCategoryOptionDivTemplate(shapeCategory));
+        let categoryOptionDiv = document.getElementById('draw-category-options').lastChild;
+        let drawCategoryDiv = document.createElement('div');
+        drawCategoryDiv.classList.add('draw-category');
+        document.getElementById('draw-options').appendChild(drawCategoryDiv);
+        for (let shapeName of shapeNames) {
+            drawCategoryDiv.insertAdjacentHTML('beforeend', drawShapeOptionDivTemplate(shapeName));
+            let systemOptionDiv = drawCategoryDiv.lastChild;
+            systemOptionDiv.addEventListener('click', function(e) { // assuming systemChangeDiv is active
+                // I dont like this fix but meh
+                if (window.getSelection().toString().length == 0 && !e.altKey) {
+                    setDrawShape(drawIcon, shapeName, true);
+                    currentDrawShape = undefined;
+                }
+                drawPuzzle();
+            });
+        }
+        categoryOptionDiv.addEventListener('click', function() {
+            document.getElementById('draw-options').scrollTop = drawCategoryDiv.offsetTop - 10; // compensate for the margin of the option divs
+        })
+        document.getElementById('draw-options').appendChild(document.createElement('hr'));
+    }
 
     document.getElementById('phase-create').addEventListener('click', function() {
         if (document.getElementById('phase-create').dataset.disabled !== undefined) return;
@@ -414,11 +470,18 @@ function initialize() {
 
     document.getElementById('share-url').addEventListener('click', function() {
         let urlParams = new URLSearchParams();
+
+        urlParams.append('draw-shape', drawIcon.dataset.system);
+
         for (let systemUnit of sliderPanel.children) {
             if (systemUnit.classList.contains('ghost-system')) continue;
             let systemCode = systemUnit.dataset.system;
             for (let reqParam of systemData[systemUnit.dataset.system].paramsRequired) {
-                systemCode += '-' + systemUnit.dataset[reqParam];
+                if (reqParam == "stringInput") {
+                    systemCode += '-' + btoa(systemUnit.dataset[reqParam]);
+                } else {
+                    systemCode += '-' + systemUnit.dataset[reqParam];
+                }
             }
             urlParams.append('system', systemCode);
             let systemAxes = getAxesFromSystemUnit(systemUnit);
@@ -426,7 +489,7 @@ function initialize() {
             let systemColors = [];
             for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children) {
                 if (sliderUnit.classList.contains('ghost-slider')) continue;
-                systemDepths.push(parseFloat(sliderUnit.dataset.depth).toFixed(6));
+                systemDepths.push(parseFloat(sliderUnit.dataset.depth));
                 systemColors.push(sliderUnit.dataset.color.replaceAll('#', ''));
             }
             urlParams.append('depths', systemDepths.join('_'));
@@ -448,18 +511,32 @@ function initialize() {
         currentLanguage = window.localStorage.getItem('lang') ?? 'en_us';
     } catch (e) {} // not sure if there's a better way to do this
     setTranslationHTML(); // has to be at the bottom!
+
+    drawPuzzle();
 }
+
+
+
+
+
+function setDrawShape(drawIcon, systemName, fromInput = false) {
+    drawIcon.dataset.system = systemName;
+    drawIcon.src = drawShapeData[systemName].getIcon(); // change this to an image // it is
+    drawIcon.dataset.altTranslate = systemName;
+    if (closeChangeDivsOnSelect && fromInput) removeChangeDivs();
+}
+
+
 
 function makeCanvasSize() {
     let spherePanelInnerStyle = window.getComputedStyle(document.getElementById('sphere-panel-inner'));
-    let canvasSide = parseInt((Math.min(parseFloat(spherePanelInnerStyle.height), parseFloat(spherePanelInnerStyle.height)) * .9) / 2) * sphereZoom;
+    let canvasSide = parseInt((Math.min(parseFloat(spherePanelInnerStyle.width), parseFloat(spherePanelInnerStyle.height)) * .9) / 2) * sphereZoom;
     sphereCanvas.width = canvasSide;
     sphereCanvas.height = canvasSide;
     sphereCanvasRadius = parseInt(sphereCanvas.width / (2 + 2 * sphereMargin));
     sphereCtx.translate(sphereCanvas.width / 2, sphereCanvas.height / 2);
     sphereCtx.scale(sphereCanvasRadius, -sphereCanvasRadius);
-    //console.log(canvasSide)
-    //drawPuzzle();
+    sphereCtx.lineWidth = 0.01 / sphereZoom;
 }
 
 function setTranslationHTML() {
@@ -510,8 +587,45 @@ function updateAngleDeltas(systemUnit) {
 }
 
 
-function drawPuzzle() {
-    drawSphere();
+var currentDrawShape;
+
+function polyhedronFromJson(data) {
+    const vertices = data.shape.vertices.map(Vector.fromArray);
+
+    const triangles = [];
+    for (const face of data.shape.faces) {
+        for (let i = 1; i < face.length - 1; i++) {
+            triangles.push([face[0], face[i], face[i + 1]]);
+        }
+    }
+
+    const infos = data.infos;
+
+    return { vertices, triangles, infos };
+}
+
+async function drawPuzzle() {
+
+    if (drawIcon) {
+        if (drawIcon.dataset.system != "sphere") {
+            if (!currentDrawShape) {
+                currentDrawShape = polyhedronFromJson(await readLocalJson(getJsonFromDrawUnit(drawIcon.dataset.system)));
+
+                shapeTransformScale = currentDrawShape.infos.closestFaceInverse;
+                projectDrawScale = currentDrawShape.infos.closestFace * currentDrawShape.infos.furthestVertexInverse;
+            }
+        }
+    }
+
+    if (currentDrawShape) {
+        drawShape(currentDrawShape);
+    } else if (drawIcon && drawIcon.dataset.system == "sphere") {
+        drawSphere();
+    } else {
+        return;
+    }
+
+
     for (let systemUnit of sliderPanel.children) {
         if (systemUnit.classList.contains('ghost-system')) continue;
 
@@ -524,9 +638,12 @@ function drawPuzzle() {
             let color = sliderUnit.dataset.color;
 
             if (sliderUnit.getElementsByClassName('view-button')[0].dataset.isOn === "0") color = "#00000000";
-
-            for (let axis of systemAxes) {
-                drawCircleOnSphere(axis, depth, color);
+            if (currentDrawShape) {
+                drawShapeCuts(currentDrawShape, systemAxes, depth, color);
+            } else {
+                for (let axis of systemAxes) {
+                    drawCircleOnSphere(axis, depth, color);
+                }
             }
         }
     }
@@ -551,6 +668,90 @@ function drawSphere() {
 }
 
 
+var projectDrawScale = 1.0;
+var shapeTransformScale = 1.0;
+
+function project(p) {
+    return new Vector(p.x * projectDrawScale, p.y * projectDrawScale, 0);
+}
+
+const lightDir = new Vector(0.15, 0.15, 1.0);
+
+// directly from 70 and c0 respectively
+const ambient = 112.0 / 255.0;
+const diffuse = 192.0 / 255.0 - ambient;
+
+function drawShape(shape) {
+    sphereCtx.clearRect(-3, -3, 6, 6);
+
+    const rotated = shape.vertices.map(v => transform(sphereTransformation, v).multiply(shapeTransformScale));
+
+    for (const [a, b, c] of shape.triangles) {
+
+        const p0 = rotated[a];
+        const p1 = rotated[b];
+        const p2 = rotated[c];
+
+        const o1 = p1.subtract(p0);
+        const o2 = p2.subtract(p0);
+
+        const normal = o1.cross(o2).unit();
+
+        if (normal.z <= 0) continue;
+
+        const s0 = project(p0);
+        const s1 = project(p1);
+        const s2 = project(p2);
+
+        const brightness = ambient + diffuse * normal.dot(lightDir);
+        
+        sphereCtx.fillStyle = `rgb(${brightness * 255.0}, ${brightness * 255.0}, ${brightness * 255.0})`;
+        sphereCtx.strokeStyle = sphereCtx.fillStyle;
+
+        sphereCtx.beginPath();
+        sphereCtx.moveTo(s0.x, s0.y);
+        sphereCtx.lineTo(s1.x, s1.y);
+        sphereCtx.lineTo(s2.x, s2.y);
+        sphereCtx.closePath();
+        sphereCtx.fill();
+        sphereCtx.stroke();
+    }
+}
+function drawShapeCuts(shape, systemAxes, depth, color) {
+    const rotated = shape.vertices.map(v => transform(sphereTransformation, v).multiply(shapeTransformScale));
+
+    for (const [a, b, c] of shape.triangles) {
+        const p0 = rotated[a];
+        const p1 = rotated[b];
+        const p2 = rotated[c];
+
+        const o1 = p1.subtract(p0);
+        const o2 = p2.subtract(p0);
+
+        const normal = o1.cross(o2).unit();
+
+        if (normal.z <= 0) continue;
+
+        const brightness = ambient + diffuse * Math.max(0, normal.dot(lightDir));
+        
+        const drawColor = lightenColor(color, brightness);
+
+        for (let axis of systemAxes) {
+            drawConeOnTriangle([rotated[a], rotated[b], rotated[c]], transform(sphereTransformation, axis.unit()), depth, 0.0, drawColor);
+        }
+    }
+}
+
+function lightenColor(hex, brightness) {
+
+    let r = parseInt(hex.slice(1, 3), 16);
+    let g = parseInt(hex.slice(3, 5), 16);
+    let b = parseInt(hex.slice(5, 7), 16);
+    let a = hex.length >= 9 ? parseInt(hex.slice(7, 9), 16) / 255 : 1;
+
+    return `rgba(${Math.round(r * brightness)}, ${Math.round(g * brightness)}, ${Math.round(b * brightness)}, ${a})`;
+}
+
 function drawPointOnSphere(pointRaw) {
     let point = transform(sphereTransformation, pointRaw);
     if (point.z >= 0) {
@@ -563,7 +764,7 @@ function drawPointOnSphere(pointRaw) {
 
 
 function drawCircleOnSphere(centerRaw, depth, color) {
-    let center = transform(sphereTransformation, centerRaw);
+    let center = transform(sphereTransformation, centerRaw.unit());
     // center is on sphere, depth from -1 to 1
     if (center.z < 0) {
         center = center.negative();
@@ -585,7 +786,6 @@ function drawCircleOnSphere(centerRaw, depth, color) {
         sphereCtx.ellipse(center.x * depth, center.y * depth, circleRadius * center.z, circleRadius, Math.atan2(center.y, center.x), beginAngle, endAngle);
         //console.log(center.x*depth, center.y*depth, circleRadius*center.z, circleRadius, Math.atan2(center.y, center.x), beginAngle, endAngle);
         sphereCtx.strokeStyle = color;
-        sphereCtx.lineWidth = 0.01 / sphereZoom;
         sphereCtx.stroke();
     }
 }
@@ -600,8 +800,357 @@ function moveSphere(x, y) {
     }
 }
 
+// i hate floating point sometimes
+// yes, these are CURRENTLY all the same value, but who knows!
+// maybe theres one edge case ive yet to consider
+// its easier just to keep them seperate and change them later if need be
+// instead of having to re-add them back (annoying)
 
+const SOLUTIONS_THRESHOLD = 1e-8;
+const QUADRATIC_THRESHOLD = 1e-8;
+const TYPE_THRESHOLD = 1e-8;
+const LINE_THRESHOLD = 1e-8;
+const UV_THRESHOLD = 1e-8;
 
+// im tired boss
+function drawConeOnTriangle(triangle, normal, depth, apex, color) {
+    const pn = normal.multiply(apex);
+
+    const rp0 = triangle[0].subtract(pn);
+    const rp1 = triangle[1].subtract(pn);
+    const rp2 = triangle[2].subtract(pn);
+
+    const p0 = rp0;
+    const p1 = rp1.subtract(rp0);
+    const p2 = rp2.subtract(rp0);
+
+    const dn0 = normal.dot(p0);
+    const dn1 = normal.dot(p1);
+    const dn2 = normal.dot(p2);
+
+    // https://www.desmos.com/calculator/e3iueqjlls
+    const k = (depth - apex) / Math.sqrt(1 + apex * apex - 2 * depth * apex);
+    const ks = k * k;
+
+    // Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0
+    const a = dn1 * dn1 - ks * p1.dot(p1);
+    const b = 2 * dn1 * dn2 - 2 * ks * p1.dot(p2);
+    const c = dn2 * dn2 - ks * p2.dot(p2);
+    const d = 2 * dn1 * dn0 - 2 * ks * p1.dot(p0);
+    const e = 2 * dn2 * dn0 - 2 * ks * p2.dot(p0);
+    const f = dn0 * dn0 - ks * p0.dot(p0);
+
+    const disc = Math.sqrt((a - c) * (a - c) + b * b);
+    const sma = (a + c + disc) * 0.5;
+    const smi = (a + c - disc) * 0.5;
+
+    const phi = Math.atan2(b, a - c) * 0.5;
+
+    const ma = [Math.cos(phi), Math.sin(phi)]
+    const mi = [-ma[1], ma[0]];
+
+    // uv in terms of the triangle
+    // xy in terms of the cone
+    const uv2xy = (uv) => [ma[0] * uv[0] + ma[1] * uv[1], mi[0] * uv[0] + mi[1] * uv[1]];
+    const xy2uv = (xy) => [ma[0] * xy[0] + mi[0] * xy[1], ma[1] * xy[0] + mi[1] * xy[1]];
+    const uv2vec = (uv) => p0.add(p1.multiply(uv[0])).add(p2.multiply(uv[1])).add(pn);
+    const uvWithinNappe = (uv) => normal.dot(uv2vec(uv).subtract(pn)) * k > -UV_THRESHOLD;
+    const uvWithinTriangle = (uv) => uv[0] > -UV_THRESHOLD && uv[1] > -UV_THRESHOLD && (uv[0] + uv[1]) < 1 + UV_THRESHOLD;
+
+    const lc = uv2xy([d, e]);
+
+    // roots along triangle edges
+    const [u1, u2] = quadratic(a, d, f, QUADRATIC_THRESHOLD); // v=0
+    const [v1, v2] = quadratic(c, e, f, QUADRATIC_THRESHOLD); // u=0
+    const [w1, w2] = quadratic(a - b + c, b - 2 * c + d - e, c + e + f, QUADRATIC_THRESHOLD); // u+v=1
+
+    const roots = [
+        {t: v1, toUv: s => [0, s]},
+        {t: u1, toUv: s => [s, 0]},
+        {t: w1, toUv: s => [s, 1 - s]},
+        {t: v2, toUv: s => [0, s]},
+        {t: u2, toUv: s => [s, 0]},
+        {t: w2, toUv: s => [s, 1 - s]}
+    ];
+
+    const intsXy = new FloatSet(2, SOLUTIONS_THRESHOLD);
+
+    for (const r of roots) {
+        if (Number.isFinite(r.t) && r.t > -UV_THRESHOLD && r.t < 1 + UV_THRESHOLD) {
+            const p = r.toUv(r.t);
+            if (uvWithinNappe(p)) {
+                intsXy.add(uv2xy(p));
+            }
+        }
+    }
+
+    if (Math.abs(sma) > TYPE_THRESHOLD && Math.abs(smi) > TYPE_THRESHOLD) {
+        const cx = -lc[0] / (2 * sma);
+        const cy = -lc[1] / (2 * smi);
+        const es = sma * cx * cx + smi * cy * cy - f;
+        
+        if (Math.sign(sma) === Math.sign(smi)) {
+            // ellipse
+            if (Math.abs(es) > QUADRATIC_THRESHOLD && Math.sign(es) === Math.sign(sma)) {
+                const eu = Math.sqrt(es / sma);
+                const ev = Math.sqrt(es / smi);
+
+                const ts = [];
+                for (const p of intsXy) {
+                    const t = Math.atan2((p[1] - cy) / ev, (p[0] - cx) / eu);
+                    ts.push(t);
+                }
+
+                if (ts.length === 0) {
+                    ts.push(0);
+                    ts.push(0); // this can be anything except 2npi?
+                }
+
+                ts.sort((x, y) => x - y);
+
+                let canDraw = false;
+                let canDrawHere = new Array(ts.length).fill(false);
+
+                for (let i = 0; i < ts.length; i++) {
+                    const tA = ts[i];
+                    const tB = ts[(i + 1) % ts.length] + ((i + 1) >= ts.length ? 2 * Math.PI : 0);
+                    const tM = ((tA + tB) * 0.5);
+
+                    const eUv = xy2uv([eu * Math.cos(tM) + cx, ev * Math.sin(tM) + cy]);
+
+                    if (uvWithinNappe(eUv) && uvWithinTriangle(eUv)) {
+                        canDraw = true;
+                        canDrawHere[i] = true;
+                    }
+                }
+
+                if (canDraw) {
+                    const eo = project(uv2vec(xy2uv([cx, cy])));
+                    const ru = project(uv2vec(xy2uv([cx + eu, cy])));
+                    const rv = project(uv2vec(xy2uv([cx, cy + ev])));
+
+                    const scu = ru.subtract(eo);
+                    const scv = rv.subtract(eo);
+
+                    const mx = new Vector(scu.x, scv.x);
+                    const my = new Vector(scu.y, scv.y);
+
+                    const c1 = mx.dot(mx);
+                    const c2 = mx.dot(my) * 2;
+                    const c3 = my.dot(my);
+
+                    const disc = Math.sqrt((c1 - c3) * (c1 - c3) + c2 * c2);
+                    const rx = Math.sqrt((c1 + c3 + disc) * 0.5);
+                    const ry = Math.sqrt((c1 + c3 - disc) * 0.5);
+
+                    const rot = Math.atan2(c2, c1 - c3) * 0.5;
+                    const ex = new Vector(Math.cos(rot), Math.sin(rot), 0);
+                    const ey = new Vector(-ex.y, ex.x, 0);
+
+                    for (let i = 0; i < ts.length; i++) {
+                        if (canDrawHere[i]) {
+                            const tA = ts[i];
+                            const tB = ts[(i + 1) % ts.length] + ((i + 1) >= ts.length ? 2 * Math.PI : 0);
+
+                            const upA = new Vector(Math.cos(tA), Math.sin(tA), 0);
+                            const upB = new Vector(Math.cos(tB), Math.sin(tB), 0);
+
+                            const tpA = new Vector(mx.dot(upA), my.dot(upA), 0);
+                            const tpB = new Vector(mx.dot(upB), my.dot(upB), 0);
+
+                            const projA = new Vector(tpA.dot(ex), tpA.dot(ey), 0);
+                            const projB = new Vector(tpB.dot(ex), tpB.dot(ey), 0);
+
+                            const theta1 = Math.atan2(projA.y / ry, projA.x / rx);
+                            const theta2 = Math.atan2(projB.y / ry, projB.x / rx);
+
+                            sphereCtx.beginPath();
+                            sphereCtx.strokeStyle = color;
+                            sphereCtx.ellipse(eo.x, eo.y, rx, ry, rot, theta1, theta2);
+                            sphereCtx.stroke();
+                        }
+                    }
+                }
+            }
+        } else {
+            // hyperbola
+            if (Math.abs(es) > QUADRATIC_THRESHOLD) {
+                const wa = Math.sqrt(es / sma);
+                const wb = Math.sqrt(es / -smi);
+
+                const ts = [];
+
+                for (const p of intsXy) {
+                    const t = Math.asinh((p[1] - cy) / wb);
+                    ts.push(t);
+                }
+
+                ts.sort((x, y) => x - y);
+
+                let canDraw = false;
+                let canDrawHere = new Array(ts.length).fill(false);
+                let drawSigns = new Array(ts.length).fill(-1);
+
+                for (let i = 0; i < ts.length - 1; i++) {
+                    const tA = ts[i];
+                    const tB = ts[i + 1];
+                    const tM = ((tA + tB) * 0.5);
+
+                    const eUv1 = xy2uv([wa * Math.cosh(tM) + cx, wb * Math.sinh(tM) + cy]);
+                    const eUv2 = xy2uv([-wa * Math.cosh(tM) + cx, wb * Math.sinh(tM) + cy]);
+
+                    if ((uvWithinNappe(eUv1) && uvWithinTriangle(eUv1)) || (uvWithinNappe(eUv2) && uvWithinTriangle(eUv2))) {
+                        canDraw = true;
+                        canDrawHere[i] = true;
+
+                        if (uvWithinNappe(eUv1) && uvWithinTriangle(eUv1)) {
+                            drawSigns[i] = 1;
+                        }
+                    }
+                }
+
+                if (canDraw) {
+                    for (let i = 0; i < ts.length - 1; i++) {
+                        if (canDrawHere[i]) {
+                            const tA = ts[i];
+                            const tB = ts[i + 1];
+                            const diff = tB - tA;
+
+                            const sign = drawSigns[i];
+
+                            sphereCtx.beginPath();
+                            sphereCtx.strokeStyle = color;
+
+                            const iters = 5;
+                            for (let j = 0; j < iters; j++) {
+                                const itA = (j / iters) * diff + tA;
+                                const itB = ((j + 1) / iters) * diff + tA;
+                                const iDiff = itB - itA;
+
+                                const uvA = [sign * wa * Math.cosh(itA) + cx, wb * Math.sinh(itA) + cy];
+                                const uvB = [sign * wa * Math.cosh(itB) + cx, wb * Math.sinh(itB) + cy];
+
+                                const tanA = [sign * wa * Math.sinh(itA) * iDiff / 3.0, wb * Math.cosh(itA) * iDiff / 3.0];
+                                const tanB = [sign * wa * Math.sinh(itB) * iDiff / 3.0, wb * Math.cosh(itB) * iDiff / 3.0];
+
+                                const cpUvA = [uvA[0] + tanA[0], uvA[1] + tanA[1]];
+                                const cpUvB = [uvB[0] - tanB[0], uvB[1] - tanB[1]];
+
+                                const ppA = project(uv2vec(xy2uv(uvA)));
+                                const ppB = project(uv2vec(xy2uv(uvB)));
+
+                                const pcpA = project(uv2vec(xy2uv(cpUvA)));
+                                const pcpB = project(uv2vec(xy2uv(cpUvB)));
+
+                                sphereCtx.moveTo(ppA.x, ppA.y);
+                                sphereCtx.bezierCurveTo(pcpA.x, pcpA.y, pcpB.x, pcpB.y, ppB.x, ppB.y);
+                            }
+
+                            sphereCtx.stroke();
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        // for some reason, floating point hates me. why do you lose so much precision?
+        if (Math.abs(lc[0]) < LINE_THRESHOLD || (Math.abs(sma) > TYPE_THRESHOLD ? Math.abs(lc[1]) < LINE_THRESHOLD : false)) {
+            // straight line
+            const [tP, tM] = quadratic(sma, lc[0], f, QUADRATIC_THRESHOLD);
+
+            let roots = [tP, tM];
+            if (Math.abs(tP - tM) < QUADRATIC_THRESHOLD) {
+                // average them! why not! lol
+                roots = [(tP + tM) * 0.5];
+            }
+
+            for (const r of roots) {
+                const ts = [];
+                for (const c of intsXy) {
+                    if (Math.abs(c[0] - r) < LINE_THRESHOLD) {
+                        ts.push(c[1]);
+                    }
+                }
+
+                ts.sort((x, y) => x - y);
+
+                for (let i = 0; i < ts.length - 1; i++) {
+                    const tA = ts[i];
+                    const tB = ts[i + 1];
+                    const tM = ((tA + tB) * 0.5);
+
+                    const eUv = xy2uv([r, tM]);
+
+                    if (uvWithinNappe(eUv) && uvWithinTriangle(eUv)) {
+                        const ppA = project(uv2vec(xy2uv([r, tA])));
+                        const ppB = project(uv2vec(xy2uv([r, tB])));
+
+                        sphereCtx.beginPath();
+                        sphereCtx.strokeStyle = color;
+                        sphereCtx.moveTo(ppA.x, ppA.y);
+                        sphereCtx.lineTo(ppB.x, ppB.y);
+                        sphereCtx.stroke();
+                    }
+                }
+            }
+        } else {
+            // parabola
+            // yk i really thought i could avoid implementing this but here we are
+            const qa = -smi / lc[0];
+            const qb = -lc[1] / lc[0];
+            const qc = -f / lc[0];
+
+            const ts = [];
+            for (const p of intsXy) {
+                ts.push(p[1]);
+            }
+
+            ts.sort((x, y) => x - y);
+
+            let canDraw = false;
+            let canDrawHere = new Array(ts.length).fill(false);
+
+            for (let i = 0; i < ts.length - 1; i++) {
+                const tA = ts[i];
+                const tB = ts[i + 1];
+                const tM = ((tA + tB) * 0.5);
+
+                const eUv1 = xy2uv([qa * tM * tM + qb * tM + qc, tM]);
+
+                if (uvWithinNappe(eUv1) && uvWithinTriangle(eUv1)) {
+                    canDraw = true;
+                    canDrawHere[i] = true;
+                }
+            }
+
+            if (canDraw) {
+                for (let i = 0; i < ts.length - 1; i++) {
+                    if (canDrawHere[i]) {
+                        const tA = ts[i];
+                        const tB = ts[i + 1];
+                        const tM = ((tA + tB) * 0.5);
+
+                        sphereCtx.beginPath();
+                        sphereCtx.strokeStyle = color;
+
+                        const uvA = [qa * tA * tA + qb * tA + qc, tA];
+                        const uvB = [qa * tB * tB + qb * tB + qc, tB];
+                        const cpUvA = [(4 * (qa * tM * tM + qb * tM + qc) - (uvA[0] + uvB[0])) * 0.5, tM];
+
+                        const ppA = project(uv2vec(xy2uv(uvA)));
+                        const ppB = project(uv2vec(xy2uv(uvB)));
+                        const pcp = project(uv2vec(xy2uv(cpUvA)));
+
+                        sphereCtx.moveTo(ppA.x, ppA.y);
+                        sphereCtx.quadraticCurveTo(pcp.x, pcp.y, ppB.x, ppB.y);
+
+                        sphereCtx.stroke();
+                    }
+                }
+            }
+        }
+    }
+}
 
 function createSystemUnit(ghost = false, system = 'cube', params = [], systemDepths = [1], systemColors = [colorChoices[0]]) {
     let systemUnit = document.getElementById('template-system-unit').cloneNode(true);
@@ -845,6 +1394,7 @@ function setSystem(systemIcon, systemName, fromInput = false) {
     hidePhaseDiagram();
     if (closeChangeDivsOnSelect && fromInput) removeChangeDivs();
 }
+
 
 
 function setSlider(sliderThumb, depth, fromInput = false, fromExtern = false) { // it also clamps the value
@@ -1102,7 +1652,7 @@ function summonChangeDiv(targetButton, changeDiv) {
 
                     input.addEventListener('keydown', function(e) {
                         if (e.key === 'Enter') {
-                            setSystemParam(param, systemUnit, " " + input.value);
+                            setSystemParam(param, systemUnit, input.value.startsWith(' ') ? input.value : ' ' + input.value);
                             drawPuzzle();
                         }
                     });
@@ -2411,11 +2961,13 @@ function lineEqnToDot(line) {
 }
 
 
-function quadratic(a, b, c) {
-    if (Math.abs(a) < THRESHOLD) return [-c/b, -c/b];
+function quadratic(a, b, c, threshold = THRESHOLD) {
+    if (Math.abs(a) < threshold && Math.abs(b) < threshold && Math.abs(c) < threshold) return [null, null];
+    if (Math.abs(a) < threshold) return [-c/b, -c/b];
+    if (Math.abs(c) < threshold) return [0, -b/a];
     let discrim = b * b - 4 * a * c;
-    if (discrim < -THRESHOLD) return [null, null];
-    else if (discrim < THRESHOLD) discrim = 0;
+    if (discrim < -threshold) return [null, null];
+    else if (discrim < threshold) discrim = 0;
     let tP = (-b + Math.sqrt(discrim)) / (2 * a);
     let tM = (-b - Math.sqrt(discrim)) / (2 * a);
     return [tP, tM];
