@@ -34,37 +34,37 @@ addDrawShape({
 
 addDrawShape({
     name: 'tetra',
-    shapePath: 'platonic/Tetrahedron'
+    shapePath: 'Platonic/Tetrahedron'
 });
 
 addDrawShape({
     name: 'cube',
-    shapePath: 'platonic/Cube'
+    shapePath: 'Platonic/Cube'
 });
 
 addDrawShape({
     name: 'octa',
-    shapePath: 'platonic/Octahedron'
+    shapePath: 'Platonic/Octahedron'
 });
 
 addDrawShape({
     name: 'r_dodeca',
-    shapePath: 'catalan/Rhombic_Dodecahedron'
+    shapePath: 'Catalan/Rhombic_Dodecahedron'
 });
 
 addDrawShape({
     name: 'dodeca',
-    shapePath: 'platonic/Dodecahedron'
+    shapePath: 'Platonic/Dodecahedron'
 });
 
 addDrawShape({
     name: 'icosa',
-    shapePath: 'platonic/Icosahedron'
+    shapePath: 'Platonic/Icosahedron'
 });
 
 addDrawShape({
     name: 'r_triaconta',
-    shapePath: 'catalan/Rhombic_Triacontahedron'
+    shapePath: 'Catalan/Rhombic_Triacontahedron'
 });
 
 
@@ -75,57 +75,57 @@ addDrawShapeCategory({
 
 addDrawShape({
     name: 'k_tetra',
-    shapePath: 'catalan/Triakis_Tetrahedron'
+    shapePath: 'Catalan/Triakis_Tetrahedron'
 });
 
 addDrawShape({
     name: 'k_cube',
-    shapePath: 'catalan/Tetrakis_Hexahedron'
+    shapePath: 'Catalan/Tetrakis_Hexahedron'
 });
 
 addDrawShape({
     name: 'k_octa',
-    shapePath: 'catalan/Triakis_Octahedron'
+    shapePath: 'Catalan/Triakis_Octahedron'
 });
 
 addDrawShape({
     name: 'd_icositetra',
-    shapePath: 'catalan/Deltoidal_Icositetrahedron'
+    shapePath: 'Catalan/Deltoidal_Icositetrahedron'
 });
 
 addDrawShape({
     name: 'kr_dodeca',
-    shapePath: 'catalan/Disdyakis_Dodecahedron'
+    shapePath: 'Catalan/Disdyakis_Dodecahedron'
 });
 
 addDrawShape({
     name: 'p_icositetra',
-    shapePath: 'catalan/Pentagonal_Icositetrahedron_laevo'
+    shapePath: 'Catalan/Pentagonal_Icositetrahedron_laevo'
 });
 
 addDrawShape({
     name: 'k_dodeca',
-    shapePath: 'catalan/Pentakis_Dodecahedron'
+    shapePath: 'Catalan/Pentakis_Dodecahedron'
 });
 
 addDrawShape({
     name: 'k_icosa',
-    shapePath: 'catalan/Triakis_Icosahedron'
+    shapePath: 'Catalan/Triakis_Icosahedron'
 });
 
 addDrawShape({
     name: 'd_hexeconta',
-    shapePath: 'catalan/Deltoidal_Hexecontahedron'
+    shapePath: 'Catalan/Deltoidal_Hexecontahedron'
 });
 
 addDrawShape({
     name: 'kr_triaconta',
-    shapePath: 'catalan/Disdyakis_Triacontahedron'
+    shapePath: 'Catalan/Disdyakis_Triacontahedron'
 });
 
 addDrawShape({
     name: 'p_hexeconta',
-    shapePath: 'catalan/Pentagonal_Hexecontahedron_laevo'
+    shapePath: 'Catalan/Pentagonal_Hexecontahedron_laevo'
 });
 
 addDrawShapeCategory({
