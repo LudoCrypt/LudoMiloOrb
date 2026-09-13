@@ -854,7 +854,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
     const uv2xy = (uv) => [ma[0] * uv[0] + ma[1] * uv[1], mi[0] * uv[0] + mi[1] * uv[1]];
     const xy2uv = (xy) => [ma[0] * xy[0] + mi[0] * xy[1], ma[1] * xy[0] + mi[1] * xy[1]];
     const uv2vec = (uv) => p0.add(p1.multiply(uv[0])).add(p2.multiply(uv[1])).add(pn);
-    const uvWithinNappe = (uv) => normal.dot(uv2vec(uv).subtract(pn)) * k > -UV_THRESHOLD;
+    const uvWithinNappe = (uv) => k > 0 ? normal.dot(uv2vec(uv).subtract(pn)) >= Math.max(-apex, 0) - UV_THRESHOLD : normal.dot(uv2vec(uv).subtract(pn)) <= Math.min(depth - apex, 0) + UV_THRESHOLD;
     const uvWithinTriangle = (uv) => uv[0] > -UV_THRESHOLD && uv[1] > -UV_THRESHOLD && (uv[0] + uv[1]) < 1 + UV_THRESHOLD;
 
     const lc = uv2xy([d, e]);
