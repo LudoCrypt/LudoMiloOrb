@@ -592,13 +592,8 @@ var currentDrawShape;
 function polyhedronFromJson(data) {
     const vertices = data.shape.vertices.map(Vector.fromArray);
 
-    const triangles = [];
-    for (const face of data.shape.faces) {
-        for (let i = 1; i < face.length - 1; i++) {
-            triangles.push([face[0], face[i], face[i + 1]]);
-        }
-    }
-
+    const triangles = triangleFan(data.shape.faces);
+    
     const infos = data.infos;
 
     return { vertices, triangles, infos };
@@ -609,7 +604,7 @@ async function drawPuzzle() {
     if (drawIcon) {
         if (drawIcon.dataset.system != "sphere") {
             if (!currentDrawShape) {
-                currentDrawShape = polyhedronFromJson(await readLocalJson('./' + getJsonFromDrawUnit(drawIcon.dataset.system)));
+                currentDrawShape = await getShapeFromDrawUnit(drawIcon.dataset.system);
 
                 shapeTransformScale = currentDrawShape.infos.closestFaceInverse;
                 projectDrawScale = currentDrawShape.infos.closestFace * currentDrawShape.infos.furthestVertexInverse;

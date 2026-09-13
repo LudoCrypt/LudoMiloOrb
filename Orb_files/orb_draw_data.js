@@ -13,14 +13,20 @@ function addDrawShapeCategory(data) {
 
 function addDrawShape(data, addToMenu = true) {
     data.getIcon ??= () => `./icons/systems/${data.name}.svg`;
-    data.getShape ??= () => `./shapes/${data.shapePath}.json`;
+    data.getShapeJson ??= () => `./shapes/${data.shapePath}.json`;
+    data.getShape ??= async (params) => polyhedronFromJson(await readLocalJson('./' + data.getShapeJson()));
 
     if (addToMenu) drawShapeCategories.get(mostRecentDrawCategory).push(data.name);
-    drawShapeData[data.name] = data
+    drawShapeData[data.name] = data;
 }
 
 function getJsonFromDrawUnit(name) {
-    return drawShapeData[name].getShape();
+    return drawShapeData[name].getShapeJson();
+}
+
+async function getShapeFromDrawUnit(name) {
+    const d = {};
+    return await drawShapeData[name].getShape(/*systemUnit.dataset*/ d);
 }
 
 addDrawShapeCategory({
@@ -264,3 +270,114 @@ addDrawShape({
     shapePath: 'Archimedean-Catalan Hulls/Joined_Snub_Dodecahedron_dextro'
 });
 
+addDrawShapeCategory({
+    name: 'variable',
+});
+
+addDrawShape({
+    name: 'pyritohedron',
+    paramsRequired: ['arbitraryConstant0'],
+    getShape: function(params) {
+        let x = parseFloat(params.arbitraryConstant0 ?? 0.5);
+
+        let c = 1 + x;
+        let v = 1 - x * x;
+
+        let verts = [
+            [c, 0, v],
+            [-c, 0, v],
+            [c, 0, -v],
+            [-c, 0, -v],
+            [0, v, c],
+            [0, -v, c],
+            [0, v, -c],
+            [0, -v, -c],
+            [v, c, 0],
+            [-v, c, 0],
+            [v, -c, 0],
+            [-v, -c, 0],
+            [1, 1, 1],
+            [-1, 1, 1],
+            [1, -1, 1],
+            [-1, -1, 1],
+            [1, 1, -1],
+            [-1, 1, -1],
+            [1, -1, -1],
+            [-1, -1, -1]
+        ];
+
+        let faces = [
+            [4, 12, 8, 9, 13],
+            [6, 17, 9, 8, 16],
+            [0, 2, 16, 8, 12],
+            [2, 0, 14, 10, 18],
+            [4, 5, 14, 0, 12],
+            [5, 4, 13, 1, 15],
+            [3, 1, 13, 9, 17],
+            [1, 3, 19, 11, 15],
+            [6, 7, 19, 3, 17],
+            [6, 7, 18, 2, 16],
+            [11, 10, 18, 7, 19],
+            [10, 11, 15, 5, 14]
+        ];
+
+        let edges = [
+            [4, 12],
+            [8, 12],
+            [8, 9],
+            [9, 13],
+            [4, 13],
+            [6, 17],
+            [9, 17],
+            [8, 16],
+            [6, 16],
+            [0, 2],
+            [2, 16],
+            [0, 12],
+            [0, 14],
+            [10, 14],
+            [10, 18],
+            [2, 18],
+            [4, 5],
+            [5, 14],
+            [1, 13],
+            [1, 15],
+            [5, 15],
+            [1, 3],
+            [3, 17],
+            [3, 19],
+            [11, 19],
+            [11, 15],
+            [6, 7],
+            [7, 19],
+            [7, 18],
+            [10, 11]
+        ];
+
+        let dist = (x + 1) / Math.sqrt(x * x + 1);
+        let faceDistances = [dist];
+        let inverseFaceDistances = [1.0 / dist];
+        let closestFace = dist;
+        let closestFaceInverse = 1.0 / dist;
+        let furthestVertex = Math.max(Math.sqrt(3), (x + 1) * Math.sqrt(x * x - 2 * x + 2));
+        let furthestVertexInverse = 1.0 / furthestVertex;
+
+        let infos = { faceDistances, inverseFaceDistances, closestFace, closestFaceInverse, furthestVertex, furthestVertexInverse };
+
+        let vertices = verts.map(Vector.fromArray);
+        let triangles = triangleFan(faces);
+
+        return { vertices, triangles, infos };
+    }
+});
+
+function triangleFan(faces) {
+    const triangles = [];
+    for (const face of faces) {
+        for (let i = 1; i < face.length - 1; i++) {
+            triangles.push([face[0], face[i], face[i + 1]]);
+        }
+    }
+
+    return triangles;
+}
