@@ -254,6 +254,21 @@ img {
     user-select: auto;
 }
 
+.slider-input-apex:focus {
+    -moz-user-select: auto;
+    -webkit-user-select: auto;
+    -ms-user-select: auto;
+    user-select: auto;
+}
+
+.slider-input {
+    width: 70px;
+}
+
+.slider-input-apex {
+    width: 70px;
+}
+
 .angle-delta {
     color: #888;
     display: inline-block;
@@ -290,6 +305,11 @@ img {
 
 .slider-add {
     display: none;
+}
+
+.link-button {
+    width: auto;
+    height: 20px;
 }
 
 .pin-button {
