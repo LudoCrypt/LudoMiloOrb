@@ -165,12 +165,13 @@ function initialize() {
     if (urlParams.has('system')) {
         let urlSystems = urlParams.getAll('system');
         let urlSystemDepths = urlParams.getAll('depths');
+        let urlSystemApices = urlParams.getAll('apices');
         let urlSystemColors = urlParams.getAll('colors');
         for (let i = 0; i < urlSystems.length; i++) {
             let systemName = urlSystems[i].split('-')[0];
             let systemParams = urlSystems[i].split('-').slice(1);
             let decodedParams = systemParams.map((value, j) => systemData[systemName].paramsRequired[j] == "stringInput" ? atob(value) : value);
-            createSystemUnit(false, systemName, decodedParams, urlSystemDepths[i].split('_').map(parseFloat), urlSystemColors[i].split('_').map(x => '#' + x))
+            createSystemUnit(false, systemName, decodedParams, urlSystemDepths[i].split('_').map(parseFloat), urlSystemApices[i].split('_').map(parseFloat), urlSystemColors[i].split('_').map(x => '#' + x))
         }
     } else {
         createSystemUnit();
@@ -486,13 +487,16 @@ function initialize() {
             urlParams.append('system', systemCode);
             let systemAxes = getAxesFromSystemUnit(systemUnit);
             let systemDepths = [];
+            let systemApices = [];
             let systemColors = [];
             for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children) {
                 if (sliderUnit.classList.contains('ghost-slider')) continue;
                 systemDepths.push(parseFloat(sliderUnit.dataset.depth));
+                systemApices.push(parseFloat(sliderUnit.dataset.apex));
                 systemColors.push(sliderUnit.dataset.color.replaceAll('#', ''));
             }
             urlParams.append('depths', systemDepths.join('_'));
+            urlParams.append('apices', systemApices.join('_'));
             urlParams.append('colors', systemColors.join('_'));
         }
         //console.log(window.location.origin + window.location.pathname + '?' + urlParams.toString());
@@ -807,14 +811,15 @@ function moveSphere(x, y) {
 // its easier just to keep them seperate and change them later if need be
 // instead of having to re-add them back (annoying)
 
-const SOLUTIONS_THRESHOLD = 1e-8;
-const QUADRATIC_THRESHOLD = 1e-8;
-const TYPE_THRESHOLD = 1e-8;
-const LINE_THRESHOLD = 1e-8;
-const UV_THRESHOLD = 1e-8;
+const SOLUTIONS_THRESHOLD = 1e-9;
+const QUADRATIC_THRESHOLD = 1e-9;
+const TYPE_THRESHOLD = 1e-9;
+const LINE_THRESHOLD = 1e-9;
+const UV_THRESHOLD = 1e-9;
 
 // im tired boss
 function drawConeOnTriangle(triangle, normal, depth, apex, color) {
+
     const pn = normal.multiply(apex);
 
     const rp0 = triangle[0].subtract(pn);
@@ -1153,7 +1158,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
     }
 }
 
-function createSystemUnit(ghost = false, system = 'cube', params = [], systemDepths = [1], systemColors = [colorChoices[0]]) {
+function createSystemUnit(ghost = false, system = 'cube', params = [], systemDepths = [1], systemApices = [0], systemColors = [colorChoices[0]]) {
     let systemUnit = document.getElementById('template-system-unit').cloneNode(true);
     systemUnit.removeAttribute('id');
     if (ghost) {
@@ -1191,7 +1196,7 @@ function createSystemUnit(ghost = false, system = 'cube', params = [], systemDep
 
         createSliderUnit(systemUnit, true);
         for (let i = 0; i < systemDepths.length; i++) {
-            createSliderUnit(systemUnit, false, systemDepths[i], 0, systemColors[i]);
+            createSliderUnit(systemUnit, false, systemDepths[i], systemApices[i], systemColors[i]);
         }
         drawPuzzle();
     }
@@ -1460,6 +1465,7 @@ function setSlider(sliderThumb, depth, apex, fromInput = false, fromExtern = fal
         //sliderUnit.getElementsByClassName('slider-input')[0].value = calDepthVal;
 
         sliderUnit.getElementsByClassName('slider-input')[0].value = clamp(Math.acos(calDepthVal) * 180.0 / Math.PI, 0, isFullDepth ? 180 : 90);
+        sliderUnit.getElementsByClassName('slider-input-apex')[0].value = sliderUnit.dataset.apex;
 
         if (isLinked) sliderUnit.getElementsByClassName('slider-input-apex')[0].value = calDepthVal;
         if (isLinked) sliderUnit.dataset.apex = calDepthVal;
@@ -2987,12 +2993,23 @@ function lineEqnToDot(line) {
 function quadratic(a, b, c, threshold = THRESHOLD) {
     if (Math.abs(a) < threshold && Math.abs(b) < threshold && Math.abs(c) < threshold) return [null, null];
     if (Math.abs(a) < threshold) return [-c/b, -c/b];
-    if (Math.abs(c) < threshold) return [0, -b/a];
+    if (Math.abs(b) < threshold) return [Math.sqrt(-c / a), -Math.sqrt(-c / a)];
+    //if (Math.abs(c) < threshold) return [0, -b/a];
+
     let discrim = b * b - 4 * a * c;
     if (discrim < -threshold) return [null, null];
     else if (discrim < threshold) discrim = 0;
-    let tP = (-b + Math.sqrt(discrim)) / (2 * a);
-    let tM = (-b - Math.sqrt(discrim)) / (2 * a);
+
+    let sqrtdisc = Math.sqrt(discrim);
+    let q = -(b + Math.sign(b) * sqrtdisc) * 0.5;
+
+    // I dont actually know if i need to do this or not
+    // i checked to see if the order mattered anywhere
+    // and in some ellipse code, its used for X and Y size
+    // id rather be careful and not mess with it
+    // so im making sure that tP is always the higher root, and vice versa
+    let tP = b > 0 ? c / q : q / a;
+    let tM = b > 0 ? q / a : c / q;
     return [tP, tM];
 }
 
