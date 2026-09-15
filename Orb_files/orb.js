@@ -1246,17 +1246,20 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
             //sliderGrabOffsetX = e.clientX - parseFloat(sliderBar.getBoundingClientRect().left);
             sliderGrabOffsetX = parseFloat(sliderBar.getBoundingClientRect().left);
             //console.log(sliderGrabOffsetX)
-            setSlider(sliderThumb, newSliderX / sliderWidth, sliderThumb.closest('.slider-unit').dataset.apex);
+            setSlider(sliderThumb, newSliderX / sliderWidth, sliderUnit.dataset.apex);
         });
 
         let linkButton = sliderUnit.getElementsByClassName('link-button')[0];
-        linkButton.addEventListener('click', function() {
+        linkButton.addEventListener('click', function(reset = true) {
             if (linkButton.dataset.isOn === "1") {
                 linkButton.dataset.isOn = 0;
                 linkButton.src = './icons/link_off.svg';
+                sliderUnit.getElementsByClassName('slider-input-apex')[0].value = 0.0;
+                if (reset) setSlider(sliderThumb, sliderUnit.dataset.depth, 0.0, true);
             } else {
                 linkButton.dataset.isOn = 1;
                 linkButton.src = './icons/link_on.svg';
+                setSlider(sliderThumb, sliderUnit.dataset.depth, sliderUnit.dataset.depth, true);
             }
             hidePhaseDiagram(false);
             createPhasePlot();
@@ -1267,12 +1270,20 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
         let sliderApexInput = sliderUnit.getElementsByClassName('slider-input-apex')[0];
 
         sliderInput.addEventListener('change', function(e) {
-            setSlider(sliderThumb, Math.cos(parseFloat(sliderInput.value) * Math.PI / 180.0), sliderThumb.closest('.slider-unit').dataset.apex, true);
+            setSlider(sliderThumb, Math.cos(parseFloat(sliderInput.value) * Math.PI / 180.0), sliderUnit.dataset.apex, true);
             //sliderAngleInput.value = Math.acos(parseFloat(sliderInput.value)) * 180.0 / Math.PI;
         });
 
         sliderApexInput.addEventListener('change', function(e) {
-            setSlider(sliderThumb, sliderThumb.closest('.slider-unit').dataset.depth, parseFloat(sliderApexInput.value), true);
+
+            let prevApex = parseFloat(sliderApexInput.value);
+
+            if (linkButton.dataset.isOn === "1") {
+                linkButton.click(false);
+            }
+
+            sliderApexInput.value = prevApex;
+            setSlider(sliderThumb, sliderUnit.dataset.depth, prevApex, true);
             //sliderAngleInput.value = Math.acos(parseFloat(sliderInput.value)) * 180.0 / Math.PI;
         });
 
@@ -1287,14 +1298,13 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
             button.addEventListener('click', function(e) {
                 const amount = parseFloat(this.getAttribute('data-step'));
 
-
                 let currentValue = parseFloat(sliderInput.value) || 0;
 
                 let newValue = clamp(currentValue + amount, 0, parseFloat(sliderInput.max));
 
                 sliderInput.value = newValue;
                 var cosAngleInput = Math.cos(parseFloat(sliderInput.value) * Math.PI / 180.0);
-                setSlider(sliderThumb, cosAngleInput, sliderThumb.closest('.slider-unit').dataset.apex, true);
+                setSlider(sliderThumb, cosAngleInput, sliderUnit.dataset.apex, false);
             });
         });
 
@@ -1464,14 +1474,22 @@ function setSlider(sliderThumb, depth, apex, fromInput = false, fromExtern = fal
         let calDepthVal = clamp(depth, isFullDepth ? -1 : 0, 1);
         //sliderUnit.getElementsByClassName('slider-input')[0].value = calDepthVal;
 
-        sliderUnit.getElementsByClassName('slider-input')[0].value = clamp(Math.acos(calDepthVal) * 180.0 / Math.PI, 0, isFullDepth ? 180 : 90);
+        let acosDepth = clamp(Math.acos(calDepthVal) * 180.0 / Math.PI, 0, isFullDepth ? 180 : 90);
+
+        if (!fromExtern) {
+            acosDepth = parseFloat(acosDepth.toFixed(1));
+        }
+
+        let newCosDepth = Math.cos(acosDepth * Math.PI / 180.0);
+
+        sliderUnit.dataset.depth = newCosDepth;
+
+        sliderUnit.getElementsByClassName('slider-input')[0].value = acosDepth;
         sliderUnit.getElementsByClassName('slider-input-apex')[0].value = sliderUnit.dataset.apex;
 
-        if (isLinked) sliderUnit.getElementsByClassName('slider-input-apex')[0].value = calDepthVal;
-        if (isLinked) sliderUnit.dataset.apex = calDepthVal;
+        if (isLinked) sliderUnit.getElementsByClassName('slider-input-apex')[0].value = newCosDepth;
+        if (isLinked) sliderUnit.dataset.apex = newCosDepth;
     }
-
-    
 
     setPhaseSlider();
     if (fromInput) removeChangeDivs();
