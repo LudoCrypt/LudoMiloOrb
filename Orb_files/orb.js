@@ -190,6 +190,15 @@ function initialize() {
 
     phasePanel.addEventListener('mouseenter', (event) => {
         if (!renderRegions) {
+
+            let axisCounts = countAxes();
+            let tooManyAxes = axisCounts.reduce((a, b) => a + b, 0) > 40;
+
+            // dont update automatically if theres too many
+            if (tooManyAxes) {
+                return;
+            }
+
             createPhasePlot();
             renderRegions = true;
             drawPhasePlot();
@@ -3099,12 +3108,14 @@ function hidePhaseDiagram(resetCamera = true) {
     let tooManySliders = axisCounts.length > 2;
     let tooFewSliders = axisCounts.length < 1;
     let tooManyAxes = axisCounts.reduce((a, b) => a + b, 0) > 60;
+    let tooManyAxesToAutoUpdate = axisCounts.reduce((a, b) => a + b, 0) > 40;
     document.getElementById('phase-create').dataset.translate =
         tooManySliders ? 'other.create_phase_diagram.too_many_sliders' :
         tooFewSliders ? 'other.create_phase_diagram.too_few_sliders' :
         tooManyAxes ? 'other.create_phase_diagram.too_many_axes' :
+        tooManyAxesToAutoUpdate ? 'other.create_phase_diagram.too_many_axes_to_auto_update' :
         'other.create_phase_diagram.good'
-    if (tooManySliders || tooFewSliders || tooManyAxes) {
+    if (tooManySliders || tooFewSliders) {
         document.getElementById('phase-create').dataset.disabled = ''
     } else {
         delete document.getElementById('phase-create').dataset.disabled

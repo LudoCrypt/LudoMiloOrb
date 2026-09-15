@@ -2908,7 +2908,8 @@ const langs = {
         'system.jt_icosidodecahedron': 'Joined Truncated Icosidodecahedron',
 
         'other.create_phase_diagram.good': 'Create phase diagram',
-        'other.create_phase_diagram.too_many_axes': 'Too many cuts to create phase diagram',
+        'other.create_phase_diagram.too_many_axes': 'Create phase diagram (may be extremely slow)',
+        'other.create_phase_diagram.too_many_axes_to_auto_update': 'Create phase diagram (may be slow)',
         'other.create_phase_diagram.too_many_sliders': 'Too many sliders to create phase diagram',
         'other.create_phase_diagram.too_few_sliders': 'Not enough sliders to create phase diagram',
         'other.share_url': 'Share URL',
