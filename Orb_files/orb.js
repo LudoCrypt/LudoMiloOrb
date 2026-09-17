@@ -897,6 +897,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
                 intsXy.add(uv2xy(p));
             }
         }
+
     }
 
     if (Math.abs(sma) > TYPE_THRESHOLD && Math.abs(smi) > TYPE_THRESHOLD) {
@@ -1108,6 +1109,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
                     }
                 }
             }
+
         } else {
             // parabola
             // yk i really thought i could avoid implementing this but here we are
@@ -1394,7 +1396,7 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
             removeSlider(sliderUnit);
         });
 
-        setSlider(sliderThumb, depth, apex);
+        setSlider(sliderThumb, depth, apex, false, true);
         sliderDrag = undefined; // kind of a hack
         setSliderColor(colorButton, color);
         drawPuzzle();
@@ -3020,7 +3022,10 @@ function lineEqnToDot(line) {
 function quadratic(a, b, c, threshold = THRESHOLD) {
     if (Math.abs(a) < threshold && Math.abs(b) < threshold && Math.abs(c) < threshold) return [null, null];
     if (Math.abs(a) < threshold) return [-c/b, -c/b];
-    if (Math.abs(b) < threshold) return [Math.sqrt(-c / a), -Math.sqrt(-c / a)];
+    if (Math.abs(b) < threshold && (-c / a) > -threshold) return [Math.sqrt(Math.max(-c / a, 0)), -Math.sqrt(Math.max(-c / a, 0))];
+    // if it didnt catch the above one, its a negative root
+    if (Math.abs(b) < threshold) return [null, null];
+
     //if (Math.abs(c) < threshold) return [0, -b/a];
 
     let discrim = b * b - 4 * a * c;
