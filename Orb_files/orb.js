@@ -820,11 +820,11 @@ function moveSphere(x, y) {
 // its easier just to keep them seperate and change them later if need be
 // instead of having to re-add them back (annoying)
 
-const SOLUTIONS_THRESHOLD = 1e-9;
-const QUADRATIC_THRESHOLD = 1e-9;
-const TYPE_THRESHOLD = 1e-9;
-const LINE_THRESHOLD = 1e-9;
-const UV_THRESHOLD = 1e-9;
+const SOLUTIONS_THRESHOLD = 1e-8;
+const QUADRATIC_THRESHOLD = 1e-8;
+const TYPE_THRESHOLD = 1e-8;
+const LINE_THRESHOLD = 1e-8;
+const UV_THRESHOLD = 1e-8;
 
 // im tired boss
 function drawConeOnTriangle(triangle, normal, depth, apex, color) {
@@ -897,7 +897,6 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
                 intsXy.add(uv2xy(p));
             }
         }
-
     }
 
     if (Math.abs(sma) > TYPE_THRESHOLD && Math.abs(smi) > TYPE_THRESHOLD) {
@@ -1087,7 +1086,6 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
                         ts.push(c[1]);
                     }
                 }
-
                 ts.sort((x, y) => x - y);
 
                 for (let i = 0; i < ts.length - 1; i++) {
@@ -3022,15 +3020,48 @@ function lineEqnToDot(line) {
 function quadratic(a, b, c, threshold = THRESHOLD) {
     if (Math.abs(a) < threshold && Math.abs(b) < threshold && Math.abs(c) < threshold) return [null, null];
     if (Math.abs(a) < threshold) return [-c/b, -c/b];
+    if (Math.abs(b) < threshold && Math.abs(c) < threshold) return [0, 0];
     if (Math.abs(b) < threshold && (-c / a) > -threshold) return [Math.sqrt(Math.max(-c / a, 0)), -Math.sqrt(Math.max(-c / a, 0))];
     // if it didnt catch the above one, its a negative root
     if (Math.abs(b) < threshold) return [null, null];
 
-    //if (Math.abs(c) < threshold) return [0, -b/a];
+    // really, i shouldn't HAVE to add this case, but, like, just in case.
+    // if b = -a then c SHOULD be -b/4 and a/4 IF it has one root.
+    if (Math.abs(a + b) < threshold) {
+        // IF there is one root, these should both be exactly c
+        // but there are two different ways to calculate it.
+        // theoretically these could give different values,
+        // and just in case, we should check both, ya!
+        let qc1 = -b * 0.25;
+        let qc2 = a * 0.25;
+
+        // so if that happens to be c (either one) calculate it directly
+        if (Math.abs(c - qc1) < threshold || Math.abs(c - qc2) < threshold) {
+            // this should technically be the same as the below discrim = 0 case
+            // however, in THIS specific instance, we have two values for c
+            // which we can average together to get hopefully a more accurate result
+            let r1 = ((a + 4 * c) / a) * 0.25;
+            let r2 = ((b - 4 * c) / b) * 0.25;
+            // average them (just in case)
+            let r = (r1 + r2) * 0.5;
+            return [r, r];
+        }
+    }
 
     let discrim = b * b - 4 * a * c;
     if (discrim < -threshold) return [null, null];
-    else if (discrim < threshold) discrim = 0;
+    else if (Math.abs(discrim) < threshold) {
+        //discrim = 0;
+        // cro you cant just set discrim to be zero
+        // be more careful about it ya?
+
+        // This formula is the average of the two roots
+        // q = -b/2
+        // (c/q + q/a) / 2
+        let r = (-4 * c * a - b * b) / (4 * b * a);
+
+        return [r, r];
+    }
 
     let sqrtdisc = Math.sqrt(discrim);
     let q = -(b + Math.sign(b) * sqrtdisc) * 0.5;
