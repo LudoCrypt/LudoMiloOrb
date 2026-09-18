@@ -821,10 +821,11 @@ function moveSphere(x, y) {
 // instead of having to re-add them back (annoying)
 
 const SOLUTIONS_THRESHOLD = 1e-8;
-const QUADRATIC_THRESHOLD = 1e-8;
-const TYPE_THRESHOLD = 1e-8;
-const LINE_THRESHOLD = 1e-8;
+const QUADRATIC_THRESHOLD = 1e-7;
+const TYPE_THRESHOLD = 1e-7;
+const LINE_THRESHOLD = 1e-7;
 const UV_THRESHOLD = 1e-8;
+const KS_THRESHOLD = 1e-6;
 
 // im tired boss
 function drawConeOnTriangle(triangle, normal, depth, apex, color) {
@@ -845,7 +846,10 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
 
     // https://www.desmos.com/calculator/e3iueqjlls
     const k = (depth - apex) / Math.sqrt(1 + apex * apex - 2 * depth * apex);
-    const ks = k * k;
+    var ks = k * k;
+
+    // im not entirely sure if this is a good thing to do or not
+    if (ks < KS_THRESHOLD) ks = 0;
 
     // Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0
     const a = dn1 * dn1 - ks * p1.dot(p1);
@@ -855,7 +859,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
     const e = 2 * dn2 * dn0 - 2 * ks * p2.dot(p0);
     const f = dn0 * dn0 - ks * p0.dot(p0);
 
-    const disc = Math.sqrt((a - c) * (a - c) + b * b);
+    const disc = Math.hypot(a - c, b);
     const sma = (a + c + disc) * 0.5;
     const smi = (a + c - disc) * 0.5;
 
@@ -903,7 +907,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
         const cx = -lc[0] / (2 * sma);
         const cy = -lc[1] / (2 * smi);
         const es = sma * cx * cx + smi * cy * cy - f;
-        
+
         if (Math.sign(sma) === Math.sign(smi)) {
             // ellipse
             if (Math.abs(es) > QUADRATIC_THRESHOLD && Math.sign(es) === Math.sign(sma)) {
@@ -954,7 +958,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
                     const c2 = mx.dot(my) * 2;
                     const c3 = my.dot(my);
 
-                    const disc = Math.sqrt((c1 - c3) * (c1 - c3) + c2 * c2);
+                    const disc = Math.hypot(c1 - c3, c2);
                     const rx = Math.sqrt((c1 + c3 + disc) * 0.5);
                     const ry = Math.sqrt((c1 + c3 - disc) * 0.5);
 
@@ -1071,40 +1075,33 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
         // for some reason, floating point hates me. why do you lose so much precision?
         if (Math.abs(lc[0]) < LINE_THRESHOLD || (Math.abs(sma) > TYPE_THRESHOLD ? Math.abs(lc[1]) < LINE_THRESHOLD : false)) {
             // straight line
-            const [tP, tM] = quadratic(sma, lc[0], f, QUADRATIC_THRESHOLD);
+            const r = -lc[0] * 0.5 / sma;
 
-            let roots = [tP, tM];
-            if (Math.abs(tP - tM) < QUADRATIC_THRESHOLD) {
-                // average them! why not! lol
-                roots = [(tP + tM) * 0.5];
+            const ts = [];
+            for (const c of intsXy) {
+                if (Math.abs(c[0] - r) < LINE_THRESHOLD) {
+                    ts.push(c[1]);
+                }
             }
 
-            for (const r of roots) {
-                const ts = [];
-                for (const c of intsXy) {
-                    if (Math.abs(c[0] - r) < LINE_THRESHOLD) {
-                        ts.push(c[1]);
-                    }
-                }
-                ts.sort((x, y) => x - y);
+            ts.sort((x, y) => x - y);
 
-                for (let i = 0; i < ts.length - 1; i++) {
-                    const tA = ts[i];
-                    const tB = ts[i + 1];
-                    const tM = ((tA + tB) * 0.5);
+            for (let i = 0; i < ts.length - 1; i++) {
+                const tA = ts[i];
+                const tB = ts[i + 1];
+                const tM = ((tA + tB) * 0.5);
 
-                    const eUv = xy2uv([r, tM]);
+                const eUv = xy2uv([r, tM]);
 
-                    if (uvWithinNappe(eUv) && uvWithinTriangle(eUv)) {
-                        const ppA = project(uv2vec(xy2uv([r, tA])));
-                        const ppB = project(uv2vec(xy2uv([r, tB])));
+                if (uvWithinNappe(eUv) && uvWithinTriangle(eUv)) {
+                    const ppA = project(uv2vec(xy2uv([r, tA])));
+                    const ppB = project(uv2vec(xy2uv([r, tB])));
 
-                        sphereCtx.beginPath();
-                        sphereCtx.strokeStyle = color;
-                        sphereCtx.moveTo(ppA.x, ppA.y);
-                        sphereCtx.lineTo(ppB.x, ppB.y);
-                        sphereCtx.stroke();
-                    }
+                    sphereCtx.beginPath();
+                    sphereCtx.strokeStyle = color;
+                    sphereCtx.moveTo(ppA.x, ppA.y);
+                    sphereCtx.lineTo(ppB.x, ppB.y);
+                    sphereCtx.stroke();
                 }
             }
 
@@ -3032,23 +3029,42 @@ function quadratic(a, b, c, threshold = THRESHOLD) {
         // but there are two different ways to calculate it.
         // theoretically these could give different values,
         // and just in case, we should check both, ya!
-        let qc1 = -b * 0.25;
-        let qc2 = a * 0.25;
+        const qc1 = -b * 0.25;
+        const qc2 = a * 0.25;
 
         // so if that happens to be c (either one) calculate it directly
         if (Math.abs(c - qc1) < threshold || Math.abs(c - qc2) < threshold) {
             // this should technically be the same as the below discrim = 0 case
             // however, in THIS specific instance, we have two values for c
             // which we can average together to get hopefully a more accurate result
-            let r1 = ((a + 4 * c) / a) * 0.25;
-            let r2 = ((b - 4 * c) / b) * 0.25;
+            const r1 = ((a + 4 * c) / a) * 0.25;
+            const r2 = ((b - 4 * c) / b) * 0.25;
             // average them (just in case)
-            let r = (r1 + r2) * 0.5;
+            const r = (r1 + r2) * 0.5;
             return [r, r];
         }
     }
 
-    let discrim = b * b - 4 * a * c;
+    // its frankly unbelievable i have to implement this case
+    // if a = c and it has one root, calculate it directly
+    if (Math.abs(a - c) < threshold) {
+        // is the root supposed to be positive 1 or negative 1
+        const isPositive1 = Math.sign(a) != Math.sign(b);
+
+        // IF there is one root, these should both be exactly b
+        // but there are two different ways to calculate it.
+        // theoretically these could give different values,
+        // and just in case, we should check both, ya!
+        const qb1 = (isPositive1 ? -1 : 1) * 2 * a;
+        const qb2 = (isPositive1 ? -1 : 1) * 2 * c;
+        // so if that happens to be b (either one) calculate it directly
+        if (Math.abs(b - qb1) < threshold || Math.abs(b - qb2) < threshold) {
+            const r = (isPositive1 ? 1 : -1);
+            return [r, r];
+        }
+    }
+
+    const discrim = b * b - 4 * a * c;
     if (discrim < -threshold) return [null, null];
     else if (Math.abs(discrim) < threshold) {
         //discrim = 0;
@@ -3058,28 +3074,28 @@ function quadratic(a, b, c, threshold = THRESHOLD) {
         // This formula is the average of the two roots
         // q = -b/2
         // (c/q + q/a) / 2
-        let r = (-4 * c * a - b * b) / (4 * b * a);
+        const r = (-4 * c * a - b * b) / (4 * b * a);
 
         return [r, r];
     }
 
-    let sqrtdisc = Math.sqrt(discrim);
-    let q = -(b + Math.sign(b) * sqrtdisc) * 0.5;
+    const sqrtdisc = Math.sqrt(discrim);
+    const q = -(b + Math.sign(b) * sqrtdisc) * 0.5;
 
     // I dont actually know if i need to do this or not
     // i checked to see if the order mattered anywhere
     // and in some ellipse code, its used for X and Y size
     // id rather be careful and not mess with it
     // so im making sure that tP is always the higher root, and vice versa
-    let tP = b > 0 ? c / q : q / a;
-    let tM = b > 0 ? q / a : c / q;
+    const tP = b > 0 ? c / q : q / a;
+    const tM = b > 0 ? q / a : c / q;
     return [tP, tM];
 }
 
 
 function intersectLines(dot0, perp0, dot1, perp1) {
-    let det = perp0[0] * perp1[1] - perp0[1] * perp1[0];
-    let intersection = [(perp1[1] * dot0 - perp0[1] * dot1) / det, (-perp1[0] * dot0 + perp0[0] * dot1) / det];
+    const det = perp0[0] * perp1[1] - perp0[1] * perp1[0];
+    const intersection = [(perp1[1] * dot0 - perp0[1] * dot1) / det, (-perp1[0] * dot0 + perp0[0] * dot1) / det];
     return intersection;
 }
 
