@@ -831,7 +831,7 @@ const KS_THRESHOLD = 1e-6;
 // Green is hyperbola
 // Yellow is parabola
 // Blue is line
-const cone_debug_colors = true;
+const cone_debug_colors = false;
 
 // im tired boss
 // mama cant you see whats happening to me?
