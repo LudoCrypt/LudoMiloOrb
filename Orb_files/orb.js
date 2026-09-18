@@ -825,9 +825,16 @@ const QUADRATIC_THRESHOLD = 1e-7;
 const TYPE_THRESHOLD = 1e-7;
 const LINE_THRESHOLD = 1e-7;
 const UV_THRESHOLD = 1e-8;
-const KS_THRESHOLD = 1e-6;
+const KS_THRESHOLD = 1e-7;
+
+// Red is ellipse
+// Green is hyperbola
+// Yellow is parabola
+// Cyan is line
+const cone_debug_colors = true;
 
 // im tired boss
+// mama cant you see whats happening to me?
 function drawConeOnTriangle(triangle, normal, depth, apex, color) {
 
     const pn = normal.multiply(apex);
@@ -852,18 +859,44 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
     if (ks < KS_THRESHOLD) ks = 0;
 
     // Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0
-    const a = dn1 * dn1 - ks * p1.dot(p1);
+    var a = dn1 * dn1 - ks * p1.dot(p1);
     const b = 2 * dn1 * dn2 - 2 * ks * p1.dot(p2);
-    const c = dn2 * dn2 - ks * p2.dot(p2);
+    var c = dn2 * dn2 - ks * p2.dot(p2);
     const d = 2 * dn1 * dn0 - 2 * ks * p1.dot(p0);
     const e = 2 * dn2 * dn0 - 2 * ks * p2.dot(p0);
     const f = dn0 * dn0 - ks * p0.dot(p0);
 
-    const disc = Math.hypot(a - c, b);
-    const sma = (a + c + disc) * 0.5;
-    const smi = (a + c - disc) * 0.5;
+    if (Math.abs(c) < KS_THRESHOLD) {
+        c = 0;
+    }
 
-    const phi = Math.atan2(b, a - c) * 0.5;
+    if (Math.abs(a) < KS_THRESHOLD) {
+        a = 0;
+    }
+
+    var disc = Math.hypot(a - c, b);
+
+    if (Math.abs(a - c) < KS_THRESHOLD) {
+        disc = Math.abs(b);
+    }
+
+    const det = a * c - b * b * 0.25;
+    var sma = (a + c + disc) * 0.5;
+    var smi = (a + c - disc) * 0.5;
+
+    // if sma is 0, disc = -smi and vice versa
+    if (Math.abs(sma) < KS_THRESHOLD) {
+        smi = Math.abs(disc - smi) * 0.5 * Math.sign(smi);
+    }
+    if (Math.abs(disc + smi) < KS_THRESHOLD) {
+        sma = 0;
+    }
+
+    var phi = Math.atan2(b, a - c) * 0.5;
+
+    if (Math.abs(a - c) < KS_THRESHOLD) {
+        phi = Math.atan2(b, 0.0) * 0.5;
+    }
 
     const ma = [Math.cos(phi), Math.sin(phi)]
     const mi = [-ma[1], ma[0]];
@@ -944,48 +977,40 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
                 }
 
                 if (canDraw) {
-                    const eo = project(uv2vec(xy2uv([cx, cy])));
-                    const ru = project(uv2vec(xy2uv([cx + eu, cy])));
-                    const rv = project(uv2vec(xy2uv([cx, cy + ev])));
-
-                    const scu = ru.subtract(eo);
-                    const scv = rv.subtract(eo);
-
-                    const mx = new Vector(scu.x, scv.x);
-                    const my = new Vector(scu.y, scv.y);
-
-                    const c1 = mx.dot(mx);
-                    const c2 = mx.dot(my) * 2;
-                    const c3 = my.dot(my);
-
-                    const disc = Math.hypot(c1 - c3, c2);
-                    const rx = Math.sqrt((c1 + c3 + disc) * 0.5);
-                    const ry = Math.sqrt((c1 + c3 - disc) * 0.5);
-
-                    const rot = Math.atan2(c2, c1 - c3) * 0.5;
-                    const ex = new Vector(Math.cos(rot), Math.sin(rot), 0);
-                    const ey = new Vector(-ex.y, ex.x, 0);
-
                     for (let i = 0; i < ts.length; i++) {
                         if (canDrawHere[i]) {
                             const tA = ts[i];
                             const tB = ts[(i + 1) % ts.length] + ((i + 1) >= ts.length ? 2 * Math.PI : 0);
-
-                            const upA = new Vector(Math.cos(tA), Math.sin(tA), 0);
-                            const upB = new Vector(Math.cos(tB), Math.sin(tB), 0);
-
-                            const tpA = new Vector(mx.dot(upA), my.dot(upA), 0);
-                            const tpB = new Vector(mx.dot(upB), my.dot(upB), 0);
-
-                            const projA = new Vector(tpA.dot(ex), tpA.dot(ey), 0);
-                            const projB = new Vector(tpB.dot(ex), tpB.dot(ey), 0);
-
-                            const theta1 = Math.atan2(projA.y / ry, projA.x / rx);
-                            const theta2 = Math.atan2(projB.y / ry, projB.x / rx);
+                            const diff = tB - tA;
 
                             sphereCtx.beginPath();
-                            sphereCtx.strokeStyle = color;
-                            sphereCtx.ellipse(eo.x, eo.y, rx, ry, rot, theta1, theta2);
+                            sphereCtx.strokeStyle = cone_debug_colors ? '#ff0000' : color;
+
+                            const iters = 5;
+                            for (let j = 0; j < iters; j++) {
+                                const itA = (j / iters) * diff + tA;
+                                const itB = ((j + 1) / iters) * diff + tA;
+                                const iDiff = itB - itA;
+
+                                const uvA = [eu * Math.cos(itA) + cx, ev * Math.sin(itA) + cy];
+                                const uvB = [eu * Math.cos(itB) + cx, ev * Math.sin(itB) + cy];
+
+                                const tanA = [-eu * Math.sin(itA) * iDiff / 3.0, ev * Math.cos(itA) * iDiff / 3.0];
+                                const tanB = [-eu * Math.sin(itB) * iDiff / 3.0, ev * Math.cos(itB) * iDiff / 3.0];
+
+                                const cpUvA = [uvA[0] + tanA[0], uvA[1] + tanA[1]];
+                                const cpUvB = [uvB[0] - tanB[0], uvB[1] - tanB[1]];
+
+                                const ppA = project(uv2vec(xy2uv(uvA)));
+                                const ppB = project(uv2vec(xy2uv(uvB)));
+
+                                const pcpA = project(uv2vec(xy2uv(cpUvA)));
+                                const pcpB = project(uv2vec(xy2uv(cpUvB)));
+
+                                sphereCtx.moveTo(ppA.x, ppA.y);
+                                sphereCtx.bezierCurveTo(pcpA.x, pcpA.y, pcpB.x, pcpB.y, ppB.x, ppB.y);
+                            }
+
                             sphereCtx.stroke();
                         }
                     }
@@ -1038,7 +1063,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
                             const sign = drawSigns[i];
 
                             sphereCtx.beginPath();
-                            sphereCtx.strokeStyle = color;
+                            sphereCtx.strokeStyle = cone_debug_colors ? '#00ff00' : color;
 
                             const iters = 5;
                             for (let j = 0; j < iters; j++) {
@@ -1098,7 +1123,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
                     const ppB = project(uv2vec(xy2uv([r, tB])));
 
                     sphereCtx.beginPath();
-                    sphereCtx.strokeStyle = color;
+                    sphereCtx.strokeStyle = cone_debug_colors ? '#0000ff' : color;
                     sphereCtx.moveTo(ppA.x, ppA.y);
                     sphereCtx.lineTo(ppB.x, ppB.y);
                     sphereCtx.stroke();
@@ -1143,7 +1168,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
                         const tM = ((tA + tB) * 0.5);
 
                         sphereCtx.beginPath();
-                        sphereCtx.strokeStyle = color;
+                        sphereCtx.strokeStyle = cone_debug_colors ? '#ffff00' : color;
 
                         const uvA = [qa * tA * tA + qb * tA + qc, tA];
                         const uvB = [qa * tB * tB + qb * tB + qc, tB];
@@ -3015,7 +3040,7 @@ function lineEqnToDot(line) {
 
 
 function quadratic(a, b, c, threshold = THRESHOLD) {
-    if (Math.abs(a) < threshold && Math.abs(b) < threshold && Math.abs(c) < threshold) return [null, null];
+    if (Math.abs(a) < threshold && Math.abs(b) < threshold) return [null, null];
     if (Math.abs(a) < threshold) return [-c/b, -c/b];
     if (Math.abs(b) < threshold && Math.abs(c) < threshold) return [0, 0];
     if (Math.abs(b) < threshold && (-c / a) > -threshold) return [Math.sqrt(Math.max(-c / a, 0)), -Math.sqrt(Math.max(-c / a, 0))];
