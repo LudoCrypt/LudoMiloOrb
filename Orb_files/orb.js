@@ -825,7 +825,7 @@ const QUADRATIC_THRESHOLD = 1e-7;
 const TYPE_THRESHOLD = 1e-7;
 const LINE_THRESHOLD = 1e-7;
 const UV_THRESHOLD = 1e-8;
-const KS_THRESHOLD = 1e-7;
+const KS_THRESHOLD = 1e-6;
 
 // Red is ellipse
 // Green is hyperbola
