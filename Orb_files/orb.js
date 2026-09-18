@@ -830,7 +830,7 @@ const KS_THRESHOLD = 1e-7;
 // Red is ellipse
 // Green is hyperbola
 // Yellow is parabola
-// Cyan is line
+// Blue is line
 const cone_debug_colors = true;
 
 // im tired boss
