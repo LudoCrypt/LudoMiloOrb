@@ -258,29 +258,31 @@ function initialize() {
                 }
 
                 if (snap && e.shiftKey && hoveredDomain) {
-                    setSlider(slidersInPhase[0].getElementsByClassName('slider-thumb')[0], parseFloat(hoveredDomain.dataset.centerX), slidersInPhase[0].getElementsByClassName('slider-thumb')[0].closest('.slider-unit').dataset.apex, false, true);
+                    setSlider(slidersInPhase[0].getElementsByClassName('slider-thumb')[0], parseFloat(hoveredDomain.dataset.centerX), parseFloat(slidersInPhase[0].getElementsByClassName('slider-thumb')[0].closest('.slider-unit').dataset.apex), false, true);
                     if (slidersInPhase[1]) {
-                        setSlider(slidersInPhase[1].getElementsByClassName('slider-thumb')[0], parseFloat(hoveredDomain.dataset.centerY), slidersInPhase[1].getElementsByClassName('slider-thumb')[0].closest('.slider-unit').dataset.apex, false, true);
+                        setSlider(slidersInPhase[1].getElementsByClassName('slider-thumb')[0], parseFloat(hoveredDomain.dataset.centerY), parseFloat(slidersInPhase[1].getElementsByClassName('slider-thumb')[0].closest('.slider-unit').dataset.apex), false, true);
                     }
                 } else {
                     let cursorPt = phaseMouseToPoint(e);
                     let newValueX = cursorPt.x - sliderGrabOffsetX;
-                    setSlider(slidersInPhase[0].querySelector('.slider-thumb:not(.wrong-sign)'), newValueX / phaseBakedScale, slidersInPhase[0].querySelector('.slider-thumb:not(.wrong-sign)').closest('.slider-unit').dataset.apex, false, true);
+                    setSlider(slidersInPhase[0].querySelector('.slider-thumb:not(.wrong-sign)'), newValueX / phaseBakedScale, parseFloat(slidersInPhase[0].querySelector('.slider-thumb:not(.wrong-sign)').closest('.slider-unit').dataset.apex), false, true);
                     if (slidersInPhase[1]) {
                         let newValueY = cursorPt.y - sliderGrabOffsetY;
-                        setSlider(slidersInPhase[1].querySelector('.slider-thumb:not(.wrong-sign)'), newValueY / phaseBakedScale, slidersInPhase[1].querySelector('.slider-thumb:not(.wrong-sign)').closest('.slider-unit').dataset.apex, false, true);
+                        setSlider(slidersInPhase[1].querySelector('.slider-thumb:not(.wrong-sign)'), newValueY / phaseBakedScale, parseFloat(slidersInPhase[1].querySelector('.slider-thumb:not(.wrong-sign)').closest('.slider-unit').dataset.apex), false, true);
                     }
                 }
 
             } else {
                 let sliderContainerStyle = window.getComputedStyle(sliderDrag.parentNode);
                 let sliderWidth = parseFloat(sliderContainerStyle.getPropertyValue('width'));
-                let newSliderX = e.clientX - sliderGrabOffsetX; // clamp(e.clientX - sliderGrabOffsetX, 0, sliderWidth);
-                //console.log(newSliderX,e.target.parentNode);
+                let newSliderX = e.clientX - sliderGrabOffsetX;
+
                 let newValue = newSliderX / sliderWidth;
-                //console.log('e',sliderDrag)
-                setSlider(sliderDrag, newValue, sliderDrag.closest('.slider-unit').dataset.apex);
-                //setSlider(sliderDrag, newValue);
+
+                let isApex = sliderDrag.classList.contains('thumb-apex');
+
+                setSlider(sliderDrag, isApex ? parseFloat(sliderDrag.closest('.slider-unit').dataset.depth) : newValue, isApex ? ((newValue + prevApexMod) * 2.0 - 1.0) : parseFloat(sliderDrag.closest('.slider-unit').dataset.apex));
+
             }
         }
     });
@@ -290,8 +292,8 @@ function initialize() {
             window.addEventListener('click', captureClick, true);
         }
         if (sliderDrag && sliderDrag !== phaseThumb) {
-            setSlider(sliderDrag, sliderDrag.closest('.slider-unit').dataset.depth, sliderDrag.closest('.slider-unit').dataset.apex);
-            //setSlider(sliderDrag, sliderDrag.closest('.slider-unit').dataset.depth);
+            setSlider(sliderDrag, parseFloat(sliderDrag.closest('.slider-unit').dataset.depth), parseFloat(sliderDrag.closest('.slider-unit').dataset.apex));
+            prevApexMod = 0;
         }
         sphereDrag = false;
         sliderDrag = undefined;
@@ -814,18 +816,23 @@ function moveSphere(x, y) {
     }
 }
 
+
 // i hate floating point sometimes
 // yes, these are CURRENTLY all the same value, but who knows!
 // maybe theres one edge case ive yet to consider
 // its easier just to keep them seperate and change them later if need be
 // instead of having to re-add them back (annoying)
 
+// actually honestly, if you see me putting one of these to anything below 7, scream at me
+// because in that case, i need to look for how that calculation got there in the first place
+// there are always other cases to address.
 const SOLUTIONS_THRESHOLD = 1e-8;
 const QUADRATIC_THRESHOLD = 1e-7;
-const TYPE_THRESHOLD = 1e-7;
+const TYPE_THRESHOLD = 1e-8;
 const LINE_THRESHOLD = 1e-7;
 const UV_THRESHOLD = 1e-8;
-const KS_THRESHOLD = 1e-6;
+const ROUND_THRESHOLD = 1e-7;
+const KS_THRESHOLD = 1e-7;
 
 // Red is ellipse
 // Green is hyperbola
@@ -852,51 +859,36 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
     const dn2 = normal.dot(p2);
 
     // https://www.desmos.com/calculator/e3iueqjlls
-    const k = (depth - apex) / Math.sqrt(1 + apex * apex - 2 * depth * apex);
-    var ks = k * k;
+    var dad = depth - apex;
+    if (Math.abs(dad) < KS_THRESHOLD) dad = 0;
+    var ks = dad * dad / (1 + apex * apex - 2 * depth * apex);
 
     // im not entirely sure if this is a good thing to do or not
-    if (ks < KS_THRESHOLD) ks = 0;
+    if (Math.abs(ks) < KS_THRESHOLD) ks = 0;
 
     // Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0
-    var a = dn1 * dn1 - ks * p1.dot(p1);
+    const a = dn1 * dn1 - ks * p1.dot(p1);
     const b = 2 * dn1 * dn2 - 2 * ks * p1.dot(p2);
-    var c = dn2 * dn2 - ks * p2.dot(p2);
+    const c = dn2 * dn2 - ks * p2.dot(p2);
     const d = 2 * dn1 * dn0 - 2 * ks * p1.dot(p0);
     const e = 2 * dn2 * dn0 - 2 * ks * p2.dot(p0);
     const f = dn0 * dn0 - ks * p0.dot(p0);
 
-    if (Math.abs(c) < KS_THRESHOLD) {
-        c = 0;
-    }
-
-    if (Math.abs(a) < KS_THRESHOLD) {
-        a = 0;
-    }
-
-    var disc = Math.hypot(a - c, b);
-
-    if (Math.abs(a - c) < KS_THRESHOLD) {
-        disc = Math.abs(b);
-    }
+    const disc = Math.hypot(a - c, b);
 
     const det = a * c - b * b * 0.25;
     var sma = (a + c + disc) * 0.5;
     var smi = (a + c - disc) * 0.5;
 
     // if sma is 0, disc = -smi and vice versa
-    if (Math.abs(sma) < KS_THRESHOLD) {
+    if (Math.abs(sma) < ROUND_THRESHOLD) {
         smi = Math.abs(disc - smi) * 0.5 * Math.sign(smi);
     }
-    if (Math.abs(disc + smi) < KS_THRESHOLD) {
+    if (Math.abs(disc + smi) < ROUND_THRESHOLD) {
         sma = 0;
     }
 
-    var phi = Math.atan2(b, a - c) * 0.5;
-
-    if (Math.abs(a - c) < KS_THRESHOLD) {
-        phi = Math.atan2(b, 0.0) * 0.5;
-    }
+    const phi = Math.atan2(b, a - c) * 0.5;
 
     const ma = [Math.cos(phi), Math.sin(phi)]
     const mi = [-ma[1], ma[0]];
@@ -906,7 +898,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
     const uv2xy = (uv) => [ma[0] * uv[0] + ma[1] * uv[1], mi[0] * uv[0] + mi[1] * uv[1]];
     const xy2uv = (xy) => [ma[0] * xy[0] + mi[0] * xy[1], ma[1] * xy[0] + mi[1] * xy[1]];
     const uv2vec = (uv) => p0.add(p1.multiply(uv[0])).add(p2.multiply(uv[1])).add(pn);
-    const uvWithinNappe = (uv) => k > 0 ? normal.dot(uv2vec(uv).subtract(pn)) >= Math.max(-apex, 0) - UV_THRESHOLD : normal.dot(uv2vec(uv).subtract(pn)) <= Math.min(depth - apex, 0) + UV_THRESHOLD;
+    const uvWithinNappe = (uv) => Math.abs(normal.dot(uv2vec(uv).subtract(pn))) < UV_THRESHOLD ? true : dad > 0 ? normal.dot(uv2vec(uv).subtract(pn)) >= Math.max(-apex, 0) - UV_THRESHOLD : normal.dot(uv2vec(uv).subtract(pn)) <= Math.min(dad, 0) + UV_THRESHOLD;
     const uvWithinTriangle = (uv) => uv[0] > -UV_THRESHOLD && uv[1] > -UV_THRESHOLD && (uv[0] + uv[1]) < 1 + UV_THRESHOLD;
 
     const lc = uv2xy([d, e]);
@@ -930,6 +922,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
     for (const r of roots) {
         if (Number.isFinite(r.t) && r.t > -UV_THRESHOLD && r.t < 1 + UV_THRESHOLD) {
             const p = r.toUv(r.t);
+
             if (uvWithinNappe(p)) {
                 intsXy.add(uv2xy(p));
             }
@@ -1098,6 +1091,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
         }
     } else {
         // for some reason, floating point hates me. why do you lose so much precision?
+
         if (Math.abs(lc[0]) < LINE_THRESHOLD || (Math.abs(sma) > TYPE_THRESHOLD ? Math.abs(lc[1]) < LINE_THRESHOLD : false)) {
             // straight line
             const r = -lc[0] * 0.5 / sma;
@@ -1108,7 +1102,6 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
                     ts.push(c[1]);
                 }
             }
-
             ts.sort((x, y) => x - y);
 
             for (let i = 0; i < ts.length - 1; i++) {
@@ -1255,8 +1248,23 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
         if (clonedSliderUnit === null) sliderGroup.insertBefore(sliderUnit, sliderGroup.lastChild);
         updateWrongSign(sliderUnit);
 
-
+        let sliderInput = sliderUnit.getElementsByClassName('slider-input')[0];
+        let sliderApexInput = sliderUnit.getElementsByClassName('slider-input-apex')[0];
+        let linkButton = sliderUnit.getElementsByClassName('link-button')[0];
+        let sliderDiv = sliderUnit.getElementsByClassName('slider')[0];
+        let sliderBar = sliderUnit.querySelector('.slider-bar:not(.slider-neg)');
+        let sliderBarNeg = sliderUnit.querySelector('.slider-bar.slider-neg');
+        let sliderBarApex = sliderUnit.querySelector('.slider-bar-apex');
         let sliderThumb = sliderUnit.getElementsByClassName('slider-thumb')[0];
+        let sliderThumbApex = sliderUnit.getElementsByClassName('slider-thumb-apex')[0];
+        let buttons = sliderUnit.querySelectorAll('.adjust-btn');
+        let colorButton = sliderUnit.getElementsByClassName('slider-color-swatch')[0];
+        let pinButton = sliderUnit.getElementsByClassName('pin-button')[0];
+        let ghostButton = sliderUnit.getElementsByClassName('ghost-button')[0];
+        let viewButton = sliderUnit.getElementsByClassName('view-button')[0];
+        let copyButton = sliderUnit.getElementsByClassName('copy-button')[0];
+        let removeButton = sliderUnit.getElementsByClassName('remove-button')[0];
+
         sliderThumb.addEventListener('mousedown', function(e) {
             if (e.button !== 0) return;
             sliderDrag = sliderThumb;
@@ -1266,47 +1274,81 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
             e.stopPropagation();
         });
 
-        let sliderDiv = sliderUnit.getElementsByClassName('slider')[0];
-        let sliderBar = sliderUnit.querySelector('.slider-bar:not(.slider-neg)');
-        sliderDiv.addEventListener('mousedown', function(e) {
+        sliderThumbApex.addEventListener('mousedown', function(e) {
             if (e.button !== 0) return;
-            let sliderWidth = sliderBar.getBoundingClientRect().width;
-            let newSliderX = e.clientX - sliderBar.getBoundingClientRect().left; //clamp(e.clientX - sliderBar.getBoundingClientRect().left, 0, sliderWidth);
-            sliderDrag = sliderThumb;
-            //sliderGrabOffsetX = e.clientX - parseFloat(window.getComputedStyle(sliderThumb).getPropertyValue('left'));
-            //sliderGrabOffsetX = e.clientX - parseFloat(sliderBar.getBoundingClientRect().left);
-            sliderGrabOffsetX = parseFloat(sliderBar.getBoundingClientRect().left);
-            //console.log(sliderGrabOffsetX)
-            setSlider(sliderThumb, newSliderX / sliderWidth, sliderUnit.dataset.apex);
+            sliderDrag = sliderThumbApex;
+            sliderGrabOffsetX = e.clientX - parseFloat(window.getComputedStyle(sliderThumbApex).getPropertyValue('left'));
+
+            if (linkButton.dataset.isOn === "1") {
+                let prevApex = parseFloat(sliderApexInput.value);
+                linkButton.click(false);
+                sliderApexInput.value = prevApex;
+                setSlider(sliderThumb, parseFloat(sliderUnit.dataset.depth), prevApex, true);
+            }
+
+            prevApexMod = Math.floor((parseFloat(sliderUnit.dataset.apex) + 1.0) * 0.5);
+            document.body.classList.add('dragging');
+            e.stopPropagation();
         });
 
-        let linkButton = sliderUnit.getElementsByClassName('link-button')[0];
+        sliderDiv.addEventListener('mousedown', function(e) {
+            if (e.button !== 0) return;
+
+            let rect = sliderBar.getBoundingClientRect();
+            let rect2 = sliderBarNeg.getBoundingClientRect();
+            let recta = sliderBarApex.getBoundingClientRect();
+
+            // if we're out the bounds of the regular slider, we might be in apex town
+            if ((e.clientX < rect.left || e.clientX > rect.right) && (e.clientX < rect2.left || e.clientX > rect2.right)) {
+                if (!(e.clientX < recta.left || e.clientX > recta.right)) {
+
+                    let sliderWidth = recta.width;
+                    let newSliderX = e.clientX - recta.left;
+                    sliderDrag = sliderThumbApex;
+
+                    sliderGrabOffsetX = parseFloat(recta.left);
+
+                    if (linkButton.dataset.isOn === "1") {
+                        linkButton.click(false);
+                    }
+
+                    let apexMod = Math.floor((parseFloat(sliderUnit.dataset.apex) + 1.0) * 0.5);
+                    prevApexMod = apexMod;
+                    setSlider(sliderThumbApex, parseFloat(sliderUnit.dataset.depth), (newSliderX / sliderWidth + apexMod) * 2.0 - 1.0);
+                }
+                return;
+            }
+
+            let sliderWidth = rect.width;
+            let newSliderX = e.clientX - rect.left;
+            sliderDrag = sliderThumb;
+
+            sliderGrabOffsetX = parseFloat(rect.left);
+
+            setSlider(sliderThumb, newSliderX / sliderWidth, parseFloat(sliderUnit.dataset.apex));
+        });
+
         linkButton.addEventListener('click', function(reset = true) {
             if (linkButton.dataset.isOn === "1") {
                 linkButton.dataset.isOn = 0;
                 linkButton.src = './icons/link_off.svg';
                 sliderUnit.getElementsByClassName('slider-input-apex')[0].value = 0.0;
-                if (reset) setSlider(sliderThumb, sliderUnit.dataset.depth, 0.0, true);
+                if (reset) setSlider(sliderThumb, parseFloat(sliderUnit.dataset.depth), 0.0, true);
             } else {
                 linkButton.dataset.isOn = 1;
                 linkButton.src = './icons/link_on.svg';
-                setSlider(sliderThumb, sliderUnit.dataset.depth, sliderUnit.dataset.depth, true);
+                setSlider(sliderThumb, parseFloat(sliderUnit.dataset.depth), parseFloat(sliderUnit.dataset.depth), true);
             }
             hidePhaseDiagram(false);
             createPhasePlot();
             drawPuzzle();
         });
 
-        let sliderInput = sliderUnit.getElementsByClassName('slider-input')[0];
-        let sliderApexInput = sliderUnit.getElementsByClassName('slider-input-apex')[0];
-
         sliderInput.addEventListener('change', function(e) {
-            setSlider(sliderThumb, Math.cos(parseFloat(sliderInput.value) * Math.PI / 180.0), sliderUnit.dataset.apex, true);
-            //sliderAngleInput.value = Math.acos(parseFloat(sliderInput.value)) * 180.0 / Math.PI;
+            setSlider(sliderThumb, Math.cos(parseFloat(sliderInput.value) * Math.PI / 180.0), parseFloat(sliderUnit.dataset.apex), true);
         });
 
         sliderApexInput.addEventListener('change', function(e) {
-
             let prevApex = parseFloat(sliderApexInput.value);
 
             if (linkButton.dataset.isOn === "1") {
@@ -1314,17 +1356,9 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
             }
 
             sliderApexInput.value = prevApex;
-            setSlider(sliderThumb, sliderUnit.dataset.depth, prevApex, true);
-            //sliderAngleInput.value = Math.acos(parseFloat(sliderInput.value)) * 180.0 / Math.PI;
+            setSlider(sliderThumb, parseFloat(sliderUnit.dataset.depth), prevApex, true);
         });
 
-        // sliderAngleInput.addEventListener('change', function(e) {
-        //     var cosAngleInput = Math.cos(parseFloat(sliderAngleInput.value) * Math.PI / 180.0);
-        //     setSlider(sliderThumb, cosAngleInput, true);
-        //     sliderInput.value = cosAngleInput;
-        // });
-
-        let buttons = sliderUnit.querySelectorAll('.adjust-btn');
         buttons.forEach(button => {
             button.addEventListener('click', function(e) {
                 const amount = parseFloat(this.getAttribute('data-step'));
@@ -1335,7 +1369,7 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
 
                 sliderInput.value = newValue;
                 var cosAngleInput = Math.cos(parseFloat(sliderInput.value) * Math.PI / 180.0);
-                setSlider(sliderThumb, cosAngleInput, sliderUnit.dataset.apex, false);
+                setSlider(sliderThumb, cosAngleInput, parseFloat(sliderUnit.dataset.apex), false);
             });
         });
 
@@ -1350,7 +1384,6 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
             drawPhasePlot();
         });
 
-        let colorButton = sliderUnit.getElementsByClassName('slider-color-swatch')[0];
         colorButton.addEventListener('click', function(e) {
             if (colorButton !== targetOfChangeDiv) {
                 summonChangeDiv(colorButton, colorChangeDiv);
@@ -1358,7 +1391,7 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
             }
         });
 
-        let pinButton = sliderUnit.getElementsByClassName('pin-button')[0];
+
         pinButton.addEventListener('click', function() {
             if (pinButton.dataset.isOn === "1") {
                 pinButton.dataset.isOn = 0;
@@ -1371,7 +1404,6 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
             createPhasePlot();
         });
 
-        let ghostButton = sliderUnit.getElementsByClassName('ghost-button')[0];
         ghostButton.addEventListener('click', function() {
             if (ghostButton.dataset.isOn === "1") {
                 ghostButton.dataset.isOn = 0;
@@ -1389,7 +1421,6 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
             drawPuzzle();
         });
 
-        let viewButton = sliderUnit.getElementsByClassName('view-button')[0];
         viewButton.addEventListener('click', function() {
             if (viewButton.dataset.isOn === "1") {
                 viewButton.dataset.isOn = 0;
@@ -1403,7 +1434,6 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
             drawPuzzle();
         });
 
-        let copyButton = sliderUnit.getElementsByClassName('copy-button')[0];
         copyButton.addEventListener('click', function() {
             let cloneUnit = sliderUnit.cloneNode(true);
             cloneUnit.removeAttribute('id');
@@ -1411,7 +1441,6 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
             createSliderUnit(systemUnit, false, Math.cos(sliderInput.value * Math.PI / 180.0), sliderApexInput.value, sliderUnit.dataset.color, cloneUnit);
         });
 
-        let removeButton = sliderUnit.getElementsByClassName('remove-button')[0];
         removeButton.addEventListener('click', function() {
             removeSlider(sliderUnit);
         });
@@ -1461,34 +1490,41 @@ function setSystem(systemIcon, systemName, fromInput = false) {
     if (closeChangeDivsOnSelect && fromInput) removeChangeDivs();
 }
 
-
-
+var prevApexMod = 0;
 function setSlider(sliderThumb, depth, apex, fromInput = false, fromExtern = false) { // it also clamps the value
     //fromInput is if it's from the text box
     //fromExtern is if it's from the phase slider or similar
 
-    //console.log(sliderGrabOffsetX);
-    //console.log(sliderThumb,depth)
-    let sliderThumbOpp = (sliderThumb.parentNode.nextElementSibling || sliderThumb.parentNode.previousElementSibling).getElementsByClassName('slider-thumb')[0];
+    let isApex = sliderThumb.classList.contains('thumb-apex');
+    let sliderThumbOpp = isApex ? sliderThumb : (sliderThumb.parentNode.nextElementSibling || sliderThumb.parentNode.previousElementSibling).getElementsByClassName('slider-thumb')[0];
+    let sliderThumbApex = isApex ? sliderThumb : sliderThumb.closest('.slider').getElementsByClassName('slider-thumb-apex')[0];
     let sliderUnit = sliderThumb.closest('.slider-unit');
     let isNegative = sliderThumb.parentNode.classList.contains('slider-neg');
     let isFullDepth = controlPanel.classList.contains('full-depth');
     let noOpposites = sliderThumb.closest('.system-unit').classList.contains('no-opposites');
+
     let swapNegate = 1;
     depth = clamp(depth, isFullDepth && !(fromExtern && !noOpposites) ? -1 : 0, 1);
+
     if (isFullDepth && ((depth >= 0) === isNegative) /*&& !fromInput*/ ) { // === acting as XOR
         if (!fromInput && !fromExtern) sliderDrag = sliderThumbOpp;
         swapNegate = -1;
-        //console.log('swap')
-        //console.log('swapped');
     }
-    if (isNegative) {
-        sliderThumb.style.left = (100 + swapNegate * depth * 100) + '%';
-        sliderThumbOpp.style.left = (-swapNegate * depth * 100) + '%';
-    } else {
-        sliderThumb.style.left = (swapNegate * depth * 100) + '%';
-        sliderThumbOpp.style.left = (100 - swapNegate * depth * 100) + '%';
+
+    if (!isApex) {
+        if (isNegative) {
+            sliderThumb.style.left = (100 + swapNegate * depth * 100) + '%';
+            sliderThumbOpp.style.left = (-swapNegate * depth * 100) + '%';
+        } else {
+            sliderThumb.style.left = (swapNegate * depth * 100) + '%';
+            sliderThumbOpp.style.left = (100 - swapNegate * depth * 100) + '%';
+        }
     }
+
+    let curper = ((apex + 1.0) * 0.5);
+    let modper = ((curper % 1) + 1) % 1;
+    sliderThumbApex.style.left = (modper * 100) + '%';
+
     updateWrongSign(sliderUnit, depth);
     if (!noOpposites) {
         depth = Math.abs(depth);
@@ -1500,6 +1536,7 @@ function setSlider(sliderThumb, depth, apex, fromInput = false, fromExtern = fal
     let isLinked = sliderUnit.getElementsByClassName('link-button')[0].dataset.isOn === "1";
     if (isLinked) sliderUnit.getElementsByClassName('slider-input-apex')[0].value = depth;
     if (isLinked) sliderUnit.dataset.apex = depth;
+    if (isLinked) sliderThumbApex.style.left = ((depth + 1.0) * 50) + '%';
 
     if (!fromInput) {
         let calDepthVal = clamp(depth, isFullDepth ? -1 : 0, 1);
@@ -1507,7 +1544,7 @@ function setSlider(sliderThumb, depth, apex, fromInput = false, fromExtern = fal
 
         let acosDepth = clamp(Math.acos(calDepthVal) * 180.0 / Math.PI, 0, isFullDepth ? 180 : 90);
 
-        if (!fromExtern) {
+        if (!fromExtern && !isApex) {
             acosDepth = parseFloat(acosDepth.toFixed(1));
         }
 
@@ -1532,7 +1569,7 @@ function setSlider(sliderThumb, depth, apex, fromInput = false, fromExtern = fal
 function setSliderColor(colorSwatch, color, fromInput = false) {
     colorSwatch.closest('.slider-unit').dataset.color = color;
     colorSwatch.style.backgroundColor = color;
-    let sliderThumbs = Array.from(colorSwatch.closest('.slider-unit').getElementsByClassName('slider-thumb'));
+    let sliderThumbs = [...Array.from(colorSwatch.closest('.slider-unit').getElementsByClassName('slider-thumb')), ...Array.from(colorSwatch.closest('.slider-unit').getElementsByClassName('slider-thumb-apex'))];
     sliderThumbs.forEach(thumb => thumb.style.backgroundColor = color);
     if (closeChangeDivsOnSelect && fromInput) removeChangeDivs();
 }
@@ -1598,7 +1635,7 @@ function updateSystemOpposite(systemUnit) {
             //sliderUnit.getElementsByClassName('slider-input-2')[0].max = 90;
             let sliderDepth = parseFloat(sliderUnit.dataset.depth);
             if (sliderDepth < 0) {
-                setSlider(sliderThumbs[0], Math.abs(sliderDepth), sliderThumbs[0].closest('.slider-unit').dataset.apex, false, true);
+                setSlider(sliderThumbs[0], Math.abs(sliderDepth), parseFloat(sliderThumbs[0].closest('.slider-unit').dataset.apex), false, true);
             }
         }
     }
