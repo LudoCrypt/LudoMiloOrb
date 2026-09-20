@@ -78,20 +78,11 @@ var isPhase2D;
 
 var phaseBakedScale = 20.0;
 
-
-
 var changeDivs;
-
+var paramsChangeDiv;
 var systemChangeDiv;
 var drawChangeDiv;
 var drawIcon;
-
-var paramsChangeDiv;
-var orderChangeDiv;
-var jumbleConfigChangeDiv;
-var arbitraryConstantChangeDiv;
-var stringInputChangeDiv;
-var baseAxesIncludedChangeDiv;
 
 var languageChangeDiv;
 
@@ -105,8 +96,6 @@ var colorChoices = [
     '#a00000', '#1f4bd1', '#167f18', '#965500', '#7528af', '#73536b', '#b51b98', '#595959', '#1d7a61', '#4c6b13',
     '#a000005a', '#1f4bd15a', '#167f185a', '#9655005a', '#7528af5a', '#73536b5a', '#b51b985a', '#5959595a', '#1d7a615a', '#4c6b135a'
 ];
-
-
 
 function transform(quat, vec) {
     return new Vector(...quat.rotateVector(vec.toArray()))
@@ -179,9 +168,9 @@ function initialize() {
 
 
 
-    document.getElementById('color-remove').addEventListener('click', function() {
-        removeSlider(targetOfChangeDiv.closest('.slider-unit'));
-    })
+    // document.getElementById('color-remove').addEventListener('click', function() {
+    //     removeSlider(targetOfChangeDiv.closest('.slider-unit'));
+    // });
 
     window.addEventListener('resize', function(e) {
         makeCanvasSize();
@@ -191,17 +180,14 @@ function initialize() {
     phasePanel.addEventListener('mouseenter', (event) => {
         if (!renderRegions) {
 
-            let axisCounts = countAxes();
-            let tooManyAxes = axisCounts.reduce((a, b) => a + b, 0) > 40;
-
             // dont update automatically if theres too many
-            if (tooManyAxes) {
+            if (tooManyAxesToAutoUpdate) {
                 return;
             }
 
-            createPhasePlot();
+            createPhasePlot(true);
             renderRegions = true;
-            drawPhasePlot();
+            drawPhasePlot(true);
         }
         renderRegions = true;
     });
@@ -336,6 +322,8 @@ function initialize() {
     })
 
 
+    paramsChangeDiv = document.getElementById('params-change');
+
     changeDivs = document.getElementById('change-windows');
 
     systemChangeDiv = document.getElementById('system-change');
@@ -363,13 +351,6 @@ function initialize() {
     document.getElementById('system-remove').addEventListener('click', function() {
         removeSystem(targetOfChangeDiv.closest('.system-unit'));
     })
-
-    paramsChangeDiv = document.getElementById('params-change');
-    orderChangeDiv = document.getElementById('order-change');
-    jumbleConfigChangeDiv = document.getElementById('jumble-config-change');
-    arbitraryConstantChangeDiv = document.getElementById('arbitrary-constant-change');
-    stringInputChangeDiv = document.getElementById('string-input-change');
-    baseAxesIncludedChangeDiv = document.getElementById('base-axes-included-change');
 
     colorChangeDiv = document.getElementById('color-change');
     for (let color of colorChoices) {
@@ -450,10 +431,10 @@ function initialize() {
 
     document.getElementById('phase-create').addEventListener('click', function() {
         if (document.getElementById('phase-create').dataset.disabled !== undefined) return;
-        createPhasePlot();
+        createPhasePlot(false);
         phaseCamera = new Viewport(phaseDiagram, phaseG, phaseBakedScale);
         renderRegions = true;
-        drawPhasePlot();
+        drawPhasePlot(false);
     });
 
     document.addEventListener('click', (e) => {
@@ -1204,8 +1185,8 @@ function createSystemUnit(ghost = false, system = 'cube', params = [], systemDep
 
         let systemParams = systemUnit.getElementsByClassName('system-params')[0];
         systemParams.addEventListener('click', function(e) {
-            //if (!systemUnit.dataset.jumbleConfig) return;
             if (!(systemData[systemUnit.dataset.system].paramsRequired.length)) return;
+
             if (systemParams !== targetOfChangeDiv) {
                 summonChangeDiv(systemParams, paramsChangeDiv);
                 e.keepChangeDivs_ = true; // otherwise it will close the div
@@ -1339,8 +1320,9 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
                 linkButton.src = './icons/link_on.svg';
                 setSlider(sliderThumb, parseFloat(sliderUnit.dataset.depth), parseFloat(sliderUnit.dataset.depth), true);
             }
-            hidePhaseDiagram(false);
-            createPhasePlot();
+            // the link button doesnt change phase, no need to auto update
+            //hidePhaseDiagram(false);
+            //createPhasePlot(true);
             drawPuzzle();
         });
 
@@ -1376,12 +1358,12 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
         document.getElementById("tangent-lines").addEventListener("change", e => {
             if (document.getElementById('phase-create').dataset.disabled !== undefined) return;
             showTangents = e.target.checked;
-            drawPhasePlot();
+            drawPhasePlot(false);
         });
         document.getElementById("coincident-lines").addEventListener("change", e => {
             if (document.getElementById('phase-create').dataset.disabled !== undefined) return;
             showTriples = e.target.checked;
-            drawPhasePlot();
+            drawPhasePlot(false);
         });
 
         colorButton.addEventListener('click', function(e) {
@@ -1401,7 +1383,7 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
                 pinButton.src = './icons/pin_on.svg';
             }
             hidePhaseDiagram(false);
-            createPhasePlot();
+            createPhasePlot(true);
         });
 
         ghostButton.addEventListener('click', function() {
@@ -1417,7 +1399,7 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
                 setSliderColor(colorButton, sliderUnit.dataset.color, true);
             }
             hidePhaseDiagram(false);
-            createPhasePlot();
+            createPhasePlot(true);
             drawPuzzle();
         });
 
@@ -1450,8 +1432,10 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
         setSliderColor(colorButton, color);
         drawPuzzle();
     }
+    createPhasePlot(true);
     hidePhaseDiagram();
 }
+
 
 
 function setSystem(systemIcon, systemName, fromInput = false) {
@@ -1463,29 +1447,16 @@ function setSystem(systemIcon, systemName, fromInput = false) {
     systemUnit.dataset.baseAxesIncluded = "true";
 
     for (let param of systemData[systemName].paramsRequired) {
-        if (param.startsWith("arbitraryConstant")) {
-            const index = parseInt(param.substring('arbitraryConstant'.length));
-            systemUnit.dataset[param] = getArbitraryConstantConfig(index).defaultValue;
-        }
+        paramsSetters[param](systemUnit, defaultParamsValues[param](systemUnit));
     }
 
-    //systemUnit.getElementsByClassName('system-params')[0].innerHTML = systemUnit.dataset.jumbleConfig;
     setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
 
-    /*if (!getOppositesFromSystemUnit(systemUnit)){
-        systemUnit.classList.add('no-opposites')
-    } else {
-        systemUnit.classList.remove('no-opposites')
-    }*/
     updateSystemOpposite(systemUnit);
-    /*if (sliderPanel.getElementsByClassName('no-opposites').length){
-        //console.log(sliderPanel.getElementsByClassName('no-opposites'));
-        controlPanel.classList.add('full-depth');
-    } else {
-        controlPanel.classList.remove('full-depth');
-    }*/
+
     systemIcon.src = systemData[systemName].getIcon(); // change this to an image // it is
     systemIcon.dataset.altTranslate = systemName;
+    createPhasePlot(true);
     hidePhaseDiagram();
     if (closeChangeDivsOnSelect && fromInput) removeChangeDivs();
 }
@@ -1563,7 +1534,7 @@ function setSlider(sliderThumb, depth, apex, fromInput = false, fromExtern = fal
     if (fromInput) removeChangeDivs();
     drawPuzzle(); // not quite sure i want this in this function
 
-    if (sliderUnit.getElementsByClassName('pin-button')[0].dataset.isOn === "1") createPhasePlot();    
+    if (sliderUnit.getElementsByClassName('pin-button')[0].dataset.isOn === "1") createPhasePlot(true);    
 }
 
 function setSliderColor(colorSwatch, color, fromInput = false) {
@@ -1594,6 +1565,7 @@ function removeSlider(sliderUnit) {
         removeChangeDivs();
         drawPuzzle();
     }
+    createPhasePlot(true);
     hidePhaseDiagram();
 }
 
@@ -1607,7 +1579,15 @@ function removeSystem(systemUnit) {
     systemUnit.remove();
     updateFullDepth();
     removeChangeDivs();
+
+    // why do this twice? good question! id rather not have to calculate a million phase lines if there happen to be a million axes
     hidePhaseDiagram();
+    // this is just to re-calculate how many lines the phase would have
+    createPhasePlot(true);
+    // and then do it again to re-update the labels
+    // im sure theres a better way to do this but :P
+    hidePhaseDiagram();
+
     drawPuzzle();
 }
 
@@ -1659,11 +1639,9 @@ function updateWrongSign(sliderUnit, depth) {
 
 function setSystemParamInnerHTML(systemParamsDiv) {
     let systemUnit = systemParamsDiv.closest('.system-unit');
-    //console.log(systemData[systemUnit.dataset.system].paramsRequired,systemUnit.dataset['jumbleConfig']);
-    let string = systemData[systemUnit.dataset.system].paramsRequired.map(param => systemUnit.dataset[param]).join(': ');
+    let string = systemData[systemUnit.dataset.system].paramsRequired.length > 0 ? "Config" : "";
     systemParamsDiv.innerHTML = string;
-    systemParamsDiv.classList.toggle('small-text', string.length >= 9);
-    systemParamsDiv.classList.toggle('system-params-in-use', string.length > 0)
+    systemParamsDiv.classList.toggle('system-params-in-use', string.length > 0);
 }
 
 function removeChildren(element) {
@@ -1672,162 +1650,171 @@ function removeChildren(element) {
     }
 }
 
-
-const jumbleConfigDivTemplate = name => `<div class='jumble-config-option simple-option'>${name}</div>`
-const orderDivTemplate = name => `<div class='order-option simple-option'>${name}</div>`
-const stringInputTemplate = name => `<input class="string-input-option" type="text" value="${name}">`;
-const toggleInputTemplate = name => `<label class="toggle-input-option"><input type="checkbox" ${name}>Include Base Axes</label>`
-
-const arbitraryConstantConfigs = {
-    10: {
-        label: "Degrees",
-        min: 0,
-        max: 90,
-        step: 1,
-        defaultValue: 45
-    },
-    7: {
-        label: "nx",
-        min: -1,
-        max: 1,
-        step: 0.01,
-        defaultValue: 0.5
-    },
-    8: {
-        label: "ny",
-        min: -1,
-        max: 1,
-        step: 0.01,
-        defaultValue: 0.5
-    },
-    9: {
-        label: "nz",
-        min: -1,
-        max: 1,
-        step: 0.01,
-        defaultValue: 0.5
-    }
-};
-
-const getArbitraryConstantConfig = (index) => ({
-    label: String.fromCharCode(97 + index),
-    min: 0,
-    max: 1,
-    step: 0.01,
-    defaultValue: 0.5,
-    ...(arbitraryConstantConfigs[index] ?? {})
-});
-
-const arbitraryConstantTemplate = (currentVal, index) => {
-    const config = getArbitraryConstantConfig(index);
+function numberInputTemplate(configId, label, defaultValue, min, max, step, hasSlider) {
+    const sliderHtml = hasSlider ? `<input class="slider-range" type="range" min="${min}" max="${max}" step="${step}" value="${defaultValue}">` : '';
 
     return `
-    <div class='arbitrary-constant-option simple-option'>
-        <label>${config.label}</label>
-        <input
-            type="number"
-            min="${config.min}"
-            max="${config.max}"
-            step="${config.step}"
-            value="${currentVal}"
-            class="constant-input"
-        >
-    </div>`;
-};
+        <div class="params-number" data-param-id="${configId}" data-value="${defaultValue}">
+            <label class="params-label">${label}</label>
+            ${sliderHtml}
+            <input class="input-text" type="number" min="${min}" max="${max}" step="${step}" value="${defaultValue}">
+        </div>
+    `;
+}
+
+function booleanInputTemplate(configId, label, defaultValue) {
+    return `
+        <label class="params-boolean" data-param-id="${configId}" data-value="${defaultValue}">
+            <input class="params-checkbox" type="checkbox" ${defaultValue ? "checked" : ""}>
+            <span class="params-label">${label}</span>
+        </label>
+    `;
+}
+
+function enumInputTemplate(configId, label, defaultValue, options, resetSystemDefault = false, systemUnit = undefined) {
+    var optionsHtml = '';
+    var foundDefault = false;
+
+    for (var option of options) {
+        optionsHtml += `<option value="${option}" ${defaultValue == option ? "selected" : ""}>${option}</option>`;
+        foundDefault = defaultValue == option || foundDefault;
+    }
+
+    // this is only a thing because of the order and jumble config interplay
+    // this is basically here so that if you change the order,
+    // and the current jumble config is not in the new options,
+    // reset the system param to match the new default
+    if (!foundDefault) {
+        if (resetSystemDefault && systemUnit) {
+            setSystemParam(configId, systemUnit, options[0]);
+        }
+    }
+    
+    return `
+        <div class="params-enum" data-param-id="${configId}" data-value="${defaultValue}">
+            <label class="params-label">${label}</label>
+            <select class="params-enum params-selection">
+                ${optionsHtml}
+            </select>
+        </div>
+    `;
+}
+
+function stringInputTemplate(configId, label, defaultValue, placeholder) {
+    return `
+        <div class="params-string" data-param-id="${configId}" data-value="${defaultValue}">
+            <label class="params-label">${label}</label>
+            <input class="input-string" type="text" placeholder="${placeholder}" value="${defaultValue}">
+        </div>
+    `;
+}
+
+const paramsTemplates = {
+    "arbitraryConstantA": (systemUnit) => numberInputTemplate("arbitraryConstantA", "a", systemUnit.dataset.arbitraryConstantA, 0, 1, 0.01, true),
+    "arbitraryConstantB": (systemUnit) => numberInputTemplate("arbitraryConstantB", "b", systemUnit.dataset.arbitraryConstantB, 0, 1, 0.01, true),
+    "arbitraryConstantC": (systemUnit) => numberInputTemplate("arbitraryConstantC", "c", systemUnit.dataset.arbitraryConstantC, 0, 1, 0.01, true),
+    "arbitraryConstantX": (systemUnit) => numberInputTemplate("arbitraryConstantX", "x", systemUnit.dataset.arbitraryConstantX, -1, 1, 0.01, true),
+    "arbitraryConstantY": (systemUnit) => numberInputTemplate("arbitraryConstantY", "y", systemUnit.dataset.arbitraryConstantY, -1, 1, 0.01, true),
+    "arbitraryConstantZ": (systemUnit) => numberInputTemplate("arbitraryConstantZ", "z", systemUnit.dataset.arbitraryConstantZ, -1, 1, 0.01, true),
+    "arbitraryConstantDegrees": (systemUnit) => numberInputTemplate("arbitraryConstantDegrees", "degrees", systemUnit.dataset.arbitraryConstantDegrees, 0, 90, 1, true),
+    "baseAxesIncluded": (systemUnit) => booleanInputTemplate("baseAxesIncluded", "Include Base Axes", systemUnit.dataset.baseAxesIncluded),
+    "order": (systemUnit) => numberInputTemplate("order", "Order", systemUnit.dataset.order, 3, 20, 1, true),
+    "jumbleConfig": (systemUnit) => enumInputTemplate("jumbleConfig", "Jumble Config", systemUnit.dataset.jumbleConfig, listjumbleConfigsFromSystemUnit(systemUnit), true, systemUnit),
+    "stringInput": (systemUnit) => stringInputTemplate("stringInput", "Axis System", systemUnit.dataset.stringInput, "o[1,0,0]"),
+}
+
+const defaultParamsValues = {
+    "arbitraryConstantA": (systemUnit) => 0.5,
+    "arbitraryConstantB": (systemUnit) => 0.5,
+    "arbitraryConstantC": (systemUnit) => 0.5,
+    "arbitraryConstantX": (systemUnit) => 0.5,
+    "arbitraryConstantY": (systemUnit) => 0.5,
+    "arbitraryConstantZ": (systemUnit) => 0.5,
+    "arbitraryConstantDegrees": (systemUnit) => 45,
+    "baseAxesIncluded": (systemUnit) => true,
+    "order": (systemUnit) => 5,
+    "jumbleConfig": (systemUnit) => listjumbleConfigsFromSystemUnit(systemUnit)[0],
+    "stringInput": (systemUnit) => "o[1,0,0]",
+}
+
+const paramsSetters = {
+    "arbitraryConstantA": (systemUnit, value) => systemUnit.dataset.arbitraryConstantA = value,
+    "arbitraryConstantB": (systemUnit, value) => systemUnit.dataset.arbitraryConstantB = value,
+    "arbitraryConstantC": (systemUnit, value) => systemUnit.dataset.arbitraryConstantC = value,
+    "arbitraryConstantX": (systemUnit, value) => systemUnit.dataset.arbitraryConstantX = value,
+    "arbitraryConstantY": (systemUnit, value) => systemUnit.dataset.arbitraryConstantY = value,
+    "arbitraryConstantZ": (systemUnit, value) => systemUnit.dataset.arbitraryConstantZ = value,
+    "arbitraryConstantDegrees": (systemUnit, value) => systemUnit.dataset.arbitraryConstantDegrees = value,
+    "baseAxesIncluded": (systemUnit, value) => systemUnit.dataset.baseAxesIncluded = value,
+    "order": (systemUnit, value) => systemUnit.dataset.order = value,
+    "jumbleConfig": (systemUnit, value) => systemUnit.dataset.jumbleConfig = value,
+    "stringInput": (systemUnit, value) => systemUnit.dataset.stringInput = value,
+}
 
 function summonChangeDiv(targetButton, changeDiv) {
-    if (changeDiv === paramsChangeDiv) { // intentional: this will not run if we are just moving the div
-        let systemUnit = targetButton.closest('.system-unit');
-        Array.from(paramsChangeDiv.children[0].children).forEach(ch => ch.classList.add('hidden'));
 
-        removeChildren(arbitraryConstantChangeDiv);
+    if (changeDiv === paramsChangeDiv) {
+        let systemUnit = targetButton.closest('.system-unit');
+
+        let paramsPanel = changeDiv.querySelector('.params-panel');
+        removeChildren(paramsPanel);
 
         for (let param of systemData[systemUnit.dataset.system].paramsRequired) {
-            switch (param) {
-                case 'order':
-                    removeChildren(orderChangeDiv);
-                    orderChangeDiv.classList.remove('hidden');
-                    for (let order = 3; order <= 24; order++) {
-                        orderChangeDiv.insertAdjacentHTML('beforeend', orderDivTemplate(order));
-                        let orderOptionDiv = orderChangeDiv.lastChild;
-                        orderOptionDiv.addEventListener('click', function() {
-                            setSystemParam(param, systemUnit, order);
-                            drawPuzzle();
-                        });
-                    }
-                    break;
-                case 'jumbleConfig':
-                    removeChildren(jumbleConfigChangeDiv);
-                    jumbleConfigChangeDiv.classList.remove('hidden');
-                    for (let jumbleConfig of listjumbleConfigsFromSystemUnit(systemUnit)) {
-                        jumbleConfigChangeDiv.insertAdjacentHTML('beforeend', jumbleConfigDivTemplate(jumbleConfig));
-                        let jumbleConfigOptionDiv = jumbleConfigChangeDiv.lastChild;
-                        jumbleConfigOptionDiv.addEventListener('click', function() {
-                            setSystemParam(param, systemUnit, jumbleConfig);
-                            drawPuzzle();
-                        });
-                    }
-                    break;
-                case 'stringInput':
-                    removeChildren(stringInputChangeDiv);
-                    stringInputChangeDiv.classList.remove('hidden');
-                    stringInputChangeDiv.insertAdjacentHTML('beforeend', stringInputTemplate(systemUnit.dataset.stringInput ?? ' '));
-
-                    let input = stringInputChangeDiv.lastChild;
-
-                    input.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter') {
-                            setSystemParam(param, systemUnit, input.value.startsWith(' ') ? input.value : ' ' + input.value);
-                            drawPuzzle();
-                        }
-                    });
-                    break;
-                case 'baseAxesIncluded':
-                    removeChildren(baseAxesIncludedChangeDiv);
-                    baseAxesIncludedChangeDiv.classList.remove('hidden');
-                    baseAxesIncludedChangeDiv.insertAdjacentHTML('beforeend', toggleInputTemplate(systemUnit.dataset.baseAxesIncluded == "true" ? "checked" : ""));
-
-                    baseAxesIncludedChangeDiv.lastChild.addEventListener("change", e => {
-                        setSystemParam(param, systemUnit, e.target.checked);
-                        drawPuzzle();
-                    });
-
-                    break;
-            }
-
-            if (param.startsWith('arbitraryConstant')) {
-
-                arbitraryConstantChangeDiv.classList.remove('hidden');
-
-                let index = parseInt(
-                    param.substring('arbitraryConstant'.length)
-                );
-
-                let currentVal = systemUnit.dataset[param] || 0.5;
-
-                arbitraryConstantChangeDiv.insertAdjacentHTML(
-                    'beforeend',
-                    arbitraryConstantTemplate(currentVal, index)
-                );
-
-                let inputField =
-                    arbitraryConstantChangeDiv.lastChild.querySelector('.constant-input');
-
-                inputField.addEventListener('change', function(e) {
-
-                    let val = parseFloat(e.target.value);
-
-                    if (isNaN(val)) val = 0.5;
-
-                    setSystemParam(param, systemUnit, val);
-
-                    drawPuzzle();
-                });
-
-                continue;
-            }
-
+            paramsPanel.insertAdjacentHTML('beforeend', paramsTemplates[param](systemUnit));
         }
+
+        paramsPanel.querySelectorAll('.params-collapsible').forEach(function (container) {
+            var header = container.querySelector('.collapsible-header');
+            header.addEventListener('click', function () {
+                container.classList.toggle('open');
+            });
+        });
+
+        paramsPanel.querySelectorAll('.params-number').forEach(function (container) {
+            var slider = container.querySelector('.slider-range');
+            var input = container.querySelector('.input-text');
+
+            function syncInputs(e) {
+                const value = e.target.value;
+
+                if (slider) slider.value = value;
+                if (input) input.value = value;
+
+                container.dataset.value = value;
+                setSystemParam(container.dataset.paramId, systemUnit, container.dataset.value);
+            }
+
+            if (slider) slider.addEventListener('input', syncInputs);
+            if (input) input.addEventListener('change', syncInputs);
+        });
+
+        paramsPanel.querySelectorAll('.params-boolean').forEach(function (container) {
+            var checkbox = container.querySelector('.params-checkbox');
+
+            if (checkbox) checkbox.addEventListener('change', function (e) {
+                container.dataset.value = checkbox.checked;
+                setSystemParam(container.dataset.paramId, systemUnit, container.dataset.value);
+            });
+        });
+
+        paramsPanel.querySelectorAll('.params-enum').forEach(function (container) {
+            var selection = container.querySelector('.params-selection');
+
+            if (selection) selection.addEventListener('change', function (e) {
+                container.dataset.value = e.target.value;
+                setSystemParam(container.dataset.paramId, systemUnit, container.dataset.value);
+            });
+        });
+
+        paramsPanel.querySelectorAll('.params-string').forEach(function (container) {
+            var input = container.querySelector('.input-string');
+
+            if (input) input.addEventListener('change', function (e) {
+                container.dataset.value = e.target.value;
+                setSystemParam(container.dataset.paramId, systemUnit, container.dataset.value);
+            });
+        });
+
     }
 
     if (changeDiv) {
@@ -1853,59 +1840,46 @@ function summonChangeDiv(targetButton, changeDiv) {
         } else if (targetBottom > parseFloat(sliderPanel.getBoundingClientRect().bottom)) {
             targetBottom = parseFloat(sliderPanel.getBoundingClientRect().bottom)
         }
-        changeDiv.style.top = (targetBottom + 20) + 'px';
+        changeDiv.style.top = (targetBottom + 10) + 'px';
     }
 }
 
 function setSystemParam(param, systemUnit, value) {
-    //console.log(param,systemUnit,value)
-    switch (param) {
-        case 'order':
-            systemUnit.dataset.order = value;
-            systemUnit.dataset.jumbleConfig = listjumbleConfigsFromSystemUnit(systemUnit)[0];
-            setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
-            //hidePhaseDiagram();
-            createPhasePlot();
-            if (closeChangeDivsOnSelect) removeChangeDivs();
-            updateSystemOpposite(systemUnit);
-            //drawPuzzle();
-            break;
-        case 'jumbleConfig':
-            systemUnit.dataset.jumbleConfig = value;
-            setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
-            //hidePhaseDiagram();
-            createPhasePlot();
-            if (closeChangeDivsOnSelect) removeChangeDivs();
-            //drawPuzzle();
-            break;
-        case 'stringInput':
-            systemUnit.dataset.stringInput = value;
-            setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
-            createPhasePlot();
-            if (closeChangeDivsOnSelect) removeChangeDivs();
-            updateSystemOpposite(systemUnit);
-            break;
-        case 'baseAxesIncluded':
-            systemUnit.dataset.baseAxesIncluded = value;
-            setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
-            createPhasePlot();
-            if (closeChangeDivsOnSelect) removeChangeDivs();
-            break;
+    paramsSetters[param](systemUnit, value);
+
+    // specifically since jumbleConfig is also dependant on params, update it here
+    if (param != "jumbleConfig") {
+        if (paramsChangeDiv) {
+            let paramsPanel = paramsChangeDiv.querySelector('.params-panel');
+            paramsPanel.querySelectorAll('.params-enum').forEach(function (container) {
+
+                // if its jumbleConfig, then replace it
+                if (container.dataset.paramId == "jumbleConfig") {
+                    var frag = document.createRange().createContextualFragment(paramsTemplates[container.dataset.paramId](systemUnit));
+                    var newContainer = frag.firstElementChild;
+
+                    var selection = newContainer.querySelector('.params-selection');
+
+                    if (selection) selection.addEventListener('change', function (e) {
+                        newContainer.dataset.value = e.target.value;
+                        setSystemParam(newContainer.dataset.paramId, systemUnit, newContainer.dataset.value);
+                    });
+
+                    container.replaceWith(newContainer);
+                }
+
+            });
+        }
     }
-    if (param.startsWith('arbitraryConstant')) {
 
-        systemUnit.dataset[param] = value;
+    // this was used previously to show the config under the thing but im probably gonna keep that removed
+    //setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
+    
+    updateFullDepth();
+    updateSystemOpposite(systemUnit);
+    createPhasePlot(true);
 
-        setSystemParamInnerHTML(
-            systemUnit.getElementsByClassName('system-params')[0]
-        );
-
-        //hidePhaseDiagram();
-
-        createPhasePlot();
-
-        updateSystemOpposite(systemUnit);
-    }
+    drawPuzzle();
 }
 
 function removeChangeDivs() {
@@ -1942,7 +1916,7 @@ function countAxes() {
     return systemsAxes.map(x => x.length);
 }
 
-function systemPhaseLines(systemUnits) {
+function systemPhaseLines(systemUnits, isAutoUpdate = false) {
     let systemsAxes = [];
     let symmetry = -1;
     for (let systemUnit of systemUnits) {
@@ -2091,6 +2065,20 @@ function systemPhaseLines(systemUnits) {
                                     lineEqnsTriple.add([0, tripleCoeffs[2] ** -0.5, 1, 0]).add([0, -(tripleCoeffs[2] ** -0.5), 1, 0]);
                                 } else {
                                     ellipseMatsTriple.add(tripleCoeffs);
+
+                                    // if we're just trying to figure out how many there are
+                                    if (isAutoUpdate) {
+                                        // come on, why bother at this point
+                                        if (ellipseMatsTriple.size > phaseLinesMaxGoodnessMe) {
+                                            return {
+                                                lineEqnsTangent,
+                                                ellipseMatsTangent,
+                                                lineEqnsTriple,
+                                                ellipseMatsTriple,
+                                                lineClippingRawTriple
+                                            };
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2388,10 +2376,13 @@ var dotColor = "#f00000";
 var tripleColor = "#008fa5";
 var tangentColor = "#d27b00";
 
-function createPhasePlot() {
-    if (document.getElementById('phase-create').dataset.disabled !== undefined) return;
-
+function createPhasePlot(isAutoUpdate = true) {
     updateFullDepth();
+
+    if (document.getElementById('phase-create').dataset.disabled !== undefined || (isAutoUpdate && tooManyAxes)) {
+        hidePhaseDiagram(false);
+        return;
+    }
 
     let systemUnits = [];
     slidersInPhase = [];
@@ -2434,7 +2425,7 @@ function createPhasePlot() {
     if (pinnedSliderIndices.length === 0) {
         isPhase2D = freeSliderIndices.length === 2;
         let freeUnits = isPhase2D ? [systemUnits[freeSystemIndices[0]], systemUnits[freeSystemIndices[1]]] : [systemUnits[freeSystemIndices[0]]];
-        let phaseLines = systemPhaseLines(freeUnits);
+        let phaseLines = systemPhaseLines(freeUnits, isAutoUpdate);
 
         lineEqnsTangent = phaseLines.lineEqnsTangent;
         ellipseMatsTangent = phaseLines.ellipseMatsTangent;
@@ -2461,7 +2452,7 @@ function createPhasePlot() {
 
         isPhase2D = true;
         let freeUnits = [systemUnits[freeSystemIndices[0]], systemUnits[freeSystemIndices[1]]];
-        let phaseLines = systemPhaseLines(freeUnits);
+        let phaseLines = systemPhaseLines(freeUnits, isAutoUpdate);
 
         lineEqnsTangent = phaseLines.lineEqnsTangent;
         ellipseMatsTangent = phaseLines.ellipseMatsTangent;
@@ -2569,14 +2560,32 @@ function createPhasePlot() {
     if (isPhase2D) lineEqnsTangent.add([1, oppositesPhaseY ? 0 : -1, 1, 0]);
     if (isPhase2D) lineEqnsTriple.add([1, oppositesPhaseY ? 0 : -1, 1, 0]);
 
+    countPhaseLines = lineEqnsTriple.size + lineEqnsTangent.size + ellipseMatsTangent.size + ellipseMatsTriple.size;
+    tooManyPhaseLines = isPhase2D && countPhaseLines > phaseLinesMax;
+    tooManyPhaseLinesLikeWowBeCareful = isPhase2D && countPhaseLines > phaseLinesMaxGoodnessMe;
+
+    if (isAutoUpdate) {
+        if (tooManyPhaseLines) {
+            renderRegions = false;
+            lineEqnsTangent = new FloatSet(4);
+            lineEqnsTriple = new FloatSet(4);
+            ellipseMatsTangent = new FloatSet(5);
+            ellipseMatsTriple = new FloatSet(5);
+            linesClippedTriple = new FloatSet(4);
+            lineClippingTriple = new Map();
+            hidePhaseDiagram(false);
+            return;
+        }
+    }
+
     renderRegions = false;
-    drawPhasePlot();
+    drawPhasePlot(isAutoUpdate);
 }
 
 let renderRegions = false;
 
-function drawPhasePlot() {
-    if (document.getElementById('phase-create').dataset.disabled !== undefined) return;
+function drawPhasePlot(isAutoUpdate = false) {
+    if (document.getElementById('phase-create').dataset.disabled !== undefined || (isAutoUpdate && tooManyPhaseLines)) return;
 
     phaseDiagram.classList.remove('hidden');
     for (let phaseDomainGChild of phaseDomainG.children) {
@@ -3215,18 +3224,30 @@ function phaseMouseToPoint(e) {
     return phasePt.matrixTransform(phaseDomainG.getScreenCTM().inverse());
 }
 
+var countPhaseLines = 0;
+
+const phaseLinesMax = 200;
+const phaseLinesMaxGoodnessMe = 500;
+
+var tooManyPhaseLines = false;
+var tooManyPhaseLinesLikeWowBeCareful = false;
+
+var tooManyAxesToAutoUpdate = false;
+var tooManyAxes = false;
 
 function hidePhaseDiagram(resetCamera = true) {
+    console.log(countPhaseLines);
     phaseDiagram.classList.add('hidden');
     let axisCounts = countAxes();
     let tooManySliders = axisCounts.length > 2;
     let tooFewSliders = axisCounts.length < 1;
-    let tooManyAxes = axisCounts.reduce((a, b) => a + b, 0) > 60;
-    let tooManyAxesToAutoUpdate = axisCounts.reduce((a, b) => a + b, 0) > 40;
+    tooManyAxes = axisCounts.reduce((a, b) => a + b, 0) > 60;
+    tooManyAxesToAutoUpdate = axisCounts.reduce((a, b) => a + b, 0) > 40 || tooManyPhaseLines;
+    
     document.getElementById('phase-create').dataset.translate =
         tooManySliders ? 'other.create_phase_diagram.too_many_sliders' :
         tooFewSliders ? 'other.create_phase_diagram.too_few_sliders' :
-        tooManyAxes ? 'other.create_phase_diagram.too_many_axes' :
+        tooManyAxes || tooManyPhaseLinesLikeWowBeCareful ? 'other.create_phase_diagram.too_many_axes' :
         tooManyAxesToAutoUpdate ? 'other.create_phase_diagram.too_many_axes_to_auto_update' :
         'other.create_phase_diagram.good'
     if (tooManySliders || tooFewSliders) {

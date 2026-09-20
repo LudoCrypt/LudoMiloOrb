@@ -2450,9 +2450,9 @@ addSystemCategory({
 
 addSystem({
     name: 'pyrito_variable',
-    paramsRequired: ['arbitraryConstant0'],
+    paramsRequired: ['arbitraryConstantA'],
     getAxes: function(params) {
-        let x = parseFloat(params.arbitraryConstant0 ?? 0.5);
+        let x = parseFloat(params.arbitraryConstantA ?? 0.5);
 
         let v = 1.0 / Math.sqrt(1 + x * x);
         let c = x * v;
@@ -2481,9 +2481,9 @@ addSystem({
 
 addSystem({
     name: 'pyrito_vertices_variable',
-    paramsRequired: ['arbitraryConstant0', 'baseAxesIncluded'],
+    paramsRequired: ['arbitraryConstantA', 'baseAxesIncluded'],
     getAxes: function(params) {
-        let x = parseFloat(params.arbitraryConstant0 ?? 0.5);
+        let x = parseFloat(params.arbitraryConstantA ?? 0.5);
 
         let b = Math.sqrt(((1 + x) * (1 + x)) + ((1 - x * x) * (1 - x * x)));
         let c = (1 + x) / b;
@@ -2527,9 +2527,9 @@ addSystem({
 
 addSystem({
     name: 'pyrito_edges_variable',
-    paramsRequired: ['arbitraryConstant0'],
+    paramsRequired: ['arbitraryConstantA'],
     getAxes: function(params) {
-        let x = parseFloat(params.arbitraryConstant0 ?? 0.5);
+        let x = parseFloat(params.arbitraryConstantA ?? 0.5);
 
         let babaisyou = (Math.sqrt(x * x + x + 1) * Math.sqrt(2) * (x + 1));
         let p = (x * x + x) / babaisyou;
@@ -2577,10 +2577,10 @@ addSystem({
 
 addSystem({
     name: 'tetartoid_variable',
-    paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1'],
+    paramsRequired: ['arbitraryConstantA', 'arbitraryConstantB'],
     getAxes: function(params) {
-        let a = parseFloat(params.arbitraryConstant0 ?? 0.5);
-        let b = parseFloat(params.arbitraryConstant1 ?? 0.5);
+        let a = parseFloat(params.arbitraryConstantA ?? 0.5);
+        let b = parseFloat(params.arbitraryConstantB ?? 0.5);
 
         let px = -b * (b - 1);
         let py = a * (b - 1);
@@ -2614,10 +2614,10 @@ addSystem({
 
 addSystem({
     name: 'tetartoid_vertices_variable',
-    paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1', 'baseAxesIncluded'],
+    paramsRequired: ['arbitraryConstantA', 'arbitraryConstantB', 'baseAxesIncluded'],
     getAxes: function(params) {
-        let a = parseFloat(params.arbitraryConstant0 ?? 0.5);
-        let b = parseFloat(params.arbitraryConstant1 ?? 0.5);
+        let a = parseFloat(params.arbitraryConstantA ?? 0.5);
+        let b = parseFloat(params.arbitraryConstantB ?? 0.5);
         let c = 1.0;
 
         let systemAxes = [
@@ -2656,9 +2656,9 @@ addSystem({
 
 addSystem({
     name: 'deltoidal_icositetrahedron',
-    paramsRequired: ['arbitraryConstant10'],
+    paramsRequired: ['arbitraryConstantDegrees'],
     getAxes: function(params) {
-        let x = parseFloat(params.arbitraryConstant10 ?? 45) * 0.5;
+        let x = parseFloat(params.arbitraryConstantDegrees ?? 45) * 0.5;
 
         let tx = Math.tan(x * (Math.PI / 180.0));
 
@@ -2695,10 +2695,10 @@ addSystem({
 
 addSystem({
     name: 'icositetrapyritohedron_variable',
-    paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1'],
+    paramsRequired: ['arbitraryConstantA', 'arbitraryConstantB'],
     getAxes: function(params) {
-        let a = parseFloat(params.arbitraryConstant0 ?? 0.5);
-        let b = parseFloat(params.arbitraryConstant1 ?? 0.5);
+        let a = parseFloat(params.arbitraryConstantA ?? 0.5);
+        let b = parseFloat(params.arbitraryConstantB ?? 0.5);
 
         return [
             new Vector(a, b, 1).unit(),
@@ -2733,10 +2733,10 @@ addSystem({
 
 addSystem({
     name: 'icositetrapyritohedron_vertices_variable',
-    paramsRequired: ['arbitraryConstant0', 'arbitraryConstant1', 'baseAxesIncluded'],
+    paramsRequired: ['arbitraryConstantA', 'arbitraryConstantB', 'baseAxesIncluded'],
     getAxes: function(params) {
-        let a = parseFloat(params.arbitraryConstant0 ?? 0.5);
-        let b = parseFloat(params.arbitraryConstant1 ?? 0.5);
+        let a = parseFloat(params.arbitraryConstantA ?? 0.5);
+        let b = parseFloat(params.arbitraryConstantB ?? 0.5);
 
         let p = (1-a) * (1+a+b) / (1-a*b);
         let q = (1-b) * (1+a+b) / (1-a*b);
@@ -2781,11 +2781,11 @@ addSystem({
 
 addSystem({
     name: 'variable_normal',
-    paramsRequired: ['arbitraryConstant7', 'arbitraryConstant8', 'arbitraryConstant9'],
+    paramsRequired: ['arbitraryConstantX', 'arbitraryConstantY', 'arbitraryConstantZ'],
     getAxes: function(params) {
-        let a = parseFloat(params.arbitraryConstant7 ?? 0.5);
-        let b = parseFloat(params.arbitraryConstant8 ?? 0.5);
-        let c = parseFloat(params.arbitraryConstant9 ?? 0.5);
+        let a = parseFloat(params.arbitraryConstantX ?? 0.5);
+        let b = parseFloat(params.arbitraryConstantY ?? 0.5);
+        let c = parseFloat(params.arbitraryConstantZ ?? 0.5);
 
         let nf = Math.sqrt(a * a + b * b + c * c);
 
