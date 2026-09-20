@@ -475,6 +475,142 @@ addDrawShape({
     }
 });
 
+addDrawShape({
+    name: 'icositetrapyritohedron_variable',
+    paramsRequired: ['itphConstA', 'itphConstB'],
+    getShape: function(params) {
+        var a = parseFloat(params.itphConstA ?? 0.5);
+        var b = parseFloat(params.itphConstB ?? 0.5);
+
+        var c = (1 + a + b);
+        var da = Math.abs(a - 1) < THRESHOLD && Math.abs(b - 1) < THRESHOLD ? 1.5 : (1 - a) * c / (1 - a * b);
+        var db = Math.abs(a - 1) < THRESHOLD && Math.abs(b - 1) < THRESHOLD ? 1.5 : (1 - b) * c / (1 - a * b);
+
+        let verts = [
+            [1, 1, 1],
+            [-1, 1, 1],
+            [1, -1, 1],
+            [-1, -1, 1],
+            [1, 1, -1],
+            [-1, 1, -1],
+            [1, -1, -1],
+            [-1, -1, -1],
+            [c, 0, 0],
+            [-c, 0, 0],
+            [0, 0, c],
+            [0, 0, -c],
+            [0, c, 0],
+            [0, -c, 0],
+            [0, da, db],
+            [0, -da, db],
+            [0, da, -db],
+            [0, -da, -db],
+            [da, db, 0],
+            [-da, -db, 0],
+            [-da, db, 0],
+            [da, -db, 0],
+            [db, 0, da],
+            [-db, 0, da],
+            [-db, 0, -da],
+            [db, 0, -da]
+        ];
+
+        let faces = [
+            [10, 22, 0, 14],
+            [10, 15, 2, 22],
+            [10, 14, 1, 23],
+            [10, 23, 3, 15],
+            [8, 18, 0, 22],
+            [21, 8, 22, 2],
+            [25, 8, 21, 6],
+            [8, 25, 4, 18],
+            [11, 25, 6, 17],
+            [24, 11, 17, 7],
+            [11, 24, 5, 16],
+            [25, 11, 16, 4],
+            [9, 24, 7, 19],
+            [9, 19, 3, 23],
+            [9, 23, 1, 20],
+            [9, 20, 5, 24],
+            [12, 20, 1, 14],
+            [12, 14, 0, 18],
+            [12, 18, 4, 16],
+            [12, 16, 5, 20],
+            [13, 19, 7, 17],
+            [13, 15, 3, 19],
+            [13, 21, 2, 15],
+            [13, 17, 6, 21]
+        ];
+
+        let edges = [
+            [10, 22],
+            [0, 22],
+            [0, 14],
+            [10, 14],
+            [10, 15],
+            [2, 15],
+            [2, 22],
+            [1, 14],
+            [1, 23],
+            [10, 23],
+            [3, 23],
+            [3, 15],
+            [8, 18],
+            [0, 18],
+            [8, 22],
+            [8, 21],
+            [2, 21],
+            [8, 25],
+            [6, 21],
+            [6, 25],
+            [4, 25],
+            [4, 18],
+            [11, 25],
+            [6, 17],
+            [11, 17],
+            [11, 24],
+            [7, 17],
+            [7, 24],
+            [5, 24],
+            [5, 16],
+            [11, 16],
+            [4, 16],
+            [9, 24],
+            [7, 19],
+            [9, 19],
+            [3, 19],
+            [9, 23],
+            [1, 20],
+            [9, 20],
+            [5, 20],
+            [12, 20],
+            [12, 14],
+            [12, 18],
+            [12, 16],
+            [13, 19],
+            [13, 17],
+            [13, 15],
+            [13, 21]
+        ];
+
+        // actually the inverse face distance is better to calculate first
+        let inverseDist = Math.hypot(a, b, 1) / c;
+        let faceDistances = [1.0 / inverseDist];
+        let inverseFaceDistances = [inverseDist];
+        let closestFace = 1.0 / inverseDist;
+        let closestFaceInverse = inverseDist;
+        let furthestVertex = Math.max(Math.max(Math.sqrt(3), c), Math.abs(a - 1) < THRESHOLD && Math.abs(b - 1) < THRESHOLD ? 3 : Math.hypot(da, db));
+        let furthestVertexInverse = 1.0 / furthestVertex;
+
+        let infos = { faceDistances, inverseFaceDistances, closestFace, closestFaceInverse, furthestVertex, furthestVertexInverse };
+
+        let vertices = verts.map(Vector.fromArray);
+        let triangles = triangleFan(faces);
+
+        return { vertices, triangles, infos };
+    }
+});
+
 function triangleFan(faces) {
     const triangles = [];
     for (const face of faces) {
