@@ -82,7 +82,9 @@ var changeDivs;
 var paramsChangeDiv;
 var systemChangeDiv;
 var drawChangeDiv;
-var drawIcon;
+
+var drawSystem;
+var drawSystemIcon;
 
 var languageChangeDiv;
 
@@ -392,16 +394,21 @@ function initialize() {
         });
     }
 
-    drawIcon = document.getElementsByClassName('draw-icon')[0];
-    drawIcon.addEventListener('click', function(e) {
-        if (drawIcon !== targetOfChangeDiv) {
-            summonChangeDiv(drawIcon, drawChangeDiv);
+    drawSystem = document.getElementsByClassName('draw-system')[0];
+    drawSystemIcon = document.getElementsByClassName('draw-icon')[0];
+    drawSystemIcon.addEventListener('click', function(e) {
+        if (drawSystemIcon !== targetOfChangeDiv) {
+            summonChangeDiv(drawSystemIcon, drawChangeDiv);
             e.keepChangeDivs_ = true; // otherwise it will close the div
         }
     });
 
     if (urlParams.has('draw-shape')) {
-        setDrawShape(drawIcon, urlParams.getAll('draw-shape')[0], true);
+        let urlDrawShape = urlParams.getAll('draw-shape')[0];
+        let drawShapeName = urlDrawShape.split('-')[0];
+        let drawSystemParams = urlDrawShape.split('-').slice(1);
+        let decodedParams = drawSystemParams.map((value, j) => drawShapeData[drawShapeName].paramsRequired[j] == "stringInput" ? atob(value) : value);
+        setDrawShape(drawSystem, drawShapeName, decodedParams, true);
     }
 
     drawChangeDiv = document.getElementById('draw-change');
@@ -417,7 +424,7 @@ function initialize() {
             systemOptionDiv.addEventListener('click', function(e) { // assuming systemChangeDiv is active
                 // I dont like this fix but meh
                 if (window.getSelection().toString().length == 0 && !e.altKey) {
-                    setDrawShape(drawIcon, shapeName, true);
+                    setDrawShape(drawSystem, shapeName, [], true);
                     currentDrawShape = undefined;
                 }
                 drawPuzzle();
@@ -464,7 +471,15 @@ function initialize() {
     document.getElementById('share-url').addEventListener('click', function() {
         let urlParams = new URLSearchParams();
 
-        urlParams.append('draw-shape', drawIcon.dataset.system);
+        let drawCode = drawSystem.dataset.system;
+        for (let reqParam of drawShapeData[drawSystem.dataset.system].paramsRequired) {
+            if (reqParam == "stringInput") {
+                drawCode += '-' + btoa(drawSystem.dataset[reqParam]);
+            } else {
+                drawCode += '-' + drawSystem.dataset[reqParam];
+            }
+        }
+        urlParams.append('draw-shape', drawCode);
 
         for (let systemUnit of sliderPanel.children) {
             if (systemUnit.classList.contains('ghost-system')) continue;
@@ -515,10 +530,34 @@ function initialize() {
 
 
 
-function setDrawShape(drawIcon, systemName, fromInput = false) {
-    drawIcon.dataset.system = systemName;
-    drawIcon.src = drawShapeData[systemName].getIcon(); // change this to an image // it is
-    drawIcon.dataset.altTranslate = systemName;
+function setDrawShape(drawSystem, systemName, params = [], fromInput = false) {
+    drawSystem.dataset.system = systemName;
+
+    for (let param of drawShapeData[systemName].paramsRequired) {
+        drawSystem.dataset[param] = defaultParamsValues[param](drawSystem);
+    }
+
+    let systemParams = drawSystem.getElementsByClassName('draw-system-params')[0];
+    systemParams.addEventListener('click', function(e) {
+        if (!(drawShapeData[drawSystem.dataset.system].paramsRequired.length)) return;
+
+        if (systemParams !== targetOfChangeDiv) {
+            paramsChangeDiv.classList.add('draw-params');
+            summonChangeDiv(systemParams, paramsChangeDiv);
+            e.keepChangeDivs_ = true; // otherwise it will close the div
+        }
+    });
+
+    let string = drawShapeData[drawSystem.dataset.system].paramsRequired.length > 0 ? "Config" : "";
+    systemParams.innerHTML = string;
+    systemParams.classList.toggle('draw-params-in-use', string.length > 0);
+
+    for (let i = 0; i < params.length; i++) {
+        setSystemParam(drawShapeData[drawSystem.dataset.system].paramsRequired[i], drawSystem, params[i], true);
+    }
+
+    drawSystem.getElementsByClassName('draw-icon')[0].src = drawShapeData[systemName].getIcon(); // change this to an image // it is
+    drawSystem.dataset.altTranslate = systemName;
     if (closeChangeDivsOnSelect && fromInput) removeChangeDivs();
 }
 
@@ -588,34 +627,32 @@ var currentDrawShape;
 function polyhedronFromJson(data) {
     const vertices = data.shape.vertices.map(Vector.fromArray);
 
-    const triangles = [];
-    for (const face of data.shape.faces) {
-        for (let i = 1; i < face.length - 1; i++) {
-            triangles.push([face[0], face[i], face[i + 1]]);
-        }
-    }
-
+    const triangles = triangleFan(data.shape.faces);
+    
     const infos = data.infos;
 
     return { vertices, triangles, infos };
 }
 
+async function resetDrawShapeRender() {
+    currentDrawShape = await getShapeFromDrawUnit(drawSystem);
+    shapeTransformScale = currentDrawShape.infos.closestFaceInverse;
+    projectDrawScale = currentDrawShape.infos.closestFace * currentDrawShape.infos.furthestVertexInverse;
+}
+
 async function drawPuzzle() {
 
-    if (drawIcon) {
-        if (drawIcon.dataset.system != "sphere") {
+    if (drawSystem) {
+        if (drawSystem.dataset.system != "sphere") {
             if (!currentDrawShape) {
-                currentDrawShape = polyhedronFromJson(await readLocalJson('./' + getJsonFromDrawUnit(drawIcon.dataset.system)));
-
-                shapeTransformScale = currentDrawShape.infos.closestFaceInverse;
-                projectDrawScale = currentDrawShape.infos.closestFace * currentDrawShape.infos.furthestVertexInverse;
+                await resetDrawShapeRender();
             }
         }
     }
 
     if (currentDrawShape) {
         drawShape(currentDrawShape);
-    } else if (drawIcon && drawIcon.dataset.system == "sphere") {
+    } else if (drawSystem && drawSystem.dataset.system == "sphere") {
         drawSphere();
     } else {
         return;
@@ -1188,6 +1225,7 @@ function createSystemUnit(ghost = false, system = 'cube', params = [], systemDep
             if (!(systemData[systemUnit.dataset.system].paramsRequired.length)) return;
 
             if (systemParams !== targetOfChangeDiv) {
+                paramsChangeDiv.classList.remove('draw-params');
                 summonChangeDiv(systemParams, paramsChangeDiv);
                 e.keepChangeDivs_ = true; // otherwise it will close the div
             }
@@ -1195,7 +1233,7 @@ function createSystemUnit(ghost = false, system = 'cube', params = [], systemDep
 
         setSystem(systemIcon, system)
         for (let i = 0; i < params.length; i++) {
-            setSystemParam(systemData[system].paramsRequired[i], systemUnit, params[i])
+            setSystemParam(systemData[system].paramsRequired[i], systemUnit, params[i], false)
         }
 
 
@@ -1447,7 +1485,7 @@ function setSystem(systemIcon, systemName, fromInput = false) {
     systemUnit.dataset.baseAxesIncluded = "true";
 
     for (let param of systemData[systemName].paramsRequired) {
-        paramsSetters[param](systemUnit, defaultParamsValues[param](systemUnit));
+        systemUnit.dataset[param] = defaultParamsValues[param](systemUnit);
     }
 
     setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
@@ -1655,6 +1693,7 @@ function numberInputTemplate(configId, label, defaultValue, min, max, step, hasS
 
     return `
         <div class="params-number" data-param-id="${configId}" data-value="${defaultValue}">
+            <img class="params-icon svg-dark-bg hidden" draggable="false" src="./icons/non_physical_warning.svg" title="Not Physical">
             <label class="params-label">${label}</label>
             ${sliderHtml}
             <input class="input-text" type="number" min="${min}" max="${max}" step="${step}" value="${defaultValue}">
@@ -1686,7 +1725,7 @@ function enumInputTemplate(configId, label, defaultValue, options, resetSystemDe
     // reset the system param to match the new default
     if (!foundDefault) {
         if (resetSystemDefault && systemUnit) {
-            setSystemParam(configId, systemUnit, options[0]);
+            setSystemParam(configId, systemUnit, options[0], false);
         }
     }
     
@@ -1710,13 +1749,15 @@ function stringInputTemplate(configId, label, defaultValue, placeholder) {
 }
 
 const paramsTemplates = {
-    "arbitraryConstantA": (systemUnit) => numberInputTemplate("arbitraryConstantA", "a", systemUnit.dataset.arbitraryConstantA, 0, 1, 0.01, true),
-    "arbitraryConstantB": (systemUnit) => numberInputTemplate("arbitraryConstantB", "b", systemUnit.dataset.arbitraryConstantB, 0, 1, 0.01, true),
-    "arbitraryConstantC": (systemUnit) => numberInputTemplate("arbitraryConstantC", "c", systemUnit.dataset.arbitraryConstantC, 0, 1, 0.01, true),
-    "arbitraryConstantX": (systemUnit) => numberInputTemplate("arbitraryConstantX", "x", systemUnit.dataset.arbitraryConstantX, -1, 1, 0.01, true),
-    "arbitraryConstantY": (systemUnit) => numberInputTemplate("arbitraryConstantY", "y", systemUnit.dataset.arbitraryConstantY, -1, 1, 0.01, true),
-    "arbitraryConstantZ": (systemUnit) => numberInputTemplate("arbitraryConstantZ", "z", systemUnit.dataset.arbitraryConstantZ, -1, 1, 0.01, true),
-    "arbitraryConstantDegrees": (systemUnit) => numberInputTemplate("arbitraryConstantDegrees", "degrees", systemUnit.dataset.arbitraryConstantDegrees, 0, 90, 1, true),
+    "pyritoConstA": (systemUnit) => numberInputTemplate("pyritoConstA", "a", systemUnit.dataset.pyritoConstA, 0, 1, 0.01, true),
+    "pyritoConstB": (systemUnit) => numberInputTemplate("pyritoConstB", "b", systemUnit.dataset.pyritoConstB, 0, 1, 0.01, true),
+    "pyritoConstC": (systemUnit) => numberInputTemplate("pyritoConstC", "c", systemUnit.dataset.pyritoConstC, 0, 1, 0.01, true),
+    "itphConstA": (systemUnit) => numberInputTemplate("itphConstA", "a", systemUnit.dataset.itphConstA, 0, 1, 0.01, true),
+    "itphConstB": (systemUnit) => numberInputTemplate("itphConstB", "b", systemUnit.dataset.itphConstB, 0, 1, 0.01, true),
+    "normalConstantX": (systemUnit) => numberInputTemplate("normalConstantX", "x", systemUnit.dataset.normalConstantX, -1, 1, 0.01, true),
+    "normalConstantY": (systemUnit) => numberInputTemplate("normalConstantY", "y", systemUnit.dataset.normalConstantY, -1, 1, 0.01, true),
+    "normalConstantZ": (systemUnit) => numberInputTemplate("normalConstantZ", "z", systemUnit.dataset.normalConstantZ, -1, 1, 0.01, true),
+    "deltoidalConstant": (systemUnit) => numberInputTemplate("deltoidalConstant", "degrees", systemUnit.dataset.deltoidalConstant, 0, 90, 1, true),
     "baseAxesIncluded": (systemUnit) => booleanInputTemplate("baseAxesIncluded", "Include Base Axes", systemUnit.dataset.baseAxesIncluded),
     "order": (systemUnit) => numberInputTemplate("order", "Order", systemUnit.dataset.order, 3, 20, 1, true),
     "jumbleConfig": (systemUnit) => enumInputTemplate("jumbleConfig", "Jumble Config", systemUnit.dataset.jumbleConfig, listjumbleConfigsFromSystemUnit(systemUnit), true, systemUnit),
@@ -1724,43 +1765,50 @@ const paramsTemplates = {
 }
 
 const defaultParamsValues = {
-    "arbitraryConstantA": (systemUnit) => 0.5,
-    "arbitraryConstantB": (systemUnit) => 0.5,
-    "arbitraryConstantC": (systemUnit) => 0.5,
-    "arbitraryConstantX": (systemUnit) => 0.5,
-    "arbitraryConstantY": (systemUnit) => 0.5,
-    "arbitraryConstantZ": (systemUnit) => 0.5,
-    "arbitraryConstantDegrees": (systemUnit) => 45,
+    "pyritoConstA": (systemUnit) => 0.5,
+    "pyritoConstB": (systemUnit) => 0.75,
+    "pyritoConstC": (systemUnit) => 1.0,
+    "itphConstA": (systemUnit) => 0.5,
+    "itphConstB": (systemUnit) => 0.5,
+    "normalConstantX": (systemUnit) => 0.5,
+    "normalConstantY": (systemUnit) => 0.5,
+    "normalConstantZ": (systemUnit) => 0.5,
+    "deltoidalConstant": (systemUnit) => 45,
     "baseAxesIncluded": (systemUnit) => true,
     "order": (systemUnit) => 5,
     "jumbleConfig": (systemUnit) => listjumbleConfigsFromSystemUnit(systemUnit)[0],
     "stringInput": (systemUnit) => "o[1,0,0]",
 }
 
-const paramsSetters = {
-    "arbitraryConstantA": (systemUnit, value) => systemUnit.dataset.arbitraryConstantA = value,
-    "arbitraryConstantB": (systemUnit, value) => systemUnit.dataset.arbitraryConstantB = value,
-    "arbitraryConstantC": (systemUnit, value) => systemUnit.dataset.arbitraryConstantC = value,
-    "arbitraryConstantX": (systemUnit, value) => systemUnit.dataset.arbitraryConstantX = value,
-    "arbitraryConstantY": (systemUnit, value) => systemUnit.dataset.arbitraryConstantY = value,
-    "arbitraryConstantZ": (systemUnit, value) => systemUnit.dataset.arbitraryConstantZ = value,
-    "arbitraryConstantDegrees": (systemUnit, value) => systemUnit.dataset.arbitraryConstantDegrees = value,
-    "baseAxesIncluded": (systemUnit, value) => systemUnit.dataset.baseAxesIncluded = value,
-    "order": (systemUnit, value) => systemUnit.dataset.order = value,
-    "jumbleConfig": (systemUnit, value) => systemUnit.dataset.jumbleConfig = value,
-    "stringInput": (systemUnit, value) => systemUnit.dataset.stringInput = value,
+var isWithinBoundSafe = (value, data, systemUnit, paramName) => (data[systemUnit.dataset.system].paramsRequired.includes(paramName) ? value <= systemUnit.dataset[paramName] : true);
+
+// is this within physical range
+const paramsPhysicalRanges = {
+    "pyritoConstA": (data, systemUnit, value) => value <= 1.0 && value >= 0.0 && isWithinBoundSafe(value, data, systemUnit, "pyritoConstB") && isWithinBoundSafe(value, data, systemUnit, "pyritoConstC"),
+    "pyritoConstB": (data, systemUnit, value) => value <= 1.0 && value >= 0.0 && isWithinBoundSafe(value, data, systemUnit, "pyritoConstC"),
+    "pyritoConstC": (data, systemUnit, value) => value <= 1.0 && value >= 0.0,
+    "itphConstA": (data, systemUnit, value) => value <= 1.0 && value >= 0.0,
+    "itphConstB": (data, systemUnit, value) => value <= 1.0 && value >= 0.0,
+    "normalConstantX": (data, systemUnit, value) => true,
+    "normalConstantY": (data, systemUnit, value) => true,
+    "normalConstantZ": (data, systemUnit, value) => true,
+    "deltoidalConstant": (data, systemUnit, value) => value <= 90.0 && value >= 0.0
 }
 
 function summonChangeDiv(targetButton, changeDiv) {
 
     if (changeDiv === paramsChangeDiv) {
-        let systemUnit = targetButton.closest('.system-unit');
+        let isDrawParams = paramsChangeDiv.classList.contains('draw-params');
+
+        let systemUnit = isDrawParams ? targetButton.closest('.draw-system') : targetButton.closest('.system-unit');
 
         let paramsPanel = changeDiv.querySelector('.params-panel');
         removeChildren(paramsPanel);
 
-        for (let param of systemData[systemUnit.dataset.system].paramsRequired) {
+        let data = (isDrawParams ? drawShapeData : systemData);
+        for (let param of data[systemUnit.dataset.system].paramsRequired) {
             paramsPanel.insertAdjacentHTML('beforeend', paramsTemplates[param](systemUnit));
+            setSystemParam(param, systemUnit, systemUnit.dataset[param], true);
         }
 
         paramsPanel.querySelectorAll('.params-collapsible').forEach(function (container) {
@@ -1781,7 +1829,7 @@ function summonChangeDiv(targetButton, changeDiv) {
                 if (input) input.value = value;
 
                 container.dataset.value = value;
-                setSystemParam(container.dataset.paramId, systemUnit, container.dataset.value);
+                setSystemParam(container.dataset.paramId, systemUnit, container.dataset.value, isDrawParams);
             }
 
             if (slider) slider.addEventListener('input', syncInputs);
@@ -1793,7 +1841,7 @@ function summonChangeDiv(targetButton, changeDiv) {
 
             if (checkbox) checkbox.addEventListener('change', function (e) {
                 container.dataset.value = checkbox.checked;
-                setSystemParam(container.dataset.paramId, systemUnit, container.dataset.value);
+                setSystemParam(container.dataset.paramId, systemUnit, container.dataset.value, isDrawParams);
             });
         });
 
@@ -1802,7 +1850,7 @@ function summonChangeDiv(targetButton, changeDiv) {
 
             if (selection) selection.addEventListener('change', function (e) {
                 container.dataset.value = e.target.value;
-                setSystemParam(container.dataset.paramId, systemUnit, container.dataset.value);
+                setSystemParam(container.dataset.paramId, systemUnit, container.dataset.value, isDrawParams);
             });
         });
 
@@ -1811,7 +1859,7 @@ function summonChangeDiv(targetButton, changeDiv) {
 
             if (input) input.addEventListener('change', function (e) {
                 container.dataset.value = e.target.value;
-                setSystemParam(container.dataset.paramId, systemUnit, container.dataset.value);
+                setSystemParam(container.dataset.paramId, systemUnit, container.dataset.value, isDrawParams);
             });
         });
 
@@ -1844,13 +1892,15 @@ function summonChangeDiv(targetButton, changeDiv) {
     }
 }
 
-function setSystemParam(param, systemUnit, value) {
-    paramsSetters[param](systemUnit, value);
+async function setSystemParam(param, systemUnit, value, isDrawParams = false) {
+    systemUnit.dataset[param] = value;
 
     // specifically since jumbleConfig is also dependant on params, update it here
-    if (param != "jumbleConfig") {
-        if (paramsChangeDiv) {
-            let paramsPanel = paramsChangeDiv.querySelector('.params-panel');
+    if (paramsChangeDiv) {
+        let data = (isDrawParams ? drawShapeData : systemData);
+        let paramsPanel = paramsChangeDiv.querySelector('.params-panel');
+
+        if (param != "jumbleConfig") {
             paramsPanel.querySelectorAll('.params-enum').forEach(function (container) {
 
                 // if its jumbleConfig, then replace it
@@ -1862,22 +1912,39 @@ function setSystemParam(param, systemUnit, value) {
 
                     if (selection) selection.addEventListener('change', function (e) {
                         newContainer.dataset.value = e.target.value;
-                        setSystemParam(newContainer.dataset.paramId, systemUnit, newContainer.dataset.value);
+                        setSystemParam(newContainer.dataset.paramId, systemUnit, newContainer.dataset.value, isDrawParams);
                     });
 
                     container.replaceWith(newContainer);
                 }
-
             });
         }
+
+        paramsPanel.querySelectorAll('.params-number').forEach(function (container) {
+            const nonPhysicalIcon = container.querySelector('.params-icon');
+            if (nonPhysicalIcon) {
+                container.querySelector('.params-icon').classList.add('hidden');
+
+                let param = container.dataset.paramId;
+                if (paramsPhysicalRanges[param]) {
+                    if (!paramsPhysicalRanges[param](data, systemUnit, systemUnit.dataset[param])) {
+                        container.querySelector('.params-icon').classList.remove('hidden');
+                    }
+                }
+            }
+        });
     }
 
     // this was used previously to show the config under the thing but im probably gonna keep that removed
     //setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
-    
-    updateFullDepth();
-    updateSystemOpposite(systemUnit);
-    createPhasePlot(true);
+ 
+    if (!((paramsChangeDiv && paramsChangeDiv.classList.contains('draw-params')) || isDrawParams)) {
+        updateFullDepth();
+        updateSystemOpposite(systemUnit);
+        createPhasePlot(true);
+    } else {
+        await resetDrawShapeRender();
+    }
 
     drawPuzzle();
 }
@@ -3236,7 +3303,6 @@ var tooManyAxesToAutoUpdate = false;
 var tooManyAxes = false;
 
 function hidePhaseDiagram(resetCamera = true) {
-    console.log(countPhaseLines);
     phaseDiagram.classList.add('hidden');
     let axisCounts = countAxes();
     let tooManySliders = axisCounts.length > 2;

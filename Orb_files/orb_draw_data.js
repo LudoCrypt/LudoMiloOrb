@@ -13,14 +13,20 @@ function addDrawShapeCategory(data) {
 
 function addDrawShape(data, addToMenu = true) {
     data.getIcon ??= () => `./icons/systems/${data.name}.svg`;
-    data.getShape ??= () => `./shapes/${data.shapePath}.json`;
+    data.getShapeJson ??= () => `./shapes/${data.shapePath}.json`;
+    data.getShape ??= async (params) => polyhedronFromJson(await readLocalJson('./' + data.getShapeJson()));
+    data.paramsRequired ??= [];
 
     if (addToMenu) drawShapeCategories.get(mostRecentDrawCategory).push(data.name);
     drawShapeData[data.name] = data
 }
 
-function getJsonFromDrawUnit(name) {
-    return drawShapeData[name].getShape();
+function getJsonFromDrawUnit(drawSystem) {
+    return drawShapeData[drawSystem.dataset.system].getShapeJson();
+}
+
+async function getShapeFromDrawUnit(drawSystem) {
+    return await drawShapeData[drawSystem.dataset.system].getShape(drawSystem.dataset);
 }
 
 addDrawShapeCategory({
@@ -264,3 +270,218 @@ addDrawShape({
     shapePath: 'Archimedean-Catalan Hulls/Joined_Snub_Dodecahedron_dextro'
 });
 
+addDrawShapeCategory({
+    name: 'variable',
+});
+
+addDrawShape({
+    name: 'pyrito_variable',
+    paramsRequired: ['pyritoConstA'],
+    getShape: function(params) {
+        let a = parseFloat(params.pyritoConstA ?? 0.5);
+
+        a = clamp(a, 0.0, 1.0);
+
+        let c = 1 + a;
+        let v = 1 - a * a;
+
+        let verts = [
+            [c, 0, v],
+            [-c, -0, v],
+            [-c, 0, -v],
+            [c, -0, -v],
+            [0, v, c],
+            [-0, -v, c],
+            [-0, v, -c],
+            [0, -v, -c],
+            [v, c, 0],
+            [-v, -c, 0],
+            [-v, c, -0],
+            [v, -c, -0],
+            [1, 1, 1],
+            [-1, 1, 1],
+            [1, -1, 1],
+            [-1, -1, 1],
+            [1, 1, -1],
+            [-1, 1, -1],
+            [1, -1, -1],
+            [-1, -1, -1]
+        ];
+
+        let faces = [
+            [2, 1, 13, 10, 17],
+            [1, 2, 19, 9, 15],
+            [5, 4, 13, 1, 15],
+            [4, 5, 14, 0, 12],
+            [8, 10, 13, 4, 12],
+            [10, 8, 16, 6, 17],
+            [6, 7, 19, 2, 17],
+            [7, 6, 16, 3, 18],
+            [0, 3, 16, 8, 12],
+            [3, 0, 14, 11, 18],
+            [9, 11, 14, 5, 15],
+            [11, 9, 19, 7, 18]
+        ];
+
+        let edges = [
+            [1, 2],
+            [1, 13],
+            [10, 13],
+            [10, 17],
+            [2, 17],
+            [2, 19],
+            [9, 19],
+            [9, 15],
+            [1, 15],
+            [4, 5],
+            [4, 13],
+            [5, 15],
+            [5, 14],
+            [0, 14],
+            [0, 12],
+            [4, 12],
+            [8, 10],
+            [8, 12],
+            [8, 16],
+            [6, 16],
+            [6, 17],
+            [6, 7],
+            [7, 19],
+            [3, 16],
+            [3, 18],
+            [7, 18],
+            [0, 3],
+            [11, 14],
+            [11, 18],
+            [9, 11]
+        ];
+
+        let dist = (a + 1) / Math.sqrt(a * a + 1);
+        let faceDistances = [dist];
+        let inverseFaceDistances = [1.0 / dist];
+        let closestFace = dist;
+        let closestFaceInverse = 1.0 / dist;
+        let furthestVertex = Math.max(Math.sqrt(3), (a + 1) * Math.sqrt(a * a - 2 * a + 2));
+        let furthestVertexInverse = 1.0 / furthestVertex;
+
+        let infos = { faceDistances, inverseFaceDistances, closestFace, closestFaceInverse, furthestVertex, furthestVertexInverse };
+
+        let vertices = verts.map(Vector.fromArray);
+        let triangles = triangleFan(faces);
+
+        return { vertices, triangles, infos };
+    }
+});
+
+addDrawShape({
+    name: 'tetartoid_variable',
+    paramsRequired: ['pyritoConstA', 'pyritoConstB'],
+    getShape: function(params) {
+        var a = parseFloat(params.pyritoConstA ?? 0.5);
+        var b = parseFloat(params.pyritoConstB ?? 0.5);
+
+        b = clamp(b, 0.0, 1.0);
+        a = clamp(a, 0.0, b);
+
+        let p = Math.abs(a) < THRESHOLD && Math.abs(b) < THRESHOLD ? 0.5 : Math.abs(b - 1) < THRESHOLD ? 1.0 : (a * a - b) / (a * a - a * b + b * b + a - 2 * b);
+        let q = Math.abs(a) < THRESHOLD && Math.abs(b) < THRESHOLD ? 0.5 : Math.abs(b - 1) < THRESHOLD ? 1.0 : (a * a - b) / (a * a + a * b + b * b - a - 2 * b);
+
+        let verts = [
+            [a, b, 1],
+            [-a, -b, 1],
+            [-a, b, -1],
+            [a, -b, -1],
+            [b, 1, a],
+            [-b, -1, a],
+            [-b, 1, -a],
+            [b, -1, -a],
+            [1, a, b],
+            [-1, -a, b],
+            [-1, a, -b],
+            [1, -a, -b],
+            [-p, -p, p],
+            [p, p, p],
+            [p, -p, -p],
+            [-p, p, -p],
+            [-q, q, q],
+            [q, -q, q],
+            [q, q, -q],
+            [-q, -q, -q]
+        ];
+
+        let faces = [
+            [0, 1, 17, 8, 13],
+            [1, 0, 16, 9, 12],
+            [8, 11, 18, 4, 13],
+            [11, 8, 17, 7, 14],
+            [3, 2, 18, 11, 14],
+            [3, 19, 10, 15, 2],
+            [9, 10, 19, 5, 12],
+            [10, 9, 16, 6, 15],
+            [7, 5, 19, 3, 14],
+            [5, 7, 17, 1, 12],
+            [4, 6, 16, 0, 13],
+            [6, 4, 18, 2, 15]
+        ];
+
+        let edges = [
+            [0, 1],
+            [1, 17],
+            [8, 17],
+            [8, 13],
+            [0, 13],
+            [0, 16],
+            [9, 16],
+            [9, 12],
+            [1, 12],
+            [8, 11],
+            [11, 18],
+            [4, 18],
+            [4, 13],
+            [7, 17],
+            [7, 14],
+            [11, 14],
+            [2, 3],
+            [2, 18],
+            [3, 14],
+            [3, 19],
+            [10, 19],
+            [10, 15],
+            [2, 15],
+            [9, 10],
+            [5, 19],
+            [5, 12],
+            [6, 16],
+            [6, 15],
+            [5, 7],
+            [4, 6]
+        ];
+
+        // actually the inverse face distance is better to calculate first
+        let inverseDist = Math.abs(a) < THRESHOLD && Math.abs(b) < THRESHOLD ? Math.sqrt(2) : Math.abs(b - 1) < THRESHOLD ? 1.0 : Math.sqrt(1 + (a * a + b * b) * ((b - 1) / (b - a * a)) * ((b - 1) / (b - a * a)));
+        let faceDistances = [1.0 / inverseDist];
+        let inverseFaceDistances = [inverseDist];
+        let closestFace = 1.0 / inverseDist;
+        let closestFaceInverse = inverseDist;
+        let furthestVertex = Math.max(Math.sqrt(3) * p, Math.hypot(a, b, 1));
+        let furthestVertexInverse = 1.0 / furthestVertex;
+
+        let infos = { faceDistances, inverseFaceDistances, closestFace, closestFaceInverse, furthestVertex, furthestVertexInverse };
+
+        let vertices = verts.map(Vector.fromArray);
+        let triangles = triangleFan(faces);
+
+        return { vertices, triangles, infos };
+    }
+});
+
+function triangleFan(faces) {
+    const triangles = [];
+    for (const face of faces) {
+        for (let i = 1; i < face.length - 1; i++) {
+            triangles.push([face[0], face[i], face[i + 1]]);
+        }
+    }
+
+    return triangles;
+}

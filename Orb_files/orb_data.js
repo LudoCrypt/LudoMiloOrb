@@ -2450,9 +2450,9 @@ addSystemCategory({
 
 addSystem({
     name: 'pyrito_variable',
-    paramsRequired: ['arbitraryConstantA'],
+    paramsRequired: ['pyritoConstA'],
     getAxes: function(params) {
-        let x = parseFloat(params.arbitraryConstantA ?? 0.5);
+        let x = parseFloat(params.pyritoConstA ?? 0.5);
 
         let v = 1.0 / Math.sqrt(1 + x * x);
         let c = x * v;
@@ -2481,9 +2481,9 @@ addSystem({
 
 addSystem({
     name: 'pyrito_vertices_variable',
-    paramsRequired: ['arbitraryConstantA', 'baseAxesIncluded'],
+    paramsRequired: ['pyritoConstA', 'baseAxesIncluded'],
     getAxes: function(params) {
-        let x = parseFloat(params.arbitraryConstantA ?? 0.5);
+        let x = parseFloat(params.pyritoConstA ?? 0.5);
 
         let b = Math.sqrt(((1 + x) * (1 + x)) + ((1 - x * x) * (1 - x * x)));
         let c = (1 + x) / b;
@@ -2527,9 +2527,9 @@ addSystem({
 
 addSystem({
     name: 'pyrito_edges_variable',
-    paramsRequired: ['arbitraryConstantA'],
+    paramsRequired: ['pyritoConstA'],
     getAxes: function(params) {
-        let x = parseFloat(params.arbitraryConstantA ?? 0.5);
+        let x = parseFloat(params.pyritoConstA ?? 0.5);
 
         let babaisyou = (Math.sqrt(x * x + x + 1) * Math.sqrt(2) * (x + 1));
         let p = (x * x + x) / babaisyou;
@@ -2577,10 +2577,12 @@ addSystem({
 
 addSystem({
     name: 'tetartoid_variable',
-    paramsRequired: ['arbitraryConstantA', 'arbitraryConstantB'],
+    paramsRequired: ['pyritoConstA', 'pyritoConstB'],
     getAxes: function(params) {
-        let a = parseFloat(params.arbitraryConstantA ?? 0.5);
-        let b = parseFloat(params.arbitraryConstantB ?? 0.5);
+        var a = parseFloat(params.pyritoConstA ?? 0.5);
+        var b = parseFloat(params.pyritoConstB ?? 0.5);
+
+        a = Math.abs(b - 1.0) < THRESHOLD ? 0 : a;
 
         let px = -b * (b - 1);
         let py = a * (b - 1);
@@ -2588,9 +2590,9 @@ addSystem({
 
         let nf = Math.sqrt(px * px + py * py + pz * pz);
 
-        let nx = px / nf;
-        let ny = py / nf;
-        let nz = pz / nf;
+        let nx = Math.abs(a) < THRESHOLD && Math.abs(b) < THRESHOLD ? Math.sqrt(0.5) : px / nf;
+        let ny = Math.abs(a) < THRESHOLD ? 0.0 : py / nf;
+        let nz = Math.abs(a) < THRESHOLD && Math.abs(b) < THRESHOLD ? Math.sqrt(0.5) : pz / nf;
 
         return [
             new Vector(nx, ny, nz),
@@ -2607,6 +2609,7 @@ addSystem({
             new Vector(nx, -ny, -nz),
         ];
     },
+    opposites: false,
     symmetries: 0x0001,
     transitiveSymmetries: 0x0000,
 });
@@ -2614,10 +2617,10 @@ addSystem({
 
 addSystem({
     name: 'tetartoid_vertices_variable',
-    paramsRequired: ['arbitraryConstantA', 'arbitraryConstantB', 'baseAxesIncluded'],
+    paramsRequired: ['pyritoConstA', 'pyritoConstB', 'baseAxesIncluded'],
     getAxes: function(params) {
-        let a = parseFloat(params.arbitraryConstantA ?? 0.5);
-        let b = parseFloat(params.arbitraryConstantB ?? 0.5);
+        let a = parseFloat(params.pyritoConstA ?? 0.5);
+        let b = parseFloat(params.pyritoConstB ?? 0.5);
         let c = 1.0;
 
         let systemAxes = [
@@ -2650,15 +2653,16 @@ addSystem({
 
         return [...systemAxes, ...(params.baseAxesIncluded == "true" ? newAxes : [])];
     },
+    opposites: false,
     symmetries: 0x0001,
     transitiveSymmetries: 0x0000,
 });
 
 addSystem({
     name: 'deltoidal_icositetrahedron',
-    paramsRequired: ['arbitraryConstantDegrees'],
+    paramsRequired: ['deltoidalConstant'],
     getAxes: function(params) {
-        let x = parseFloat(params.arbitraryConstantDegrees ?? 45) * 0.5;
+        let x = parseFloat(params.deltoidalConstant ?? 45) * 0.5;
 
         let tx = Math.tan(x * (Math.PI / 180.0));
 
@@ -2695,10 +2699,10 @@ addSystem({
 
 addSystem({
     name: 'icositetrapyritohedron_variable',
-    paramsRequired: ['arbitraryConstantA', 'arbitraryConstantB'],
+    paramsRequired: ['itphConstA', 'itphConstB'],
     getAxes: function(params) {
-        let a = parseFloat(params.arbitraryConstantA ?? 0.5);
-        let b = parseFloat(params.arbitraryConstantB ?? 0.5);
+        let a = parseFloat(params.itphConstA ?? 0.5);
+        let b = parseFloat(params.itphConstB ?? 0.5);
 
         return [
             new Vector(a, b, 1).unit(),
@@ -2733,10 +2737,10 @@ addSystem({
 
 addSystem({
     name: 'icositetrapyritohedron_vertices_variable',
-    paramsRequired: ['arbitraryConstantA', 'arbitraryConstantB', 'baseAxesIncluded'],
+    paramsRequired: ['itphConstA', 'itphConstB', 'baseAxesIncluded'],
     getAxes: function(params) {
-        let a = parseFloat(params.arbitraryConstantA ?? 0.5);
-        let b = parseFloat(params.arbitraryConstantB ?? 0.5);
+        let a = parseFloat(params.itphConstA ?? 0.5);
+        let b = parseFloat(params.itphConstB ?? 0.5);
 
         let p = (1-a) * (1+a+b) / (1-a*b);
         let q = (1-b) * (1+a+b) / (1-a*b);
@@ -2781,11 +2785,11 @@ addSystem({
 
 addSystem({
     name: 'variable_normal',
-    paramsRequired: ['arbitraryConstantX', 'arbitraryConstantY', 'arbitraryConstantZ'],
+    paramsRequired: ['normalConstantX', 'normalConstantY', 'normalConstantZ'],
     getAxes: function(params) {
-        let a = parseFloat(params.arbitraryConstantX ?? 0.5);
-        let b = parseFloat(params.arbitraryConstantY ?? 0.5);
-        let c = parseFloat(params.arbitraryConstantZ ?? 0.5);
+        let a = parseFloat(params.normalConstantX ?? 0.5);
+        let b = parseFloat(params.normalConstantY ?? 0.5);
+        let c = parseFloat(params.normalConstantZ ?? 0.5);
 
         let nf = Math.sqrt(a * a + b * b + c * c);
 
@@ -2866,10 +2870,10 @@ const langs = {
 
         'category.special': 'Special',
         'system.prism_edges': 'Prism Edges',
-        'system.pyrito_variable': 'Pyritohedron Faces',
+        'system.pyrito_variable': 'Pyritohedron',
         'system.pyrito_vertices_variable': 'Pyritohedron Vertices',
         'system.pyrito_edges_variable': 'Pyritohedron Edges',
-        'system.tetartoid_variable': 'Tetartoid Faces',
+        'system.tetartoid_variable': 'Tetartoid',
         'system.tetartoid_vertices_variable': 'Tetartoid Vertices',
         'system.icositetrapyritohedron_variable': 'Icositetrapyritohedron',
         'system.icositetrapyritohedron_vertices_variable': 'Icositetrapyritohedron Vertices',

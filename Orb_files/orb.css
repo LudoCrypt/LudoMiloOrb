@@ -222,6 +222,45 @@ img {
     white-space: nowrap;
 }
 
+.draw-system {
+    display: flex;
+    flex-direction: column;
+    float: left;
+    align-items: center;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
+
+.draw-system-params {
+    border-radius: 5px;
+    display: inline-block;
+    height: 25px;
+    width: 110px;
+    vertical-align: middle;
+    text-align:center;
+    font-size: 20px;
+    line-height: 20px;
+    margin: 5px;
+    position: relative;
+    right: -80px;
+    top: 25px;
+}
+
+.draw-system-params.draw-params-in-use {
+    background-color: #606060;
+}
+.draw-system-params.draw-params-in-use:hover {
+    background-color: #a95858;
+}
+
+.draw-system-params.small-text {
+    font-size: 15px;
+    white-space: nowrap;
+}
+
+
 .toggle-input-option {
     font-size: 15px;
     white-space: pre-line;
@@ -729,6 +768,12 @@ img {
     overflow: auto;
 }
 
+#params-change.draw-params {
+    left: 80px;
+}
+
+
+
 #order-change {
     flex-grow: 1;
 }
@@ -831,14 +876,20 @@ img {
 }
 
 .params-number {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
     width: 100%;
 }
 
+.params-icon {
+    position: absolute;
+    left: -12px;
+}
+
 .params-label {
-    margin-left: 10px;
+    margin-left: 12px;
     margin-right: 10px;
     width: 50px;
     flex: 0 0 50px;
