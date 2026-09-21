@@ -2577,10 +2577,13 @@ addSystem({
 
 addSystem({
     name: 'tetartoid_variable',
-    paramsRequired: ['pyritoConstA', 'pyritoConstB'],
+    paramsRequired: ['pyritoConstA', 'pyritoConstB', 'folder', 'pyritoConstC', 'end_folder'],
     getAxes: function(params) {
         var a = parseFloat(params.pyritoConstA ?? 0.5);
         var b = parseFloat(params.pyritoConstB ?? 0.5);
+        var c = parseFloat(params.pyritoConstC ?? 1.0);
+        a /= c;
+        b /= c;
 
         a = Math.abs(b - 1.0) < THRESHOLD ? 0 : a;
 
@@ -2617,11 +2620,11 @@ addSystem({
 
 addSystem({
     name: 'tetartoid_vertices_variable',
-    paramsRequired: ['pyritoConstA', 'pyritoConstB', 'baseAxesIncluded'],
+    paramsRequired: ['pyritoConstA', 'pyritoConstB', 'folder', 'pyritoConstC', 'end_folder', 'baseAxesIncluded'],
     getAxes: function(params) {
         let a = parseFloat(params.pyritoConstA ?? 0.5);
         let b = parseFloat(params.pyritoConstB ?? 0.5);
-        let c = 1.0;
+        let c = parseFloat(params.pyritoConstC ?? 1.0);
 
         let systemAxes = [
             new Vector(a, b, c).unit(),

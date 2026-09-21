@@ -473,6 +473,7 @@ function initialize() {
 
         let drawCode = drawSystem.dataset.system;
         for (let reqParam of drawShapeData[drawSystem.dataset.system].paramsRequired) {
+            if (reqParam == "folder" || reqParam == "end_folder") { drawCode += '-' + "f"; continue; };
             if (reqParam == "stringInput") {
                 drawCode += '-' + btoa(drawSystem.dataset[reqParam]);
             } else {
@@ -485,6 +486,7 @@ function initialize() {
             if (systemUnit.classList.contains('ghost-system')) continue;
             let systemCode = systemUnit.dataset.system;
             for (let reqParam of systemData[systemUnit.dataset.system].paramsRequired) {
+                if (reqParam == "folder" || reqParam == "end_folder") { systemCode += '-' + "f"; continue; };
                 if (reqParam == "stringInput") {
                     systemCode += '-' + btoa(systemUnit.dataset[reqParam]);
                 } else {
@@ -534,7 +536,7 @@ function setDrawShape(drawSystem, systemName, params = [], fromInput = false) {
     drawSystem.dataset.system = systemName;
 
     for (let param of drawShapeData[systemName].paramsRequired) {
-        drawSystem.dataset[param] = defaultParamsValues[param](drawSystem);
+        if (param != "folder" && param != "end_folder") drawSystem.dataset[param] = defaultParamsValues[param](drawSystem);
     }
 
     let systemParams = drawSystem.getElementsByClassName('draw-system-params')[0];
@@ -1485,7 +1487,7 @@ function setSystem(systemIcon, systemName, fromInput = false) {
     systemUnit.dataset.baseAxesIncluded = "true";
 
     for (let param of systemData[systemName].paramsRequired) {
-        systemUnit.dataset[param] = defaultParamsValues[param](systemUnit);
+        if (param != "folder" && param != "end_folder") systemUnit.dataset[param] = defaultParamsValues[param](systemUnit);
     }
 
     setSystemParamInnerHTML(systemUnit.getElementsByClassName('system-params')[0]);
@@ -1748,6 +1750,19 @@ function stringInputTemplate(configId, label, defaultValue, placeholder) {
     `;
 }
 
+function folderTemplate(label) {
+    return `
+        <div class="params-collapsible">
+            <button class="collapsible-header" type="button">
+                <svg class="collapsible-chevron" viewBox="0 0 24 24"><path d="M9 7L15 13L9 19"/></svg>
+                <span class="params-label">${label}</span>
+            </button>
+            <div class="collapsible-content">
+            </div>
+        </div>
+    `;
+}
+
 const paramsTemplates = {
     "pyritoConstA": (systemUnit) => numberInputTemplate("pyritoConstA", "a", systemUnit.dataset.pyritoConstA, 0, 1, 0.01, true),
     "pyritoConstB": (systemUnit) => numberInputTemplate("pyritoConstB", "b", systemUnit.dataset.pyritoConstB, 0, 1, 0.01, true),
@@ -1758,10 +1773,14 @@ const paramsTemplates = {
     "normalConstantY": (systemUnit) => numberInputTemplate("normalConstantY", "y", systemUnit.dataset.normalConstantY, -1, 1, 0.01, true),
     "normalConstantZ": (systemUnit) => numberInputTemplate("normalConstantZ", "z", systemUnit.dataset.normalConstantZ, -1, 1, 0.01, true),
     "deltoidalConstant": (systemUnit) => numberInputTemplate("deltoidalConstant", "degrees", systemUnit.dataset.deltoidalConstant, 0, 90, 1, true),
-    "baseAxesIncluded": (systemUnit) => booleanInputTemplate("baseAxesIncluded", "Include Base Axes", systemUnit.dataset.baseAxesIncluded),
+    "height": (systemUnit) => numberInputTemplate("height", "height", systemUnit.dataset.height, 0, 5.0, 0.01, true),
+    "baseAxesIncluded": (systemUnit) => booleanInputTemplate("baseAxesIncluded", "Include Base Axes", systemUnit.dataset.baseAxesIncluded == "true"),
+    "altShape": (systemUnit) => booleanInputTemplate("altShape", "Alt", systemUnit.dataset.altShape == "true"),
     "order": (systemUnit) => numberInputTemplate("order", "Order", systemUnit.dataset.order, 3, 20, 1, true),
     "jumbleConfig": (systemUnit) => enumInputTemplate("jumbleConfig", "Jumble Config", systemUnit.dataset.jumbleConfig, listjumbleConfigsFromSystemUnit(systemUnit), true, systemUnit),
     "stringInput": (systemUnit) => stringInputTemplate("stringInput", "Axis System", systemUnit.dataset.stringInput, "o[1,0,0]"),
+    "folder": (systemUnit) => folderTemplate("Other"),
+    "end_folder": (systemUnit) => ``,
 }
 
 const defaultParamsValues = {
@@ -1770,11 +1789,13 @@ const defaultParamsValues = {
     "pyritoConstC": (systemUnit) => 1.0,
     "itphConstA": (systemUnit) => 0.5,
     "itphConstB": (systemUnit) => 0.5,
-    "normalConstantX": (systemUnit) => 0.5,
-    "normalConstantY": (systemUnit) => 0.5,
+    "normalConstantX": (systemUnit) => 1.0,
+    "normalConstantY": (systemUnit) => 0.0,
     "normalConstantZ": (systemUnit) => 0.5,
     "deltoidalConstant": (systemUnit) => 45,
+    "height": (systemUnit) => 1.0,
     "baseAxesIncluded": (systemUnit) => true,
+    "altShape": (systemUnit) => false,
     "order": (systemUnit) => 5,
     "jumbleConfig": (systemUnit) => listjumbleConfigsFromSystemUnit(systemUnit)[0],
     "stringInput": (systemUnit) => "o[1,0,0]",
@@ -1789,9 +1810,8 @@ const paramsPhysicalRanges = {
     "pyritoConstC": (data, systemUnit, value) => value <= 1.0 && value >= 0.0,
     "itphConstA": (data, systemUnit, value) => value <= 1.0 && value >= 0.0,
     "itphConstB": (data, systemUnit, value) => value <= 1.0 && value >= 0.0,
-    "normalConstantX": (data, systemUnit, value) => true,
-    "normalConstantY": (data, systemUnit, value) => true,
-    "normalConstantZ": (data, systemUnit, value) => true,
+    "order": (data, systemUnit, value) => value >= 3,
+    "height": (data, systemUnit, value) => value > 0.0,
     "deltoidalConstant": (data, systemUnit, value) => value <= 90.0 && value >= 0.0
 }
 
@@ -1805,9 +1825,20 @@ function summonChangeDiv(targetButton, changeDiv) {
         let paramsPanel = changeDiv.querySelector('.params-panel');
         removeChildren(paramsPanel);
 
+        var toAddTo = paramsPanel;
         let data = (isDrawParams ? drawShapeData : systemData);
         for (let param of data[systemUnit.dataset.system].paramsRequired) {
-            paramsPanel.insertAdjacentHTML('beforeend', paramsTemplates[param](systemUnit));
+            var frag = document.createRange().createContextualFragment(paramsTemplates[param](systemUnit));
+            var container = frag.firstElementChild;
+
+            toAddTo.appendChild(frag);
+
+            if (param == "folder") {
+                toAddTo = container.querySelector('.collapsible-content');
+            } else if (param == "end_folder") {
+                toAddTo = paramsPanel;
+            }
+
             setSystemParam(param, systemUnit, systemUnit.dataset[param], true);
         }
 
@@ -1895,11 +1926,13 @@ function summonChangeDiv(targetButton, changeDiv) {
 async function setSystemParam(param, systemUnit, value, isDrawParams = false) {
     systemUnit.dataset[param] = value;
 
-    // specifically since jumbleConfig is also dependant on params, update it here
+    // here is all the hardcoded param changing interactions
+    // not sure where else to put this tbh, but its gotta be somewhere
     if (paramsChangeDiv) {
         let data = (isDrawParams ? drawShapeData : systemData);
         let paramsPanel = paramsChangeDiv.querySelector('.params-panel');
 
+        // since jumbleConfig is also dependant on params, update it here
         if (param != "jumbleConfig") {
             paramsPanel.querySelectorAll('.params-enum').forEach(function (container) {
 

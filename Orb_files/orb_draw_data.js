@@ -13,8 +13,8 @@ function addDrawShapeCategory(data) {
 
 function addDrawShape(data, addToMenu = true) {
     data.getIcon ??= () => `./icons/systems/${data.name}.svg`;
-    data.getShapeJson ??= () => `./shapes/${data.shapePath}.json`;
-    data.getShape ??= async (params) => polyhedronFromJson(await readLocalJson('./' + data.getShapeJson()));
+    data.getShapeJson ??= (params) => `./shapes/${data.shapePath}.json`;
+    data.getShape ??= async (params) => polyhedronFromJson(await readLocalJson('./' + data.getShapeJson(params)));
     data.paramsRequired ??= [];
 
     if (addToMenu) drawShapeCategories.get(mostRecentDrawCategory).push(data.name);
@@ -22,7 +22,7 @@ function addDrawShape(data, addToMenu = true) {
 }
 
 function getJsonFromDrawUnit(drawSystem) {
-    return drawShapeData[drawSystem.dataset.system].getShapeJson();
+    return drawShapeData[drawSystem.dataset.system].getShapeJson(drawSystem.dataset);
 }
 
 async function getShapeFromDrawUnit(drawSystem) {
@@ -40,7 +40,10 @@ addDrawShape({
 
 addDrawShape({
     name: 'tetra',
-    shapePath: 'Platonic/Tetrahedron'
+    paramsRequired: ['altShape'],
+    getShapeJson: function(params) {
+        return params.altShape == "true" ? `./shapes/Platonic/Tetrahedron-Alt.json` : `./shapes/Platonic/Tetrahedron.json`;
+    }
 });
 
 addDrawShape({
@@ -134,12 +137,18 @@ addDrawShape({
 
 addDrawShape({
     name: 's_cube',
-    shapePath: 'Archimedean/Snub_Cube_dextro'
+    paramsRequired: ['altShape'],
+    getShapeJson: function(params) {
+        return params.altShape == "true" ? `./shapes/Archimedean/Snub_Cube_laevo.json` : `./shapes/Archimedean/Snub_Cube_dextro.json`;
+    }
 });
 
 addDrawShape({
     name: 's_dodecahedron',
-    shapePath: 'Archimedean/Snub_Dodecahedron_dextro'
+    paramsRequired: ['altShape'],
+    getShapeJson: function(params) {
+        return params.altShape == "true" ? `./shapes/Archimedean/Snub_Dodecahedron_laevo.json` : `./shapes/Archimedean/Snub_Dodecahedron_dextro.json`;
+    }
 });
 
 addDrawShapeCategory({
@@ -173,7 +182,10 @@ addDrawShape({
 
 addDrawShape({
     name: 'p_icositetra',
-    shapePath: 'Catalan/Pentagonal_Icositetrahedron_laevo'
+    paramsRequired: ['altShape'],
+    getShapeJson: function(params) {
+        return params.altShape == "true" ? `./shapes/Catalan/Pentagonal_Icositetrahedron_dextro.json` : `./shapes/Catalan/Pentagonal_Icositetrahedron_laevo.json`;
+    }
 });
 
 addDrawShape({
@@ -198,7 +210,10 @@ addDrawShape({
 
 addDrawShape({
     name: 'p_hexeconta',
-    shapePath: 'Catalan/Pentagonal_Hexecontahedron_laevo'
+    paramsRequired: ['altShape'],
+    getShapeJson: function(params) {
+        return params.altShape == "true" ? `./shapes/Catalan/Pentagonal_Hexecontahedron_dextro.json` : `./shapes/Catalan/Pentagonal_Hexecontahedron_laevo.json`;
+    }
 });
 
 addDrawShapeCategory({
@@ -262,16 +277,69 @@ addDrawShape({
 
 addDrawShape({
     name: 'js_cube',
-    shapePath: 'Archimedean-Catalan Hulls/Joined_Snub_Cube_dextro'
+    paramsRequired: ['altShape'],
+    getShapeJson: function(params) {
+        return params.altShape == "true" ? `./shapes/Archimedean-Catalan Hulls/Joined_Snub_Cube_laevo.json` : `./shapes/Archimedean-Catalan Hulls/Joined_Snub_Cube_dextro.json`;
+    }
 });
 
 addDrawShape({
     name: 'js_dodecahedron',
-    shapePath: 'Archimedean-Catalan Hulls/Joined_Snub_Dodecahedron_dextro'
+    paramsRequired: ['altShape'],
+    getShapeJson: function(params) {
+        return params.altShape == "true" ? `./shapes/Archimedean-Catalan Hulls/Joined_Snub_Dodecahedron_laevo.json` : `./shapes/Archimedean-Catalan Hulls/Joined_Snub_Dodecahedron_dextro.json`;
+    }
 });
 
 addDrawShapeCategory({
     name: 'variable',
+});
+
+addDrawShape({
+    name: 'equator',
+    paramsRequired: ['order', 'height'],
+    getShape: function(params) {
+        let order = parseFloat(params.order ?? 3);
+        let height = parseFloat(params.height ?? 1.0);
+
+        let verts = [];
+        let faces = [];
+        let edges = [];
+
+        for (let i = 0; i < order; i++) {
+            let j = verts.length;
+
+            let angle = (i / order) * 2 * Math.PI + Math.PI / order;
+            verts.push([Math.cos(angle), Math.sin(angle), height]);
+            verts.push([Math.cos(angle), Math.sin(angle), -height]);
+
+            faces.push([j, j + 1, (j + 3) % (order * 2), (j + 2) % (order * 2)]);
+            edges.push([j, (j + 2) % (order * 2)]);
+            edges.push([j + 1, (j + 3) % (order * 2)]);
+            edges.push([j, j + 1]);
+        }
+
+        faces.push(Array.from({ length: order }, (_, i) => i * 2));
+        faces.push(Array.from({ length: order }, (_, i) => order * 2 - i * 2 - 1));
+
+        // ok so heres the thing, these face distances are only meant for information about the apex
+        // for a prism shape, youre almost always going to want the apex to be around the prism faces, not the top and bottom
+        // so im deliberately not including those as to not mess with that
+        let dist = Math.cos(Math.PI / order);
+        let faceDistances = [dist];
+        let inverseFaceDistances = [1.0 / dist];
+        let closestFace = dist;
+        let closestFaceInverse = 1.0 / dist;
+        let furthestVertex = Math.hypot(1, height);
+        let furthestVertexInverse = 1.0 / furthestVertex;
+
+        let infos = { faceDistances, inverseFaceDistances, closestFace, closestFaceInverse, furthestVertex, furthestVertexInverse };
+
+        let vertices = verts.map(Vector.fromArray);
+        let triangles = triangleFan(faces);
+
+        return { vertices, triangles, infos };
+    }
 });
 
 addDrawShape({
@@ -375,10 +443,14 @@ addDrawShape({
 
 addDrawShape({
     name: 'tetartoid_variable',
-    paramsRequired: ['pyritoConstA', 'pyritoConstB'],
+    paramsRequired: ['pyritoConstA', 'pyritoConstB', 'folder', 'pyritoConstC', 'end_folder'],
     getShape: function(params) {
         var a = parseFloat(params.pyritoConstA ?? 0.5);
         var b = parseFloat(params.pyritoConstB ?? 0.5);
+        var c = parseFloat(params.pyritoConstC ?? 1.0);
+
+        a /= c;
+        b /= c;
 
         b = clamp(b, 0.0, 1.0);
         a = clamp(a, 0.0, b);
