@@ -910,7 +910,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
 
     const phi = Math.atan2(b, a - c) * 0.5;
 
-    const ma = [Math.cos(phi), Math.sin(phi)]
+    const ma = [Math.cos(phi), Math.sin(phi)];
     const mi = [-ma[1], ma[0]];
 
     // uv in terms of the triangle
@@ -918,7 +918,21 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
     const uv2xy = (uv) => [ma[0] * uv[0] + ma[1] * uv[1], mi[0] * uv[0] + mi[1] * uv[1]];
     const xy2uv = (xy) => [ma[0] * xy[0] + mi[0] * xy[1], ma[1] * xy[0] + mi[1] * xy[1]];
     const uv2vec = (uv) => p0.add(p1.multiply(uv[0])).add(p2.multiply(uv[1])).add(pn);
-    const uvWithinNappe = (uv) => Math.abs(normal.dot(uv2vec(uv).subtract(pn))) < UV_THRESHOLD ? true : dad > 0 ? normal.dot(uv2vec(uv).subtract(pn)) >= Math.max(-apex, 0) - UV_THRESHOLD : normal.dot(uv2vec(uv).subtract(pn)) <= Math.min(dad, 0) + UV_THRESHOLD;
+
+    // I hope you know i hate you dear uvWithinNappe :))
+    const uvWithinNappe = (uv) => {
+        // This is for if its a plane! Include all points if its a plane
+        if (Math.abs(normal.dot(uv2vec(uv).subtract(pn))) < UV_THRESHOLD)
+        {
+            return true;
+        }
+
+        const clipPlane = Math.min(Math.sign(dad) * depth, 0) * Math.sign(dad);
+        const inNappe = normal.dot(uv2vec(uv).subtract(pn)) * dad > -UV_THRESHOLD;
+        const inClipping = normal.dot(uv2vec(uv).subtract(normal.multiply(clipPlane))) * dad > -UV_THRESHOLD;
+
+        return inNappe && inClipping;
+    };
     const uvWithinTriangle = (uv) => uv[0] > -UV_THRESHOLD && uv[1] > -UV_THRESHOLD && (uv[0] + uv[1]) < 1 + UV_THRESHOLD;
 
     const lc = uv2xy([d, e]);

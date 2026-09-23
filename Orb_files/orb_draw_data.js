@@ -325,7 +325,7 @@ addDrawShape({
         // ok so heres the thing, these face distances are only meant for information about the apex
         // for a prism shape, youre almost always going to want the apex to be around the prism faces, not the top and bottom
         // so im deliberately not including those as to not mess with that
-        let dist = Math.cos(Math.PI / order);
+        let dist = Math.min(Math.cos(Math.PI / order), height);
         let faceDistances = [dist];
         let inverseFaceDistances = [1.0 / dist];
         let closestFace = dist;
