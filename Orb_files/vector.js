@@ -76,6 +76,10 @@ Vector.prototype = {
   init: function(x, y, z) {
     this.x = x; this.y = y; this.z = z;
     return this;
+  },
+  // modified
+  toString: function() {
+    return '(' + this.x + ', ' + this.y + ', ' + this.z + ')';
   }
 };
 

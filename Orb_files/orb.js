@@ -99,6 +99,8 @@ var colorChoices = [
     '#a000005a', '#1f4bd15a', '#167f185a', '#9655005a', '#7528af5a', '#73536b5a', '#b51b985a', '#5959595a', '#1d7a615a', '#4c6b135a'
 ];
 
+var debugMode = false;
+
 function transform(quat, vec) {
     return new Vector(...quat.rotateVector(vec.toArray()))
 }
@@ -290,7 +292,7 @@ function initialize() {
     });
 
     document.addEventListener('keydown', function(e) {
-        let keySpeed = sphereCanvasRadius / 10
+        let keySpeed = sphereCanvasRadius / 10;
         let keyMove = function(code) {
             switch (code) {
                 case 'KeyW':
@@ -308,6 +310,47 @@ function initialize() {
             }
         }
         keyMove(e.code);
+    });
+
+    document.addEventListener('keydown', function(e) {
+        let keyMove = function(code) {
+            switch (code) {
+                case 'KeyJ':
+                    curTri += 1;
+                    drawPuzzle();
+                    break;
+                case 'KeyH':
+                    curTri -= 1;
+                    drawPuzzle();
+                    break;
+
+                case 'KeyK':
+                    curAxis -= 1;
+                    drawPuzzle();
+                    break;
+                case 'KeyL':
+                    curAxis += 1;
+                    drawPuzzle();
+                    break;
+
+                case 'KeyO':
+                    debugPage -= 1;
+                    drawPuzzle();
+                    break;
+                case 'KeyP':
+                    debugPage += 1;
+                    drawPuzzle();
+                    break;
+
+                case 'KeyU':
+                    curTri = 0;
+                    curAxis = 0;
+                    debugPage = 0;
+                    drawPuzzle();
+                    break;
+            }
+        }
+        if (debugMode) keyMove(e.code);
     });
 
     document.addEventListener('keyup', function(e) {
@@ -411,6 +454,16 @@ function initialize() {
         setDrawShape(drawSystem, drawShapeName, decodedParams, true);
     }
 
+    if (urlParams.has('debug-mode')) {
+        debugMode = true;
+        if (urlParams.has('curTri')) {
+            curTri = parseFloat(urlParams.getAll('curTri')[0]);
+        }
+        if (urlParams.has('curAxis')) {
+            curAxis = parseFloat(urlParams.getAll('curAxis')[0]);
+        }
+    }
+
     drawChangeDiv = document.getElementById('draw-change');
     for (let [shapeCategory, shapeNames] of drawShapeCategories) {
         document.getElementById('draw-category-options').insertAdjacentHTML('beforeend', drawCategoryOptionDivTemplate(shapeCategory));
@@ -508,6 +561,13 @@ function initialize() {
             urlParams.append('apices', systemApices.join('_'));
             urlParams.append('colors', systemColors.join('_'));
         }
+
+        if (debugMode) {
+            urlParams.append('debug-mode', 'true');
+            urlParams.append('curTri', curTri);
+            urlParams.append('curAxis', curAxis);
+        }
+
         //console.log(window.location.origin + window.location.pathname + '?' + urlParams.toString());
         const toggleIfConstant = true;
         let urlBox = document.getElementById('url-box');
@@ -652,6 +712,12 @@ async function drawPuzzle() {
         }
     }
 
+    updateDebugInfo({
+        curTri,
+        curAxis,
+        debugPage
+    });
+
     if (currentDrawShape) {
         drawShape(currentDrawShape);
     } else if (drawSystem && drawSystem.dataset.system == "sphere") {
@@ -703,6 +769,9 @@ function drawSphere() {
 
 }
 
+var debugPage = 0;
+var curTri = 0;
+var curAxis = 0;
 
 var projectDrawScale = 1.0;
 var shapeTransformScale = 1.0;
@@ -722,7 +791,8 @@ function drawShape(shape) {
 
     const rotated = shape.vertices.map(v => transform(sphereTransformation, v).multiply(shapeTransformScale));
 
-    for (const [a, b, c] of shape.triangles) {
+    var trianglesToDraw = debugMode ? (curTri > 0 ? [shape.triangles[curTri % shape.triangles.length]] : shape.triangles) : shape.triangles;
+    for (const [a, b, c] of trianglesToDraw) {
 
         const p0 = rotated[a];
         const p1 = rotated[b];
@@ -756,7 +826,8 @@ function drawShape(shape) {
 function drawShapeCuts(shape, systemAxes, depth, apex, color) {
     const rotated = shape.vertices.map(v => transform(sphereTransformation, v).multiply(shapeTransformScale));
 
-    for (const [a, b, c] of shape.triangles) {
+    var trianglesToDraw = debugMode ? (curTri > 0 ? [shape.triangles[curTri % shape.triangles.length]] : shape.triangles) : shape.triangles;
+    for (const [a, b, c] of trianglesToDraw) {
         const p0 = rotated[a];
         const p1 = rotated[b];
         const p2 = rotated[c];
@@ -772,7 +843,8 @@ function drawShapeCuts(shape, systemAxes, depth, apex, color) {
         
         const drawColor = lightenColor(color, brightness);
 
-        for (let axis of systemAxes) {
+        var axesToDraw = debugMode ? (curAxis > 0 ? [systemAxes[curAxis % systemAxes.length]] : systemAxes) : systemAxes;
+        for (let axis of axesToDraw) {
             drawConeOnTriangle([rotated[a], rotated[b], rotated[c]], transform(sphereTransformation, axis.unit()), depth, apex, drawColor);
         }
     }
@@ -848,9 +920,9 @@ function moveSphere(x, y) {
 // there are always other cases to address.
 const SOLUTIONS_THRESHOLD = 1e-8;
 const QUADRATIC_THRESHOLD = 1e-7;
-const TYPE_THRESHOLD = 1e-8;
+const TYPE_THRESHOLD = 1e-7;
 const LINE_THRESHOLD = 1e-7;
-const UV_THRESHOLD = 1e-8;
+const UV_THRESHOLD = 1e-7;
 const ROUND_THRESHOLD = 1e-7;
 const KS_THRESHOLD = 1e-7;
 
@@ -858,11 +930,11 @@ const KS_THRESHOLD = 1e-7;
 // Green is hyperbola
 // Yellow is parabola
 // Blue is line
-const cone_debug_colors = false;
 
 // im tired boss
 // mama cant you see whats happening to me?
 function drawConeOnTriangle(triangle, normal, depth, apex, color) {
+    var curPage = 0;
 
     const pn = normal.multiply(apex);
 
@@ -887,16 +959,33 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
     if (Math.abs(ks) < KS_THRESHOLD) ks = 0;
 
     // Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0
-    const a = dn1 * dn1 - ks * p1.dot(p1);
-    const b = 2 * dn1 * dn2 - 2 * ks * p1.dot(p2);
-    const c = dn2 * dn2 - ks * p2.dot(p2);
-    const d = 2 * dn1 * dn0 - 2 * ks * p1.dot(p0);
-    const e = 2 * dn2 * dn0 - 2 * ks * p2.dot(p0);
-    const f = dn0 * dn0 - ks * p0.dot(p0);
+    var a = dn1 * dn1 - ks * p1.dot(p1);
+    var b = 2 * dn1 * dn2 - 2 * ks * p1.dot(p2);
+    var c = dn2 * dn2 - ks * p2.dot(p2);
+    var d = 2 * dn1 * dn0 - 2 * ks * p1.dot(p0);
+    var e = 2 * dn2 * dn0 - 2 * ks * p2.dot(p0);
+    var f = dn0 * dn0 - ks * p0.dot(p0);
+
+    // when numbers get particularly large, you lose precision (very bad)
+    // so find the biggest one and scale it down by that
+    // hopefully this should make it so the numbers we get are a little nicer to work with
+    const scale = Math.abs(Math.max(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d), Math.abs(e), Math.abs(f)));
+
+    // only do it if the scale is above 1
+    // otherwise we would potentially be losing precision? unsure
+    // best just to be safe about it though.
+    if (scale - 100 > ROUND_THRESHOLD) {
+        a /= scale;
+        b /= scale;
+        c /= scale;
+        d /= scale;
+        e /= scale;
+        f /= scale;
+    }
 
     const disc = Math.hypot(a - c, b);
 
-    const det = a * c - b * b * 0.25;
+    // sma is always larger than smi (crazy)
     var sma = (a + c + disc) * 0.5;
     var smi = (a + c - disc) * 0.5;
 
@@ -908,9 +997,29 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
         sma = 0;
     }
 
+    // if smi is 0, disc = sma and vice versa
+    if (Math.abs(smi) < ROUND_THRESHOLD) {
+        sma = disc;
+    }
+    if (Math.abs(disc - sma) < ROUND_THRESHOLD) {
+        smi = 0;
+    }
+
     const phi = Math.atan2(b, a - c) * 0.5;
 
-    const ma = [Math.cos(phi), Math.sin(phi)];
+    var ma = [Math.cos(phi), Math.sin(phi)];
+
+    // cos phi and sin phi are the same precisely when a-c is 0 and b is positive
+    if (Math.abs(a - c) < ROUND_THRESHOLD && b > 0) {
+        ma[0] = Math.sqrt(0.5);
+        ma[1] = ma[0];
+    }
+    // and if theyre both about sqrt 1/2 then set them both equal to sqrt 1/2
+    if (Math.abs(ma[0] - Math.sqrt(0.5)) < ROUND_THRESHOLD && Math.abs(ma[1] - Math.sqrt(0.5)) < ROUND_THRESHOLD) {
+        ma[0] = Math.sqrt(0.5);
+        ma[1] = ma[0];
+    }
+
     const mi = [-ma[1], ma[0]];
 
     // uv in terms of the triangle
@@ -919,23 +1028,60 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
     const xy2uv = (xy) => [ma[0] * xy[0] + mi[0] * xy[1], ma[1] * xy[0] + mi[1] * xy[1]];
     const uv2vec = (uv) => p0.add(p1.multiply(uv[0])).add(p2.multiply(uv[1])).add(pn);
 
+    const clipPlane = dad > 0 ? Math.min(depth, 0) : Math.max(depth, 0);
     // I hope you know i hate you dear uvWithinNappe :))
     const uvWithinNappe = (uv) => {
-        // This is for if its a plane! Include all points if its a plane
-        if (Math.abs(normal.dot(uv2vec(uv).subtract(pn))) < UV_THRESHOLD)
-        {
-            return true;
-        }
-
-        const clipPlane = Math.min(Math.sign(dad) * depth, 0) * Math.sign(dad);
-        const inNappe = normal.dot(uv2vec(uv).subtract(pn)) * dad > -UV_THRESHOLD;
-        const inClipping = normal.dot(uv2vec(uv).subtract(normal.multiply(clipPlane))) * dad > -UV_THRESHOLD;
-
-        return inNappe && inClipping;
+        const h = normal.dot(uv2vec(uv));
+        return Math.abs(h - apex) < UV_THRESHOLD || Math.min((h - apex) * dad, (h - clipPlane) * dad) > -UV_THRESHOLD;
     };
     const uvWithinTriangle = (uv) => uv[0] > -UV_THRESHOLD && uv[1] > -UV_THRESHOLD && (uv[0] + uv[1]) < 1 + UV_THRESHOLD;
 
-    const lc = uv2xy([d, e]);
+    var lc = uv2xy([d, e]);
+
+    // the lengths of both ought to be the same
+    if (d * d + e * e < ROUND_THRESHOLD) {
+        lc[0] = 0;
+        lc[1] = 0;
+    }
+
+    if (debugPage == curPage++) {
+        updateDebugInfo({
+            dad, ks,
+            disc,
+            sma, smi,
+            ma, mi,
+            lc,
+            debugPage,
+        });
+    }
+
+    const tn = p1.cross(p2).unit();
+    const ap = normal.cross(tn);
+    const aps = ap.dot(ap);
+    const apd = tn.dot(p0);
+    const type = aps - ks;
+    const distType = Math.abs(apd) > TYPE_THRESHOLD;
+
+    if (debugPage == curPage++) {
+        updateDebugInfo({
+            tn,
+            ap, aps, apd,
+            type, distType,
+            debugPage,
+        });
+    }
+
+    if (debugPage == curPage++) {
+        const wA = a - b + c;
+        const wB = b - 2 * c + d - e;
+        const wC = c + e + f;
+        updateDebugInfo({
+            scale,
+            a,b,c,d,e,f,
+            wA,wB,wC,
+            debugPage,
+        });
+    }
 
     // roots along triangle edges
     const [u1, u2] = quadratic(a, d, f, QUADRATIC_THRESHOLD); // v=0
@@ -951,8 +1097,17 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
         {t: w2, toUv: s => [s, 1 - s]}
     ];
 
+    if (debugPage == curPage++) {
+        updateDebugInfo({
+            u1,u2,v1,v2,w1,w2,
+            debugPage,
+        });
+    }
+
     const intsXy = new FloatSet(2, SOLUTIONS_THRESHOLD);
 
+    var debugRoots = [];
+    var debugRootsInBound = [];
     for (const r of roots) {
         if (Number.isFinite(r.t) && r.t > -UV_THRESHOLD && r.t < 1 + UV_THRESHOLD) {
             const p = r.toUv(r.t);
@@ -960,201 +1115,319 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
             if (uvWithinNappe(p)) {
                 intsXy.add(uv2xy(p));
             }
+            debugRootsInBound.push(r.toUv(r.t));
         }
+        debugRoots.push(r.toUv(r.t));
     }
 
-    if (Math.abs(sma) > TYPE_THRESHOLD && Math.abs(smi) > TYPE_THRESHOLD) {
-        const cx = -lc[0] / (2 * sma);
-        const cy = -lc[1] / (2 * smi);
+    if (debugPage == curPage++) {
+        updateDebugInfo({
+            debugRoots,
+            debugRootsInBound,
+            debugPage
+        });
+    }
+
+    if (Math.abs(type) > TYPE_THRESHOLD && Math.abs(ks) > TYPE_THRESHOLD && Math.abs(sma) > TYPE_THRESHOLD && Math.abs(smi) > TYPE_THRESHOLD && distType) {
+        const cx = -lc[0] * 0.5 / sma;
+        const cy = -lc[1] * 0.5 / smi;
         const es = sma * cx * cx + smi * cy * cy - f;
+
+        if (debugPage == curPage++) {
+            updateDebugInfo({
+                cx, cy, es,
+                "lineOptions": "Ellipse or Hyperbola",
+                debugPage
+            });
+        }
 
         if (Math.sign(sma) === Math.sign(smi)) {
             // ellipse
-            if (Math.abs(es) > QUADRATIC_THRESHOLD && Math.sign(es) === Math.sign(sma)) {
-                const eu = Math.sqrt(es / sma);
-                const ev = Math.sqrt(es / smi);
+            const eu = Math.abs(es) < ROUND_THRESHOLD ? Math.sqrt(Math.abs(es) / sma) : Math.sqrt(es / sma);
+            const ev = Math.abs(es) < ROUND_THRESHOLD ? Math.sqrt(Math.abs(es) / smi) : Math.sqrt(es / smi);
 
-                const ts = [];
-                for (const p of intsXy) {
-                    const t = Math.atan2((p[1] - cy) / ev, (p[0] - cx) / eu);
-                    ts.push(t);
+            if (debugPage == curPage++) {
+                updateDebugInfo({
+                    eu, ev,
+                    "lineType": "Ellipse",
+                    debugPage
+                });
+            }
+
+            const ts = [];
+            for (const p of intsXy) {
+                const t = Math.atan2((p[1] - cy) / ev, (p[0] - cx) / eu);
+                ts.push(t);
+            }
+
+            if (ts.length === 0) {
+                ts.push(0);
+                ts.push(1); // this can be anything except 2npi? unsure
+            }
+
+            ts.sort((x, y) => x - y);
+
+            let canDraw = false;
+            let canDrawHere = new Array(ts.length).fill(false);
+
+            const tsUVs = [];
+            const tsUVsWithinBound = [];
+
+            for (let i = 0; i < ts.length; i++) {
+                const tA = ts[i];
+                const tB = ts[(i + 1) % ts.length] + ((i + 1) >= ts.length ? 2 * Math.PI : 0);
+                const tM = ((tA + tB) * 0.5);
+
+                const eUv = xy2uv([eu * Math.cos(tM) + cx, ev * Math.sin(tM) + cy]);
+                tsUVs.push(eUv);
+
+                if (uvWithinNappe(eUv) && uvWithinTriangle(eUv)) {
+                    tsUVsWithinBound.push(eUv);
+
+                    canDraw = true;
+                    canDrawHere[i] = true;
                 }
+            }
 
-                if (ts.length === 0) {
-                    ts.push(0);
-                    ts.push(1); // this can be anything except 2npi?
-                }
+            if (debugPage == curPage++) {
+                updateDebugInfo({
+                    ts,
+                    tsUVs,
+                    tsUVsWithinBound,
+                    debugPage
+                });
+            }
 
-                ts.sort((x, y) => x - y);
-
-                let canDraw = false;
-                let canDrawHere = new Array(ts.length).fill(false);
-
+            if (canDraw) {
                 for (let i = 0; i < ts.length; i++) {
-                    const tA = ts[i];
-                    const tB = ts[(i + 1) % ts.length] + ((i + 1) >= ts.length ? 2 * Math.PI : 0);
-                    const tM = ((tA + tB) * 0.5);
+                    if (canDrawHere[i]) {
+                        const tA = ts[i];
+                        const tB = ts[(i + 1) % ts.length] + ((i + 1) >= ts.length ? 2 * Math.PI : 0);
+                        const diff = tB - tA;
 
-                    const eUv = xy2uv([eu * Math.cos(tM) + cx, ev * Math.sin(tM) + cy]);
+                        sphereCtx.beginPath();
+                        sphereCtx.strokeStyle = debugMode ? '#ff0000' : color;
 
-                    if (uvWithinNappe(eUv) && uvWithinTriangle(eUv)) {
-                        canDraw = true;
-                        canDrawHere[i] = true;
-                    }
-                }
+                        const iters = 6;
+                        for (let j = 0; j < iters; j++) {
+                            const itA = (j / iters) * diff + tA;
+                            const itB = ((j + 1) / iters) * diff + tA;
+                            const iDiff = itB - itA;
 
-                if (canDraw) {
-                    for (let i = 0; i < ts.length; i++) {
-                        if (canDrawHere[i]) {
-                            const tA = ts[i];
-                            const tB = ts[(i + 1) % ts.length] + ((i + 1) >= ts.length ? 2 * Math.PI : 0);
-                            const diff = tB - tA;
+                            const uvA = [eu * Math.cos(itA) + cx, ev * Math.sin(itA) + cy];
+                            const uvB = [eu * Math.cos(itB) + cx, ev * Math.sin(itB) + cy];
 
-                            sphereCtx.beginPath();
-                            sphereCtx.strokeStyle = cone_debug_colors ? '#ff0000' : color;
+                            const tanA = [-eu * Math.sin(itA) * iDiff / 3.0, ev * Math.cos(itA) * iDiff / 3.0];
+                            const tanB = [-eu * Math.sin(itB) * iDiff / 3.0, ev * Math.cos(itB) * iDiff / 3.0];
 
-                            const iters = 5;
-                            for (let j = 0; j < iters; j++) {
-                                const itA = (j / iters) * diff + tA;
-                                const itB = ((j + 1) / iters) * diff + tA;
-                                const iDiff = itB - itA;
+                            const cpUvA = [uvA[0] + tanA[0], uvA[1] + tanA[1]];
+                            const cpUvB = [uvB[0] - tanB[0], uvB[1] - tanB[1]];
 
-                                const uvA = [eu * Math.cos(itA) + cx, ev * Math.sin(itA) + cy];
-                                const uvB = [eu * Math.cos(itB) + cx, ev * Math.sin(itB) + cy];
+                            const ppA = project(uv2vec(xy2uv(uvA)));
+                            const ppB = project(uv2vec(xy2uv(uvB)));
 
-                                const tanA = [-eu * Math.sin(itA) * iDiff / 3.0, ev * Math.cos(itA) * iDiff / 3.0];
-                                const tanB = [-eu * Math.sin(itB) * iDiff / 3.0, ev * Math.cos(itB) * iDiff / 3.0];
+                            const pcpA = project(uv2vec(xy2uv(cpUvA)));
+                            const pcpB = project(uv2vec(xy2uv(cpUvB)));
 
-                                const cpUvA = [uvA[0] + tanA[0], uvA[1] + tanA[1]];
-                                const cpUvB = [uvB[0] - tanB[0], uvB[1] - tanB[1]];
-
-                                const ppA = project(uv2vec(xy2uv(uvA)));
-                                const ppB = project(uv2vec(xy2uv(uvB)));
-
-                                const pcpA = project(uv2vec(xy2uv(cpUvA)));
-                                const pcpB = project(uv2vec(xy2uv(cpUvB)));
-
-                                sphereCtx.moveTo(ppA.x, ppA.y);
-                                sphereCtx.bezierCurveTo(pcpA.x, pcpA.y, pcpB.x, pcpB.y, ppB.x, ppB.y);
-                            }
-
-                            sphereCtx.stroke();
+                            sphereCtx.moveTo(ppA.x, ppA.y);
+                            sphereCtx.bezierCurveTo(pcpA.x, pcpA.y, pcpB.x, pcpB.y, ppB.x, ppB.y);
                         }
+
+                        sphereCtx.stroke();
                     }
                 }
             }
         } else {
             // hyperbola
-            if (Math.abs(es) > QUADRATIC_THRESHOLD) {
-                const wa = Math.sqrt(es / sma);
-                const wb = Math.sqrt(es / -smi);
+            const wa = Math.abs(es) < ROUND_THRESHOLD ? Math.sqrt(Math.abs(es) / sma) : Math.sqrt(es / sma);
+            const wb = Math.abs(es) < ROUND_THRESHOLD ? Math.sqrt(Math.abs(es) / -smi) : Math.sqrt(es / -smi);
 
-                const ts = [];
-
-                for (const p of intsXy) {
-                    const t = Math.asinh((p[1] - cy) / wb);
-                    ts.push(t);
-                }
-
-                ts.sort((x, y) => x - y);
-
-                let canDraw = false;
-                let canDrawHere = new Array(ts.length).fill(false);
-                let drawSigns = new Array(ts.length).fill(-1);
-
-                for (let i = 0; i < ts.length - 1; i++) {
-                    const tA = ts[i];
-                    const tB = ts[i + 1];
-                    const tM = ((tA + tB) * 0.5);
-
-                    const eUv1 = xy2uv([wa * Math.cosh(tM) + cx, wb * Math.sinh(tM) + cy]);
-                    const eUv2 = xy2uv([-wa * Math.cosh(tM) + cx, wb * Math.sinh(tM) + cy]);
-
-                    if ((uvWithinNappe(eUv1) && uvWithinTriangle(eUv1)) || (uvWithinNappe(eUv2) && uvWithinTriangle(eUv2))) {
-                        canDraw = true;
-                        canDrawHere[i] = true;
-
-                        if (uvWithinNappe(eUv1) && uvWithinTriangle(eUv1)) {
-                            drawSigns[i] = 1;
-                        }
-                    }
-                }
-
-                if (canDraw) {
-                    for (let i = 0; i < ts.length - 1; i++) {
-                        if (canDrawHere[i]) {
-                            const tA = ts[i];
-                            const tB = ts[i + 1];
-                            const diff = tB - tA;
-
-                            const sign = drawSigns[i];
-
-                            sphereCtx.beginPath();
-                            sphereCtx.strokeStyle = cone_debug_colors ? '#00ff00' : color;
-
-                            const iters = 5;
-                            for (let j = 0; j < iters; j++) {
-                                const itA = (j / iters) * diff + tA;
-                                const itB = ((j + 1) / iters) * diff + tA;
-                                const iDiff = itB - itA;
-
-                                const uvA = [sign * wa * Math.cosh(itA) + cx, wb * Math.sinh(itA) + cy];
-                                const uvB = [sign * wa * Math.cosh(itB) + cx, wb * Math.sinh(itB) + cy];
-
-                                const tanA = [sign * wa * Math.sinh(itA) * iDiff / 3.0, wb * Math.cosh(itA) * iDiff / 3.0];
-                                const tanB = [sign * wa * Math.sinh(itB) * iDiff / 3.0, wb * Math.cosh(itB) * iDiff / 3.0];
-
-                                const cpUvA = [uvA[0] + tanA[0], uvA[1] + tanA[1]];
-                                const cpUvB = [uvB[0] - tanB[0], uvB[1] - tanB[1]];
-
-                                const ppA = project(uv2vec(xy2uv(uvA)));
-                                const ppB = project(uv2vec(xy2uv(uvB)));
-
-                                const pcpA = project(uv2vec(xy2uv(cpUvA)));
-                                const pcpB = project(uv2vec(xy2uv(cpUvB)));
-
-                                sphereCtx.moveTo(ppA.x, ppA.y);
-                                sphereCtx.bezierCurveTo(pcpA.x, pcpA.y, pcpB.x, pcpB.y, ppB.x, ppB.y);
-                            }
-
-                            sphereCtx.stroke();
-                        }
-                    }
-                }
+            if (debugPage == curPage++) {
+                updateDebugInfo({
+                    wa, wb,
+                    "lineType": "Hyperbola",
+                    debugPage
+                });
             }
-        }
-    } else {
-        // for some reason, floating point hates me. why do you lose so much precision?
-
-        if (Math.abs(lc[0]) < LINE_THRESHOLD || (Math.abs(sma) > TYPE_THRESHOLD ? Math.abs(lc[1]) < LINE_THRESHOLD : false)) {
-            // straight line
-            const r = -lc[0] * 0.5 / sma;
 
             const ts = [];
-            for (const c of intsXy) {
-                if (Math.abs(c[0] - r) < LINE_THRESHOLD) {
-                    ts.push(c[1]);
-                }
+
+            for (const p of intsXy) {
+                const t = Math.asinh((p[1] - cy) / wb);
+                ts.push(t);
             }
+
             ts.sort((x, y) => x - y);
+
+            let canDraw = false;
+            let canDrawHere = new Array(ts.length).fill(false);
+            let drawSigns = new Array(ts.length).fill(-1);
+
+            const tsUVs = [];
+            const tsUVsWithinBound = [];
 
             for (let i = 0; i < ts.length - 1; i++) {
                 const tA = ts[i];
                 const tB = ts[i + 1];
                 const tM = ((tA + tB) * 0.5);
 
-                const eUv = xy2uv([r, tM]);
+                const eUv1 = xy2uv([wa * Math.cosh(tM) + cx, wb * Math.sinh(tM) + cy]);
+                const eUv2 = xy2uv([-wa * Math.cosh(tM) + cx, wb * Math.sinh(tM) + cy]);
+
+                tsUVs.push([eUv1, eUv2]);
+
+                if ((uvWithinNappe(eUv1) && uvWithinTriangle(eUv1)) || (uvWithinNappe(eUv2) && uvWithinTriangle(eUv2))) {
+                    canDraw = true;
+                    canDrawHere[i] = true;
+
+                    if (uvWithinNappe(eUv1) && uvWithinTriangle(eUv1)) {
+                        tsUVsWithinBound.push(eUv1);
+                        drawSigns[i] = 1;
+                    } else {
+                        tsUVsWithinBound.push(eUv2);
+                    }
+                }
+            }
+
+            if (debugPage == curPage++) {
+                updateDebugInfo({
+                    ts,
+                    tsUVs,
+                    tsUVsWithinBound,
+                    debugPage
+                });
+            }
+
+            if (canDraw) {
+                for (let i = 0; i < ts.length - 1; i++) {
+                    if (canDrawHere[i]) {
+                        const tA = ts[i];
+                        const tB = ts[i + 1];
+                        const diff = tB - tA;
+
+                        const sign = drawSigns[i];
+
+                        sphereCtx.beginPath();
+                        sphereCtx.strokeStyle = debugMode ? '#00ff00' : color;
+
+                        const iters = 6;
+                        for (let j = 0; j < iters; j++) {
+                            const itA = (j / iters) * diff + tA;
+                            const itB = ((j + 1) / iters) * diff + tA;
+                            const iDiff = itB - itA;
+
+                            const uvA = [sign * wa * Math.cosh(itA) + cx, wb * Math.sinh(itA) + cy];
+                            const uvB = [sign * wa * Math.cosh(itB) + cx, wb * Math.sinh(itB) + cy];
+
+                            const tanA = [sign * wa * Math.sinh(itA) * iDiff / 3.0, wb * Math.cosh(itA) * iDiff / 3.0];
+                            const tanB = [sign * wa * Math.sinh(itB) * iDiff / 3.0, wb * Math.cosh(itB) * iDiff / 3.0];
+
+                            const cpUvA = [uvA[0] + tanA[0], uvA[1] + tanA[1]];
+                            const cpUvB = [uvB[0] - tanB[0], uvB[1] - tanB[1]];
+
+                            const ppA = project(uv2vec(xy2uv(uvA)));
+                            const ppB = project(uv2vec(xy2uv(uvB)));
+
+                            const pcpA = project(uv2vec(xy2uv(cpUvA)));
+                            const pcpB = project(uv2vec(xy2uv(cpUvB)));
+
+                            sphereCtx.moveTo(ppA.x, ppA.y);
+                            sphereCtx.bezierCurveTo(pcpA.x, pcpA.y, pcpB.x, pcpB.y, ppB.x, ppB.y);
+                        }
+
+                        sphereCtx.stroke();
+                    }
+                }
+            }
+        }
+    } else {
+
+        if (debugPage == curPage++) {
+            updateDebugInfo({
+                "lineOptions": "Line or Parabola",
+                debugPage
+            });
+        }
+
+        if (aps > TYPE_THRESHOLD && Math.abs(type) > TYPE_THRESHOLD) {
+            // straight line
+            const r = -lc[0] * 0.5 / sma;
+
+            if (debugPage == curPage++) {
+                updateDebugInfo({
+                    r,
+                    "lineType": "Line",
+                    debugPage
+                });
+            }
+
+            const ts = [];
+            const tsChecks = [];
+            const tsChecks2 = [];
+
+            // we can calculate directly what the intersections should be, instead of using the quadratics
+            const tXy = [
+                [0, 0],
+                [ma[0], mi[0]],
+                [ma[1], mi[1]]
+            ];
+
+            // hmm. this looks awfully familiar.
+            for (let i = 0; i < tXy.length; i++) {
+                const tA = tXy[i];
+                const tB = tXy[(i + 1) % tXy.length];
+                const diff = tB[0] - tA[0];
+
+                if (Math.abs(diff) > LINE_THRESHOLD) {
+                    const t = Math.abs((r - tA[0])) < ROUND_THRESHOLD ? 0.0 : (r - tA[0]) / diff;
+
+                    if (t > -LINE_THRESHOLD && t < 1 + LINE_THRESHOLD) {
+                        const x = tA[1] + t * (tB[1] - tA[1]);
+                        ts.push(x);
+                    }
+                    tsChecks2.push(t);
+                }
+
+                tsChecks.push(diff);
+            }
+
+            ts.sort((x, y) => x - y);
+
+            const tsUVs = [];
+            const tsUVsWithinBound = [];
+
+            for (let i = 0; i < ts.length - 1; i++) {
+                const tA = ts[i];
+                const tB = ts[i + 1];
+                const tM = ((tA + tB) * 0.5);
+
+                var eUv = xy2uv([r, tM]);
+
+                tsUVs.push(eUv);
 
                 if (uvWithinNappe(eUv) && uvWithinTriangle(eUv)) {
+                    tsUVsWithinBound.push(eUv);
+
                     const ppA = project(uv2vec(xy2uv([r, tA])));
                     const ppB = project(uv2vec(xy2uv([r, tB])));
 
                     sphereCtx.beginPath();
-                    sphereCtx.strokeStyle = cone_debug_colors ? '#0000ff' : color;
+                    sphereCtx.strokeStyle = debugMode ? '#0000ff' : color;
                     sphereCtx.moveTo(ppA.x, ppA.y);
                     sphereCtx.lineTo(ppB.x, ppB.y);
                     sphereCtx.stroke();
                 }
+            }
+
+            if (debugPage == curPage++) {
+                updateDebugInfo({
+                    ts,
+                    tsChecks,
+                    tsChecks2,
+                    tsUVs,
+                    tsUVsWithinBound,
+                    debugPage
+                });
             }
 
         } else {
@@ -1163,6 +1436,14 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
             const qa = -smi / lc[0];
             const qb = -lc[1] / lc[0];
             const qc = -f / lc[0];
+
+            if (debugPage == curPage++) {
+                updateDebugInfo({
+                    qa, qb, qc,
+                    "lineType": "Parabola",
+                    debugPage
+                });
+            }
 
             const ts = [];
             for (const p of intsXy) {
@@ -1174,17 +1455,32 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
             let canDraw = false;
             let canDrawHere = new Array(ts.length).fill(false);
 
+            const tsUVs = [];
+            const tsUVsWithinBound = [];
+
             for (let i = 0; i < ts.length - 1; i++) {
                 const tA = ts[i];
                 const tB = ts[i + 1];
                 const tM = ((tA + tB) * 0.5);
 
                 const eUv1 = xy2uv([qa * tM * tM + qb * tM + qc, tM]);
+                tsUVs.push(eUv1);
 
                 if (uvWithinNappe(eUv1) && uvWithinTriangle(eUv1)) {
+                    tsUVsWithinBound.push(eUv1);
+
                     canDraw = true;
                     canDrawHere[i] = true;
                 }
+            }
+
+            if (debugPage == curPage++) {
+                updateDebugInfo({
+                    ts,
+                    tsUVs,
+                    tsUVsWithinBound,
+                    debugPage
+                });
             }
 
             if (canDraw) {
@@ -1195,7 +1491,7 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
                         const tM = ((tA + tB) * 0.5);
 
                         sphereCtx.beginPath();
-                        sphereCtx.strokeStyle = cone_debug_colors ? '#ffff00' : color;
+                        sphereCtx.strokeStyle = debugMode ? '#ffff00' : color;
 
                         const uvA = [qa * tA * tA + qb * tA + qc, tA];
                         const uvB = [qa * tB * tB + qb * tB + qc, tB];
@@ -1215,6 +1511,24 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
         }
     }
 }
+
+var debugDiv;
+function updateDebugInfo(infos) {
+    if (!debugMode) return;
+    if (!debugDiv) {
+        debugDiv = document.createElement('div');
+        debugDiv.id = 'debug-infos';
+        debugDiv.style = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:10px 20px; border-radius:5px; z-index:1000; white-space: pre-line;";
+        document.body.appendChild(debugDiv);
+    }
+    debugDiv.textContent = Object.entries(infos).map(([k, v]) => `${k}: ${v}`).join('\n');
+}
+
+
+
+
+
+
 
 function createSystemUnit(ghost = false, system = 'cube', params = [], systemDepths = [1], systemApices = [0], systemColors = [colorChoices[0]]) {
     let systemUnit = document.getElementById('template-system-unit').cloneNode(true);
@@ -3199,7 +3513,24 @@ function lineEqnToDot(line) {
 }
 
 
-function quadratic(a, b, c, threshold = THRESHOLD) {
+function quadratic(aR, bR, cR, threshold = THRESHOLD) {
+
+    // un-fucking believable.
+    // if the coefficients are too large, floating point kicks in (again)
+    // and the discriminant is no longer reliable
+    // so scale each of the coefficients by the largest one, so they're all hopefully reasonable
+    const scale = Math.max(Math.abs(aR), Math.abs(bR), Math.abs(cR));
+
+    var a = aR;
+    var b = bR;
+    var c = cR;
+
+    if (Math.abs(scale) - 1 > threshold) {
+        a /= scale;
+        b /= scale;
+        c /= scale;
+    }
+
     if (Math.abs(a) < threshold && Math.abs(b) < threshold) return [null, null];
     if (Math.abs(a) < threshold) return [-c/b, -c/b];
     if (Math.abs(b) < threshold && Math.abs(c) < threshold) return [0, 0];
