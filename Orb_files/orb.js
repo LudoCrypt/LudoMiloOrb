@@ -813,7 +813,7 @@ async function drawPuzzle() {
 
         var slidersGroup = Array.from(systemUnit.getElementsByClassName('slider-group')[0].children).filter(sliderUnit => !sliderUnit.classList.contains('ghost-slider') && sliderUnit.getElementsByClassName('view-button')[0].dataset.isOn === "1");
 
-        for (let i = 0; i < slidersGroup.length; i++) {
+        for (let i = slidersGroup.length - 1; i >= 0; i--) {
             const sliderUnit = slidersGroup[i];
 
             if (sliderUnit.classList.contains('ghost-slider')) continue;
@@ -822,7 +822,7 @@ async function drawPuzzle() {
             let color = sliderUnit.dataset.color;
 
             if (shellsViewMode) {
-                drawShells(systemUnit, systemAxes, slidersGroup[i - 1], sliderUnit, slidersGroup[i + 1], i);
+                drawShells(systemUnit, systemAxes, slidersGroup[i + 1], sliderUnit, slidersGroup[i - 1], slidersGroup.length - i - 1);
             } else {
                 if (currentDrawShape) {
                     drawShapeCuts(currentDrawShape, systemAxes, depth, apex, color);
