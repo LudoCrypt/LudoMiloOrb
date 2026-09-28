@@ -100,6 +100,7 @@ var colorChoices = [
 ];
 
 var debugMode = false;
+var shellsViewMode = false;
 
 function transform(quat, vec) {
     return new Vector(...quat.rotateVector(vec.toArray()))
@@ -292,24 +293,60 @@ function initialize() {
     });
 
     document.addEventListener('keydown', function(e) {
-        let keySpeed = sphereCanvasRadius / 10;
         let keyMove = function(code) {
             switch (code) {
                 case 'KeyW':
-                    moveSphere(0, keySpeed);
+                    sphereTransformation = Quaternion.fromAxisAngle([1, 0, 0], Math.PI * 0.05).mul(sphereTransformation);
                     break;
                 case 'KeyA':
-                    moveSphere(keySpeed, 0);
+                    sphereTransformation = Quaternion.fromAxisAngle([0, 1, 0], Math.PI * 0.05).mul(sphereTransformation);
                     break;
                 case 'KeyS':
-                    moveSphere(0, -keySpeed);
+                    sphereTransformation = Quaternion.fromAxisAngle([-1, 0, 0], Math.PI * 0.05).mul(sphereTransformation);
                     break;
                 case 'KeyD':
-                    moveSphere(-keySpeed, 0);
+                    sphereTransformation = Quaternion.fromAxisAngle([0, -1, 0], Math.PI * 0.05).mul(sphereTransformation);
+                    break;
+
+                case 'ArrowUp':
+                    sphereTransformation = sphereTransformation.mul(Quaternion.fromAxisAngle([1, 0, 0], Math.PI * 0.05));
+                    break;
+                case 'ArrowLeft':
+                    sphereTransformation = sphereTransformation.mul(Quaternion.fromAxisAngle([0, 1, 0], Math.PI * 0.05));
+                    break;
+                case 'ArrowDown':
+                    sphereTransformation = sphereTransformation.mul(Quaternion.fromAxisAngle([-1, 0, 0], Math.PI * 0.05));
+                    break;
+                case 'ArrowRight':
+                    sphereTransformation = sphereTransformation.mul(Quaternion.fromAxisAngle([0, -1, 0], Math.PI * 0.05));
+                    break;
+
+                case 'Digit1':
+                case 'Numpad1':
+                    sphereTransformation = Quaternion.ONE;
+                    break;
+                case 'Digit2':
+                case 'Numpad2':
+                    sphereTransformation = Quaternion.fromAxisAngle([1, 0, 0], Math.PI * 0.5);
+                    break;
+                case 'Digit3':
+                case 'Numpad3':
+                    sphereTransformation = Quaternion.fromAxisAngle([0, 1, 0], Math.PI * 0.5);
+                    break;
+                case 'Digit4':
+                case 'Numpad4':
+                    sphereTransformation = Quaternion.fromAxisAngle([1, 0, 0], Math.PI * 0.25);
+                    break;
+                case 'Digit5':
+                case 'Numpad5':
+                    sphereTransformation = Quaternion.fromAxisAngle([0, 1, 0], Math.PI * 0.25);
                     break;
             }
+            drawPuzzle();
         }
-        keyMove(e.code);
+
+        const isInputFocused = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.isContentEditable);
+        if (!isInputFocused) keyMove(e.code);
     });
 
     document.addEventListener('keydown', function(e) {
@@ -350,7 +387,35 @@ function initialize() {
                     break;
             }
         }
-        if (debugMode) keyMove(e.code);
+
+        const isInputFocused = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.isContentEditable);
+        if (!isInputFocused && debugMode) keyMove(e.code);
+    });
+
+    document.addEventListener('keydown', function(e) {
+        let keyMove = function(code) {
+            switch (code) {
+                case 'KeyM':
+                    shellsViewMode = !shellsViewMode;
+                    break;
+                case 'KeyT':
+                    debugMode = !debugMode;
+
+                    if (!debugMode) {
+                        document.getElementById('debug-how-to').classList.add('hidden');
+                        document.body.removeChild(debugDiv);
+                        debugDiv = null;
+                    } else {
+                        document.getElementById('debug-how-to').classList.remove('hidden');
+                    }
+
+                    break;
+            }
+            drawPuzzle();
+        }
+
+        const isInputFocused = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.isContentEditable);
+        if (!isInputFocused) keyMove(e.code);
     });
 
     document.addEventListener('keyup', function(e) {
@@ -462,6 +527,11 @@ function initialize() {
         if (urlParams.has('curAxis')) {
             curAxis = parseFloat(urlParams.getAll('curAxis')[0]);
         }
+        document.getElementById('debug-how-to').classList.remove('hidden');
+    }
+
+    if (urlParams.has('shells-view-mode')) {
+        shellsViewMode = true;
     }
 
     drawChangeDiv = document.getElementById('draw-change');
@@ -566,6 +636,10 @@ function initialize() {
             urlParams.append('debug-mode', 'true');
             urlParams.append('curTri', curTri);
             urlParams.append('curAxis', curAxis);
+        }
+
+        if (shellsViewMode) {
+            urlParams.append('shells-view-mode', 'true');
         }
 
         //console.log(window.location.origin + window.location.pathname + '?' + urlParams.toString());
@@ -718,14 +792,17 @@ async function drawPuzzle() {
         debugPage
     });
 
-    if (currentDrawShape) {
-        drawShape(currentDrawShape);
-    } else if (drawSystem && drawSystem.dataset.system == "sphere") {
+    if (shellsViewMode) {
         drawSphere();
     } else {
-        return;
+        if (currentDrawShape) {
+            drawShape(currentDrawShape);
+        } else if (drawSystem && drawSystem.dataset.system == "sphere") {
+            drawSphere();
+        } else {
+            return;
+        }
     }
-
 
     for (let systemUnit of sliderPanel.children) {
         if (systemUnit.classList.contains('ghost-system')) continue;
@@ -733,23 +810,114 @@ async function drawPuzzle() {
         updateAngleDeltas(systemUnit);
 
         let systemAxes = getAxesFromSystemUnit(systemUnit);
-        for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children) {
+
+        var slidersGroup = Array.from(systemUnit.getElementsByClassName('slider-group')[0].children).filter(sliderUnit => !sliderUnit.classList.contains('ghost-slider') && sliderUnit.getElementsByClassName('view-button')[0].dataset.isOn === "1");
+
+        for (let i = 0; i < slidersGroup.length; i++) {
+            const sliderUnit = slidersGroup[i];
+
             if (sliderUnit.classList.contains('ghost-slider')) continue;
             let depth = sliderUnit.dataset.depth;
             let apex = sliderUnit.dataset.apex;
             let color = sliderUnit.dataset.color;
 
-            if (sliderUnit.getElementsByClassName('view-button')[0].dataset.isOn === "0") color = "#00000000";
-            if (currentDrawShape) {
-                drawShapeCuts(currentDrawShape, systemAxes, depth, apex, color);
+            if (shellsViewMode) {
+                drawShells(systemUnit, systemAxes, slidersGroup[i - 1], sliderUnit, slidersGroup[i + 1], i);
             } else {
-                for (let axis of systemAxes) {
-                    drawCircleOnSphere(axis, depth, color);
+                if (currentDrawShape) {
+                    drawShapeCuts(currentDrawShape, systemAxes, depth, apex, color);
+                } else {
+                    for (let axis of systemAxes) {
+                        drawCircleOnSphere(axis, depth, color);
+                    }
                 }
             }
         }
     }
 }
+
+function drawShells(systemUnit, systemAxes, prevSliderUnit, sliderUnit, nextSliderUnit, i) {
+
+    const depth = sliderUnit.dataset.depth;
+    const color = sliderUnit.dataset.color;
+
+    const maxSteps = Math.max(globalMaxSliders, 15);
+    const stepSize = 1.0 / maxSteps;
+
+    const step = maxSteps - i - 1;
+    const bStep = stepSize * step;
+    const tStep = stepSize * (step + 1);
+
+    for (let axis of systemAxes) {
+        const normal = transform(sphereTransformation, axis.unit());
+
+        const shell = getShell(normal, depth);
+        if (!shell) continue;
+
+        const prevShell = prevSliderUnit ? getShell(normal, prevSliderUnit.dataset.depth) : undefined;
+        const nextShell = nextSliderUnit ? getShell(normal, nextSliderUnit.dataset.depth) : undefined;
+
+        sphereCtx.beginPath();
+
+        drawStep(shell.aorAngle + shell.coneAngle, bStep, tStep);
+        drawStep(shell.aorAngle - shell.coneAngle, bStep, tStep);
+
+        if (prevShell) {
+            drawShell(tStep, shell.aorAngle + prevShell.coneAngle, shell.aorAngle + shell.coneAngle);
+            drawShell(tStep, shell.aorAngle - prevShell.coneAngle, shell.aorAngle - shell.coneAngle);
+        } else {
+            drawShell(tStep, shell.aorAngle - shell.coneAngle, shell.aorAngle + shell.coneAngle);
+        }
+
+        if (!nextShell) {
+            drawShell(bStep, shell.aorAngle - shell.coneAngle, shell.aorAngle + shell.coneAngle);
+        }
+
+        sphereCtx.strokeStyle = color;
+        sphereCtx.stroke();
+
+    }
+}
+
+const SHELLS_THRESHOLD = 1e-7;
+
+function getShell(normal, depth) {
+    const c = Math.hypot(normal.x, normal.y);
+    if (c < SHELLS_THRESHOLD) return;
+
+    const k = depth / c;
+    if (Math.abs(k) > 1 + SHELLS_THRESHOLD) return;
+
+    return {
+        aorAngle: Math.atan2(normal.y, normal.x),
+        coneAngle: Math.acos(clamp(k, -1, 1))
+    };
+}
+
+function drawShell(r, a1, a2) {
+    sphereCtx.moveTo(Math.cos(a1) * r, Math.sin(a1) * r);
+    sphereCtx.arc(0, 0, r, a1, a2, a2 < a1);
+}
+
+function drawStep(a, r1, r2) {
+    sphereCtx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1);
+    sphereCtx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
+}
+
+var globalMaxSliders = 0;
+function countMaxSliders() {
+    var max = 0;
+
+    for (let systemUnit of sliderPanel.children) {
+        if (systemUnit.classList.contains('ghost-system')) continue;
+        max = Math.max(systemUnit.getElementsByClassName('slider-group')[0].children.length, max);
+    }
+
+    return max;
+}
+
+
+
 
 
 function drawSphere() {
@@ -969,12 +1137,12 @@ function drawConeOnTriangle(triangle, normal, depth, apex, color) {
     // when numbers get particularly large, you lose precision (very bad)
     // so find the biggest one and scale it down by that
     // hopefully this should make it so the numbers we get are a little nicer to work with
-    const scale = Math.abs(Math.max(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d), Math.abs(e), Math.abs(f)));
+    const scale = Math.max(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d), Math.abs(e), Math.abs(f));
 
-    // only do it if the scale is above 1
+    // only do it if the scale is above 10
     // otherwise we would potentially be losing precision? unsure
     // best just to be safe about it though.
-    if (scale - 100 > ROUND_THRESHOLD) {
+    if (scale - 10 > ROUND_THRESHOLD) {
         a /= scale;
         b /= scale;
         c /= scale;
@@ -1573,6 +1741,8 @@ function createSystemUnit(ghost = false, system = 'cube', params = [], systemDep
         }
         drawPuzzle();
     }
+
+    globalMaxSliders = countMaxSliders();
 }
 
 
@@ -1802,6 +1972,8 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
     }
     createPhasePlot(true);
     hidePhaseDiagram();
+
+    globalMaxSliders = countMaxSliders();
 }
 
 
@@ -2325,6 +2497,12 @@ function countAxes() {
     let systemUnits = [];
     for (let systemUnit of sliderPanel.children) {
         if (systemUnit.classList.contains('ghost-system')) continue;
+
+        if (shellsViewMode) {
+            systemUnits.push(systemUnit);
+            continue;
+        }
+
         for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children) {
             if (sliderUnit.classList.contains('ghost-slider')) continue;
 
@@ -2387,6 +2565,7 @@ function systemPhaseLines(systemUnits, isAutoUpdate = false) {
     let lineClippingRawTriple = []; // [line vector, [lower bound, upper bound]]
     // where the bounds represent dir . endpoint
 
+
     for (let s0 = 0; s0 < systemUnits.length; s0++) {
         for (let i0 of systemReducedAxes[s0]) {
             for (let s1 = 0; s1 < systemUnits.length; s1++) {
@@ -2428,6 +2607,7 @@ function systemPhaseLines(systemUnits, isAutoUpdate = false) {
 
                             let axis2 = systemsAxes[s2][i2];
                             let aarr = [axis0, axis1, axis2];
+
                             if (axis2.dot(axis0) > 1 - THRESHOLD || axis2.dot(axis0) < -1 + THRESHOLD ||
                                 axis2.dot(axis1) > 1 - THRESHOLD || axis2.dot(axis1) < -1 + THRESHOLD) continue;
 
@@ -2520,6 +2700,7 @@ function systemPhaseLines(systemUnits, isAutoUpdate = false) {
     // if (is2D && getAnyOppositesFromSystemUnit(systemUnits[1])) lineEqnsTangent.add([0, 0, 1, 0]);
     // if (getAnyOppositesFromSystemUnit(systemUnits[0])) lineEqnsTriple.add([0, 0, -1, 0]);
     // if (is2D && getAnyOppositesFromSystemUnit(systemUnits[1])) lineEqnsTriple.add([0, 0, 1, 0]);
+
 
     return {
         lineEqnsTangent,
@@ -3525,7 +3706,7 @@ function quadratic(aR, bR, cR, threshold = THRESHOLD) {
     var b = bR;
     var c = cR;
 
-    if (Math.abs(scale) - 1 > threshold) {
+    if (scale - 1 > threshold) {
         a /= scale;
         b /= scale;
         c /= scale;
@@ -3703,4 +3884,5 @@ function hidePhaseDiagram(resetCamera = true) {
     if (resetCamera) phaseCamera = new Viewport(phaseDiagram, phaseG, phaseBakedScale);
     renderRegions = false;
     updateFullDepth();
+    globalMaxSliders = countMaxSliders();
 }

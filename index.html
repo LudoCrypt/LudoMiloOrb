@@ -42,6 +42,18 @@
         <img class='draw-icon svg-dark-bg svg-hoverable translate' src='./icons/systems/sphere.svg'>
         <div class='draw-system-params'></div>
     </div>
+    <div id='how-to-use'>
+        <pre>WASD - Pan Camera
+Arrow Keys - Pan Gimbal
+Number Keys - Align View
+M - Toggle Mechanism View
+T - Toggle Debug Mode</pre>
+        <pre id='debug-how-to' class='hidden'>
+    P/O - Next/Previous Page
+    U - Reset Values
+    L/K - Next/Previous Axis
+    J/H - Next/Previous Triangle</pre>
+    </div>
 </div>
 
 <div id='control-panel'>
@@ -54,6 +66,11 @@
             <div id='phase-diagram-controls'>
                 <label class="phase-tick-button"><input type="checkbox" id="tangent-lines" checked>Tangent Lines</label>
                 <label class="phase-tick-button"><input type="checkbox" id="coincident-lines" checked>Coincident Lines</label>
+            </div>
+            <div id='how-to-use-phase'>
+                <pre>Hold Shift - Snap to Phase
+Click Phase - Phase in Degrees
+Shift Click Phase - Phase in Depth</pre>
             </div>
         </div>
         <svg id='phase-diagram' class='hidden'>

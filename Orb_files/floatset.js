@@ -102,6 +102,10 @@ function FloatSet(dimension=1, threshold){
         yield* this.valuesHashMap(this.hashMap, this.dimension-1);
     }
 
+    this.toString = function() {
+        return `FloatSet(${this.dimension}) [${this.values().map(e => `[${e.join(', ')}]`).join(', ')}]`;
+    }
+
     this.keys = this.values;
     this[Symbol.iterator] = this.values;
 }

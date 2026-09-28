@@ -40,6 +40,26 @@ body {
     color: black;
 }
 
+#how-to-use {
+    position: absolute;
+    bottom: 2%;
+    left: 2%;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
+
+#how-to-use-phase {
+    position: absolute;
+    bottom: 2%;
+    left: 10%;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
+
 #sphere-panel {
     position: absolute;
     top: 0%;
@@ -89,9 +109,11 @@ body {
     text-align: left;
     border: 1px solid #c0c0c0;
     color: white;
+    background-color: #1a1a1a;
     font-family: monospace;
     overflow: auto;
     word-break: break-all;
+    z-index: 1;
 }
 
 img {
