@@ -95,8 +95,10 @@ var targetOfChangeDiv = undefined; // which one has the change div
 const closeChangeDivsOnSelect = true;
 
 var colorChoices = [
-    '#a00000', '#1f4bd1', '#167f18', '#965500', '#7528af', '#73536b', '#b51b98', '#595959', '#1d7a61', '#4c6b13',
-    '#a000005a', '#1f4bd15a', '#167f185a', '#9655005a', '#7528af5a', '#73536b5a', '#b51b985a', '#5959595a', '#1d7a615a', '#4c6b135a'
+    '#a00000', '#1f4bd1', '#167f18', '#965500', '#7528af',
+    '#73536b', '#b51b98', '#595959', '#1d7a61', '#4c6b13',
+    '#a000005a', '#1f4bd15a', '#167f185a', '#9655005a', '#7528af5a',
+    '#73536b5a', '#b51b985a', '#5959595a', '#1d7a615a', '#4c6b135a',
 ];
 
 var debugMode = false;
