@@ -103,6 +103,7 @@ var colorChoices = [
 
 var debugMode = false;
 var shellsViewMode = false;
+var flipShellsOrder = false;
 
 function transform(quat, vec) {
     return new Vector(...quat.rotateVector(vec.toArray()))
@@ -167,7 +168,11 @@ function initialize() {
             let systemName = urlSystems[i].split('-')[0];
             let systemParams = urlSystems[i].split('-').slice(1);
             let decodedParams = systemParams.map((value, j) => systemData[systemName].paramsRequired[j] == "stringInput" ? atob(value) : value);
-            createSystemUnit(false, systemName, decodedParams, urlSystemDepths[i].split('_').map(parseFloat), urlSystemApices[i].split('_').map(parseFloat), urlSystemColors[i].split('_').map(x => '#' + x))
+
+            let depthsString = urlSystemDepths[i].split('_').map(d => Math.cos(parseFloat(d) * Math.PI / 180.0));
+            let apicesString = urlSystemApices[i].split('_').length == 1 ? Array(urlSystemDepths[i].split('_').length).fill(urlSystemApices[i].split('_')[0]) : urlSystemApices[i].split('_').map(parseFloat);
+            let colorsString = urlSystemColors[i].split('_').length == 1 ? Array(urlSystemDepths[i].split('_').length).fill('#' + urlSystemColors[i].split('_')[0]) : urlSystemColors[i].split('_').map(x => '#' + x);
+            createSystemUnit(false, systemName, decodedParams, depthsString, apicesString, colorsString);
         }
     } else {
         createSystemUnit();
@@ -400,6 +405,9 @@ function initialize() {
                 case 'KeyM':
                     shellsViewMode = !shellsViewMode;
                     break;
+                case 'KeyF':
+                    flipShellsOrder = !flipShellsOrder;
+                    break;
                 case 'KeyT':
                     debugMode = !debugMode;
 
@@ -546,6 +554,10 @@ function initialize() {
         shellsViewMode = true;
     }
 
+    if (urlParams.has('flip-shells-order')) {
+        flipShellsOrder = true;
+    }
+
     drawChangeDiv = document.getElementById('draw-change');
     for (let [shapeCategory, shapeNames] of drawShapeCategories) {
         document.getElementById('draw-category-options').insertAdjacentHTML('beforeend', drawCategoryOptionDivTemplate(shapeCategory));
@@ -635,13 +647,13 @@ function initialize() {
             let systemColors = [];
             for (let sliderUnit of systemUnit.getElementsByClassName('slider-group')[0].children) {
                 if (sliderUnit.classList.contains('ghost-slider')) continue;
-                systemDepths.push(parseFloat(sliderUnit.dataset.depth));
-                systemApices.push(parseFloat(sliderUnit.dataset.apex));
+                systemDepths.push(parseFloat((Math.acos(parseFloat(sliderUnit.dataset.depth)) * 180.0 / Math.PI).toFixed(8)));
+                systemApices.push(parseFloat(parseFloat(sliderUnit.dataset.apex).toFixed(8)));
                 systemColors.push(sliderUnit.dataset.color.replaceAll('#', ''));
             }
             urlParams.append('depths', systemDepths.join('_'));
-            urlParams.append('apices', systemApices.join('_'));
-            urlParams.append('colors', systemColors.join('_'));
+            urlParams.append('apices', (systemApices.every(v => v === systemApices[0])) ? systemApices[0] : systemApices.join('_'));
+            urlParams.append('colors', (systemColors.every(v => v === systemColors[0])) ? systemColors[0] : systemColors.join('_'));
         }
 
         if (debugMode) {
@@ -652,6 +664,9 @@ function initialize() {
 
         if (shellsViewMode) {
             urlParams.append('shells-view-mode', 'true');
+        }
+        if (flipShellsOrder) {
+            urlParams.append('flip-shells-order', 'true');
         }
 
         //console.log(window.location.origin + window.location.pathname + '?' + urlParams.toString());
@@ -673,10 +688,6 @@ function initialize() {
 
     drawPuzzle();
 }
-
-
-
-
 
 function setDrawShape(drawSystem, systemName, params = [], fromInput = false) {
     drawSystem.dataset.system = systemName;
@@ -823,9 +834,9 @@ async function drawPuzzle() {
 
         let systemAxes = getAxesFromSystemUnit(systemUnit);
 
-        var slidersGroup = Array.from(systemUnit.getElementsByClassName('slider-group')[0].children).filter(sliderUnit => !sliderUnit.classList.contains('ghost-slider') && sliderUnit.getElementsByClassName('view-button')[0].dataset.isOn === "1");
+        var slidersGroup = Array.from(systemUnit.getElementsByClassName('slider-group')[0].children).filter(sliderUnit => !sliderUnit.classList.contains('ghost-slider'));
 
-        for (let i = slidersGroup.length - 1; i >= 0; i--) {
+        for (let i = flipShellsOrder ? 0 : slidersGroup.length - 1; flipShellsOrder ? (i < slidersGroup.length) : (i >= 0); flipShellsOrder ? i++ : i--) {
             const sliderUnit = slidersGroup[i];
 
             if (sliderUnit.classList.contains('ghost-slider')) continue;
@@ -834,13 +845,15 @@ async function drawPuzzle() {
             let color = sliderUnit.dataset.color;
 
             if (shellsViewMode) {
-                drawShells(systemUnit, systemAxes, slidersGroup[i + 1], sliderUnit, slidersGroup[i - 1], slidersGroup.length - i - 1);
+                drawShells(systemUnit, systemAxes, (flipShellsOrder ? slidersGroup[i - 1] : slidersGroup[i + 1]), sliderUnit, (flipShellsOrder ? slidersGroup[i + 1] : slidersGroup[i - 1]), flipShellsOrder ? i : (slidersGroup.length - i - 1));
             } else {
-                if (currentDrawShape) {
-                    drawShapeCuts(currentDrawShape, systemAxes, depth, apex, color);
-                } else {
-                    for (let axis of systemAxes) {
-                        drawCircleOnSphere(axis, depth, color);
+                if (sliderUnit.getElementsByClassName('view-button')[0].dataset.isOn === "1") {
+                    if (currentDrawShape) {
+                        drawShapeCuts(currentDrawShape, systemAxes, depth, apex, color);
+                    } else {
+                        for (let axis of systemAxes) {
+                            drawCircleOnSphere(axis, depth, color);
+                        }
                     }
                 }
             }
