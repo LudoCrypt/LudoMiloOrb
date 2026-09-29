@@ -412,6 +412,16 @@ function initialize() {
                     }
 
                     break;
+
+                case 'Minus':
+                case 'NumpadSubtract':
+                    shellsViewRadius -= 1;
+                    shellsViewRadius = Math.max(shellsViewRadius, 0);
+                    break;
+                case 'Equal':
+                case 'NumpadAdd':
+                    shellsViewRadius += 1;
+                    break;
             }
             drawPuzzle();
         }
@@ -838,12 +848,14 @@ async function drawPuzzle() {
     }
 }
 
+var shellsViewRadius = 15;
 function drawShells(systemUnit, systemAxes, prevSliderUnit, sliderUnit, nextSliderUnit, i) {
 
     const depth = sliderUnit.dataset.depth;
     const color = sliderUnit.dataset.color;
 
-    const maxSteps = Math.max(globalMaxSliders, 15);
+    const maxSteps = Math.max(2.0 * globalMaxSliders + 1.0, shellsViewRadius);
+
     const stepSize = 1.0 / maxSteps;
 
     const step = maxSteps - i - 1;
