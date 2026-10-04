@@ -2128,12 +2128,12 @@ function diptrapConstructor(trap) {
     let data = {
         name: trap ? 'trapezo' : 'dipyramid',
         order: 5,
-        paramsRequired: ['order', 'jumbleConfig'],
+        paramsRequired: ['order', 'jumbleConfig', 'altShape'],
         getBaseAxes: function(params) {
             let order = parseInt(params.order ?? this.order);
             return [
                 [new Vector(0, 0, 1), new Vector(0, 0, -1)],
-                [...new Array(order * (trap + 1)).keys()].map(i => new Vector(Math.cos((2 - trap) * Math.PI * i / order), Math.sin((2 - trap) * Math.PI * i / order), 0))
+                [...new Array(order * (trap + 1)).keys()].map(i => new Vector(Math.cos((2 - trap) * Math.PI * i / order + (params.altShape == "false" ? 0.0 : Math.PI / order)), Math.sin((2 - trap) * Math.PI * i / order + (params.altShape == "false" ? 0.0 : Math.PI / order)), 0))
             ];
         },
         getCombAxes: function(params) {
@@ -2214,10 +2214,17 @@ addSystem(diptrapConstructor(1));
 addSystem({
     name: 'equator',
     order: 5,
-    paramsRequired: ['order'],
+    paramsRequired: ['order', 'altShape'],
     getAxes: function(params) {
         let order = parseInt(params.order ?? this.order);
-        return [...new Array(order).keys()].map(i => new Vector(Math.cos(2 * Math.PI * i / order), Math.sin(2 * Math.PI * i / order), 0));
+        let axes = [];
+
+        for (let i = 0; i < order; i++) {
+            let theta = (2 * Math.PI * i) / order + (params.altShape == "false" ? 0.0 : Math.PI / order);
+
+            axes.push(new Vector(Math.cos(theta), Math.sin(theta), 0));
+        }
+        return axes;
     },
     getOpposites: function(params) {
         let order = parseInt(params.order ?? this.order);
@@ -2230,7 +2237,7 @@ addSystem({
 addSystem({
     name: 'prism_edges',
     order: 4,
-    paramsRequired: ['order'],
+    paramsRequired: ['order', 'altShape'],
     getAxes: function(params) {
         let order = parseInt(params.order ?? this.order);
         let axes = [];
@@ -2240,7 +2247,7 @@ addSystem({
         const sinPhi = Math.sin(phi);
 
         for (let i = 0; i < order; i++) {
-            let theta = (2 * Math.PI * i) / order;
+            let theta = (2 * Math.PI * i) / order + (params.altShape == "true" ? 0.0 : Math.PI / order);
 
             axes.push(new Vector(Math.cos(theta), Math.sin(theta), 0));
 

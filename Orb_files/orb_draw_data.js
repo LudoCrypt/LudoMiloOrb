@@ -297,7 +297,7 @@ addDrawShapeCategory({
 
 addDrawShape({
     name: 'equator',
-    paramsRequired: ['order', 'height'],
+    paramsRequired: ['order', 'height', 'altShape'],
     getShape: function(params) {
         let order = parseFloat(params.order ?? 3);
         let height = parseFloat(params.height ?? 1.0);
@@ -309,7 +309,7 @@ addDrawShape({
         for (let i = 0; i < order; i++) {
             let j = verts.length;
 
-            let angle = (i / order) * 2 * Math.PI + Math.PI / order;
+            let angle = (i / order) * 2 * Math.PI + (params.altShape == "true" ? 0.0 : Math.PI / order);
             verts.push([Math.cos(angle), Math.sin(angle), height]);
             verts.push([Math.cos(angle), Math.sin(angle), -height]);
 
