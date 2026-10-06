@@ -256,17 +256,17 @@ function initialize() {
                 }
 
                 if (snap && e.shiftKey && hoveredDomain) {
-                    setSlider(slidersInPhase[0].getElementsByClassName('slider-thumb')[0], parseFloat(hoveredDomain.dataset.centerX), parseFloat(slidersInPhase[0].getElementsByClassName('slider-thumb')[0].closest('.slider-unit').dataset.apex), false, true);
+                    setSlider(slidersInPhase[0].getElementsByClassName('slider-thumb')[0], parseFloat(hoveredDomain.dataset.centerX), parseFloat(slidersInPhase[0].getElementsByClassName('slider-thumb')[0].closest('.slider-unit').dataset.apex), false, true, false);
                     if (slidersInPhase[1]) {
-                        setSlider(slidersInPhase[1].getElementsByClassName('slider-thumb')[0], parseFloat(hoveredDomain.dataset.centerY), parseFloat(slidersInPhase[1].getElementsByClassName('slider-thumb')[0].closest('.slider-unit').dataset.apex), false, true);
+                        setSlider(slidersInPhase[1].getElementsByClassName('slider-thumb')[0], parseFloat(hoveredDomain.dataset.centerY), parseFloat(slidersInPhase[1].getElementsByClassName('slider-thumb')[0].closest('.slider-unit').dataset.apex), false, true, false);
                     }
                 } else {
                     let cursorPt = phaseMouseToPoint(e);
                     let newValueX = cursorPt.x - sliderGrabOffsetX;
-                    setSlider(slidersInPhase[0].querySelector('.slider-thumb:not(.wrong-sign)'), newValueX / phaseBakedScale, parseFloat(slidersInPhase[0].querySelector('.slider-thumb:not(.wrong-sign)').closest('.slider-unit').dataset.apex), false, true);
+                    setSlider(slidersInPhase[0].querySelector('.slider-thumb:not(.wrong-sign)'), newValueX / phaseBakedScale, parseFloat(slidersInPhase[0].querySelector('.slider-thumb:not(.wrong-sign)').closest('.slider-unit').dataset.apex), false, true, false);
                     if (slidersInPhase[1]) {
                         let newValueY = cursorPt.y - sliderGrabOffsetY;
-                        setSlider(slidersInPhase[1].querySelector('.slider-thumb:not(.wrong-sign)'), newValueY / phaseBakedScale, parseFloat(slidersInPhase[1].querySelector('.slider-thumb:not(.wrong-sign)').closest('.slider-unit').dataset.apex), false, true);
+                        setSlider(slidersInPhase[1].querySelector('.slider-thumb:not(.wrong-sign)'), newValueY / phaseBakedScale, parseFloat(slidersInPhase[1].querySelector('.slider-thumb:not(.wrong-sign)').closest('.slider-unit').dataset.apex), false, true, false);
                     }
                 }
 
@@ -1843,9 +1843,8 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
             let rect = sliderBar.getBoundingClientRect();
             let rect2 = sliderBarNeg.getBoundingClientRect();
             let recta = sliderBarApex.getBoundingClientRect();
-            let rectt = sliderThumb.getBoundingClientRect();
 
-            if (e.clientY < rectt.top || e.clientY > rectt.bottom) {
+            if (e.clientY < rect.top - 10 || e.clientY > rect.bottom + 10) {
                 return;
             }
 
@@ -1884,11 +1883,11 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
                 linkButton.dataset.isOn = 0;
                 linkButton.src = './icons/link_off.svg';
                 sliderUnit.getElementsByClassName('slider-input-apex')[0].value = 0.0;
-                if (reset) setSlider(sliderThumb, parseFloat(sliderUnit.dataset.depth), 0.0, true);
+                if (reset) setSlider(sliderThumb, parseFloat(sliderUnit.dataset.depth), 0.0, true, false, false);
             } else {
                 linkButton.dataset.isOn = 1;
                 linkButton.src = './icons/link_on.svg';
-                setSlider(sliderThumb, parseFloat(sliderUnit.dataset.depth), parseFloat(sliderUnit.dataset.depth), true);
+                setSlider(sliderThumb, parseFloat(sliderUnit.dataset.depth), parseFloat(sliderUnit.dataset.depth), true, false, false);
             }
             // the link button doesnt change phase, no need to auto update
             //hidePhaseDiagram(false);
@@ -1897,7 +1896,7 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
         });
 
         sliderInput.addEventListener('change', function(e) {
-            setSlider(sliderThumb, Math.cos(parseFloat(sliderInput.value) * Math.PI / 180.0), parseFloat(sliderUnit.dataset.apex), true);
+            setSlider(sliderThumb, Math.cos(parseFloat(sliderInput.value) * Math.PI / 180.0), parseFloat(sliderUnit.dataset.apex), true, false, false);
         });
 
         sliderApexInput.addEventListener('change', function(e) {
@@ -1908,11 +1907,13 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
             }
 
             sliderApexInput.value = prevApex;
-            setSlider(sliderThumb, parseFloat(sliderUnit.dataset.depth), prevApex, true);
+            setSlider(sliderThumb, parseFloat(sliderUnit.dataset.depth), prevApex, true, false, false);
         });
 
         buttons.forEach(button => {
-            button.addEventListener('click', function(e) {
+            button.addEventListener('mousedown', function(e) {
+                if (e.button !== 0) return;
+
                 const amount = parseFloat(this.getAttribute('data-step'));
 
                 let currentValue = parseFloat(sliderInput.value) || 0;
@@ -1921,7 +1922,7 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
 
                 sliderInput.value = newValue;
                 var cosAngleInput = Math.cos(parseFloat(sliderInput.value) * Math.PI / 180.0);
-                setSlider(sliderThumb, cosAngleInput, parseFloat(sliderUnit.dataset.apex), false);
+                setSlider(sliderThumb, cosAngleInput, parseFloat(sliderUnit.dataset.apex), false, false, false);
             });
         });
 
@@ -1997,7 +1998,7 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
             removeSlider(sliderUnit);
         });
 
-        setSlider(sliderThumb, depth, apex, false, true);
+        setSlider(sliderThumb, depth, apex, false, true, false);
         sliderDrag = undefined; // kind of a hack
         setSliderColor(colorButton, color);
         drawPuzzle();
@@ -2034,7 +2035,7 @@ function setSystem(systemIcon, systemName, fromInput = false) {
 }
 
 var prevApexMod = 0;
-function setSlider(sliderThumb, depth, apex, fromInput = false, fromExtern = false) { // it also clamps the value
+function setSlider(sliderThumb, depth, apex, fromInput = false, fromExtern = false, fromDrag = true) { // it also clamps the value
     //fromInput is if it's from the text box
     //fromExtern is if it's from the phase slider or similar
 
@@ -2050,7 +2051,7 @@ function setSlider(sliderThumb, depth, apex, fromInput = false, fromExtern = fal
     depth = clamp(depth, isFullDepth && !(fromExtern && !noOpposites) ? -1 : 0, 1);
 
     if (isFullDepth && ((depth >= 0) === isNegative) /*&& !fromInput*/ ) { // === acting as XOR
-        if (!fromInput && !fromExtern) sliderDrag = sliderThumbOpp;
+        if (!fromInput && !fromExtern && fromDrag) sliderDrag = sliderThumbOpp;
         swapNegate = -1;
     }
 
@@ -2187,7 +2188,7 @@ function updateSystemOpposite(systemUnit) {
             //sliderUnit.getElementsByClassName('slider-input-2')[0].max = 90;
             let sliderDepth = parseFloat(sliderUnit.dataset.depth);
             if (sliderDepth < 0) {
-                setSlider(sliderThumbs[0], Math.abs(sliderDepth), parseFloat(sliderThumbs[0].closest('.slider-unit').dataset.apex), false, true);
+                setSlider(sliderThumbs[0], Math.abs(sliderDepth), parseFloat(sliderThumbs[0].closest('.slider-unit').dataset.apex), false, true, false);
             }
         }
     }
