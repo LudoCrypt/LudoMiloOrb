@@ -1843,6 +1843,11 @@ function createSliderUnit(systemUnit, ghost = false, depth = 1, apex = 0, color 
             let rect = sliderBar.getBoundingClientRect();
             let rect2 = sliderBarNeg.getBoundingClientRect();
             let recta = sliderBarApex.getBoundingClientRect();
+            let rectt = sliderThumb.getBoundingClientRect();
+
+            if (e.clientY < rectt.top || e.clientY > rectt.bottom) {
+                return;
+            }
 
             // if we're out the bounds of the regular slider, we might be in apex town
             if ((e.clientX < rect.left || e.clientX > rect.right) && (e.clientX < rect2.left || e.clientX > rect2.right)) {
