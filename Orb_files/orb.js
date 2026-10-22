@@ -2305,7 +2305,7 @@ const paramsTemplates = {
     "normalConstantX": (systemUnit) => numberInputTemplate("normalConstantX", "x", systemUnit.dataset.normalConstantX, -1, 1, 0.01, true),
     "normalConstantY": (systemUnit) => numberInputTemplate("normalConstantY", "y", systemUnit.dataset.normalConstantY, -1, 1, 0.01, true),
     "normalConstantZ": (systemUnit) => numberInputTemplate("normalConstantZ", "z", systemUnit.dataset.normalConstantZ, -1, 1, 0.01, true),
-    "deltoidalConstant": (systemUnit) => numberInputTemplate("deltoidalConstant", "degrees", systemUnit.dataset.deltoidalConstant, 0, 90, 1, true),
+    "deltoidalConstant": (systemUnit) => numberInputTemplate("deltoidalConstant", "degrees", systemUnit.dataset.deltoidalConstant, 0, 45, 0.1, true),
     "height": (systemUnit) => numberInputTemplate("height", "height", systemUnit.dataset.height, 0, 5.0, 0.01, true),
     "baseAxesIncluded": (systemUnit) => booleanInputTemplate("baseAxesIncluded", "Include Base Axes", systemUnit.dataset.baseAxesIncluded == "true"),
     "altShape": (systemUnit) => booleanInputTemplate("altShape", "Alt", systemUnit.dataset.altShape == "true"),
@@ -2325,7 +2325,7 @@ const defaultParamsValues = {
     "normalConstantX": (systemUnit) => 1.0,
     "normalConstantY": (systemUnit) => 0.0,
     "normalConstantZ": (systemUnit) => 0.5,
-    "deltoidalConstant": (systemUnit) => 45,
+    "deltoidalConstant": (systemUnit) => 22.5,
     "height": (systemUnit) => 1.0,
     "baseAxesIncluded": (systemUnit) => true,
     "altShape": (systemUnit) => false,
@@ -2345,7 +2345,7 @@ const paramsPhysicalRanges = {
     "itphConstB": (data, systemUnit, value) => value <= 1.0 && value >= 0.0,
     "order": (data, systemUnit, value) => value >= 3,
     "height": (data, systemUnit, value) => value > 0.0,
-    "deltoidalConstant": (data, systemUnit, value) => value <= 90.0 && value >= 0.0
+    "deltoidalConstant": (data, systemUnit, value) => value <= 45.0 && value >= 0.0
 }
 
 function summonChangeDiv(targetButton, changeDiv) {

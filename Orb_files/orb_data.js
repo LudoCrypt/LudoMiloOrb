@@ -2487,7 +2487,7 @@ addSystem({
 });
 
 addSystem({
-    name: 'pyrito_vertices_variable',
+    name: 'pseudoicosahedron_variable',
     paramsRequired: ['pyritoConstA', 'baseAxesIncluded'],
     getAxes: function(params) {
         let x = parseFloat(params.pyritoConstA ?? 0.5);
@@ -2534,7 +2534,7 @@ addSystem({
 
 addSystem({
     name: 'pyrito_edges_variable',
-    paramsRequired: ['pyritoConstA'],
+    paramsRequired: ['pyritoConstA', 'baseAxesIncluded'],
     getAxes: function(params) {
         let x = parseFloat(params.pyritoConstA ?? 0.5);
 
@@ -2543,8 +2543,7 @@ addSystem({
         let q = (x + 1) / babaisyou;
         let l = ((x + 1) * (x + 1)) / babaisyou;
 
-        return [
-
+        let systemAxes = [
             new Vector(p, q, l),
             new Vector(p, -q, l),
             new Vector(-p, -q, l),
@@ -2574,8 +2573,18 @@ addSystem({
             new Vector(l, -p, -q),
             new Vector(-l, -p, -q),
             new Vector(-l, p, -q)
-
         ];
+
+        let newAxes = [
+            new Vector(1, 0, 0),
+            new Vector(0, 1, 0),
+            new Vector(0, 0, 1),
+            new Vector(-1, 0, 0),
+            new Vector(0, -1, 0),
+            new Vector(0, 0, -1),
+        ];
+
+        return [...systemAxes, ...(params.baseAxesIncluded == "true" ? newAxes : [])];
     },
     symmetries: 0x0001,
     transitiveSymmetries: 0x0000,
@@ -2626,7 +2635,7 @@ addSystem({
 
 
 addSystem({
-    name: 'tetartoid_vertices_variable',
+    name: 'snit_variable',
     paramsRequired: ['pyritoConstA', 'pyritoConstB', 'folder', 'pyritoConstC', 'end_folder', 'baseAxesIncluded'],
     getAxes: function(params) {
         let a = parseFloat(params.pyritoConstA ?? 0.5);
@@ -2672,7 +2681,7 @@ addSystem({
     name: 'deltoidal_icositetrahedron',
     paramsRequired: ['deltoidalConstant'],
     getAxes: function(params) {
-        let x = parseFloat(params.deltoidalConstant ?? 45) * 0.5;
+        let x = parseFloat(params.deltoidalConstant ?? 22.5);
 
         let tx = Math.tan(x * (Math.PI / 180.0));
 
@@ -2881,10 +2890,10 @@ const langs = {
         'category.special': 'Special',
         'system.prism_edges': 'Prism Edges',
         'system.pyrito_variable': 'Pyritohedron',
-        'system.pyrito_vertices_variable': 'Pyritohedron Vertices',
+        'system.pseudoicosahedron_variable': 'Pseudo-Icosahedron',
         'system.pyrito_edges_variable': 'Pyritohedron Edges',
         'system.tetartoid_variable': 'Tetartoid',
-        'system.tetartoid_vertices_variable': 'Tetartoid Vertices',
+        'system.snit_variable': 'Snub Tetrahedron',
         'system.icositetrapyritohedron_variable': 'Icositetrapyritohedron',
         'system.icositetrapyritohedron_vertices_variable': 'Icositetrapyritohedron Vertices',
         'system.deltoidal_icositetrahedron': 'Deltoidal Icositetrahedron',
@@ -2967,10 +2976,10 @@ const langs = {
         'category.special': 'Spécial',
         'system.prism_edges': 'Arêtes du prisme',
         'system.pyrito_variable': 'Pyritoèdre',
-        'system.pyrito_vertices_variable': 'Sommets du pyritoèdre',
+        'system.pseudoicosahedron_variable': 'Pseudo-icosaèdre',
         'system.pyrito_edges_variable': 'Arêtes du pyritoèdre',
         'system.tetartoid_variable': 'Tétartoïde',
-        'system.tetartoid_vertices_variable': 'Sommets du tétartoïde',
+        'system.snit_variable': 'Tétraèdre adouci',
         'system.icositetrapyritohedron_variable': 'Icositétraèdre pyritoédrique',
         'system.icositetrapyritohedron_vertices_variable': 'Sommets de l’icositétraèdre pyritoédrique',
         'system.deltoidal_icositetrahedron': 'Icositétraèdre trapézoïdal',
@@ -3054,10 +3063,10 @@ const langs = {
         'category.special': '特殊',
         'system.prism_edges': '棱柱的棱',
         'system.pyrito_variable': '五角十二面体',
-        'system.pyrito_vertices_variable': '五角十二面体的顶点',
+        'system.pseudoicosahedron_variable': '伪二十面体',
         'system.pyrito_edges_variable': '五角十二面体的棱',
         'system.tetartoid_variable': '五角三四面体',
-        'system.tetartoid_vertices_variable': '五角三四面体的顶点',
+        'system.snit_variable': '扭棱四面体',
         'system.icositetrapyritohedron_variable': '黄铁矿对称二十四面体',
         'system.icositetrapyritohedron_vertices_variable': '黄铁矿对称二十四面体的顶点',
         'system.deltoidal_icositetrahedron': '鸢形二十四面体',
@@ -3141,10 +3150,10 @@ const langs = {
         'category.special': '特殊',
         'system.prism_edges': '稜柱的稜',
         'system.pyrito_variable': '五角十二面體',
-        'system.pyrito_vertices_variable': '五角十二面體的頂點',
+        'system.pseudoicosahedron_variable': '偽二十面體',
         'system.pyrito_edges_variable': '五角十二面體的稜',
         'system.tetartoid_variable': '五角三四面體',
-        'system.tetartoid_vertices_variable': '五角三四面體的頂點',
+        'system.snit_variable': '扭稜四面體',
         'system.icositetrapyritohedron_variable': '黃鐵礦對稱二十四面體',
         'system.icositetrapyritohedron_vertices_variable': '黃鐵礦對稱二十四面體的頂點',
         'system.deltoidal_icositetrahedron': '鳶形二十四面體',

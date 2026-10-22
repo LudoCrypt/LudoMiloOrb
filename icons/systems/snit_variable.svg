@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 50 50">
+  <defs>
+    <style>
+      .st0 {
+        fill: none;
+        stroke: #231f20;
+        stroke-linecap: round;
+        stroke-miterlimit: 10;
+        stroke-width: 4px;
+      }
+    </style>
+  </defs>
+  <line class="st0" x1="26.1" y1="30.91" x2="10.06" y2="25.56"/>
+  <line class="st0" x1="26.1" y1="30.91" x2="20.15" y2="4.6"/>
+  <line class="st0" x1="10.06" y1="25.56" x2="20.15" y2="4.6"/>
+  <line class="st0" x1="10.06" y1="25.56" x2="24.48" y2="47.91"/>
+  <line class="st0" x1="26.1" y1="30.91" x2="24.48" y2="47.91"/>
+  <line class="st0" x1="46.4" y1="17.39" x2="44.96" y2="34.77"/>
+  <line class="st0" x1="26.1" y1="30.91" x2="44.96" y2="34.77"/>
+  <line class="st0" x1="26.1" y1="30.91" x2="46.4" y2="17.39"/>
+  <line class="st0" x1="5.04" y1="31.93" x2="3.6" y2="15.9"/>
+  <line class="st0" x1="10.06" y1="25.56" x2="5.04" y2="31.93"/>
+  <line class="st0" x1="10.06" y1="25.56" x2="3.6" y2="15.9"/>
+  <line class="st0" x1="20.15" y1="4.6" x2="29.85" y2="2.32"/>
+  <line class="st0" x1="20.15" y1="4.6" x2="46.4" y2="17.39"/>
+  <line class="st0" x1="29.85" y1="2.32" x2="46.4" y2="17.39"/>
+  <line class="st0" x1="20.15" y1="4.6" x2="3.6" y2="15.9"/>
+  <line class="st0" x1="24.48" y1="47.91" x2="5.04" y2="31.93"/>
+  <line class="st0" x1="24.48" y1="47.91" x2="44.96" y2="34.77"/>
+</svg>

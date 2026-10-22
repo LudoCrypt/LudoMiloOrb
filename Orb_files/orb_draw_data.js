@@ -442,6 +442,104 @@ addDrawShape({
 });
 
 addDrawShape({
+    name: 'pseudoicosahedron_variable',
+    paramsRequired: ['pyritoConstA'],
+    getShape: function(params) {
+        let a = parseFloat(params.pyritoConstA ?? 0.5);
+
+        a = clamp(a, 0.0, 1.0);
+
+        let verts = [
+            [0, 1, a],
+            [0, -1, a],
+            [0, 1, -a],
+            [0, -1, -a],
+            [-1, a, 0],
+            [1, -a, 0],
+            [1, a, 0],
+            [-1, -a, 0],
+            [-a, 0, 1],
+            [a, 0, 1],
+            [a, 0, -1],
+            [-a, 0, -1]
+        ];
+
+        let faces = [
+            [10, 11, 2],
+            [11, 10, 3],
+            [7, 8, 4],
+            [7, 4, 11],
+            [8, 9, 0],
+            [9, 8, 1],
+            [6, 5, 10],
+            [5, 6, 9],
+            [0, 2, 4],
+            [2, 0, 6],
+            [1, 3, 5],
+            [3, 1, 7],
+            [9, 6, 0],
+            [6, 10, 2],
+            [11, 4, 2],
+            [4, 8, 0],
+            [9, 1, 5],
+            [5, 3, 10],
+            [11, 3, 7],
+            [7, 1, 8]
+        ];
+
+        let edges = [
+            [10, 11],
+            [2, 11],
+            [2, 10],
+            [3, 10],
+            [3, 11],
+            [7, 8],
+            [4, 8],
+            [4, 7],
+            [4, 11],
+            [7, 11],
+            [8, 9],
+            [0, 9],
+            [0, 8],
+            [1, 8],
+            [1, 9],
+            [5, 6],
+            [5, 10],
+            [6, 10],
+            [6, 9],
+            [5, 9],
+            [0, 2],
+            [2, 4],
+            [0, 4],
+            [0, 6],
+            [2, 6],
+            [1, 3],
+            [3, 5],
+            [1, 5],
+            [1, 7],
+            [3, 7]
+        ];
+
+        let dist1 = (a + 1) / Math.sqrt(3);
+        let dist2i = Math.sqrt(1 + (1 - a) * (1 - a));
+        let dist2 = 1.0 / dist2i;
+        let faceDistances = [dist1, dist2];
+        let inverseFaceDistances = [1.0 / dist1, dist2i];
+        let closestFace = Math.min(dist1, dist2);
+        let closestFaceInverse = 1.0 / closestFace;
+        let furthestVertex = Math.sqrt(1 + a * a);
+        let furthestVertexInverse = 1.0 / furthestVertex;
+
+        let infos = { faceDistances, inverseFaceDistances, closestFace, closestFaceInverse, furthestVertex, furthestVertexInverse };
+
+        let vertices = verts.map(Vector.fromArray);
+        let triangles = triangleFan(faces);
+
+        return { vertices, triangles, infos };
+    }
+});
+
+addDrawShape({
     name: 'tetartoid_variable',
     paramsRequired: ['pyritoConstA', 'pyritoConstB', 'folder', 'pyritoConstC', 'end_folder'],
     getShape: function(params) {
@@ -536,6 +634,262 @@ addDrawShape({
         let closestFace = 1.0 / inverseDist;
         let closestFaceInverse = inverseDist;
         let furthestVertex = Math.max(Math.sqrt(3) * p, Math.hypot(a, b, 1));
+        let furthestVertexInverse = 1.0 / furthestVertex;
+
+        let infos = { faceDistances, inverseFaceDistances, closestFace, closestFaceInverse, furthestVertex, furthestVertexInverse };
+
+        let vertices = verts.map(Vector.fromArray);
+        let triangles = triangleFan(faces);
+
+        return { vertices, triangles, infos };
+    }
+});
+
+addDrawShape({
+    name: 'snit_variable',
+    paramsRequired: ['pyritoConstA', 'pyritoConstB', 'folder', 'pyritoConstC', 'end_folder'],
+    getShape: function(params) {
+        var a = parseFloat(params.pyritoConstA ?? 0.5);
+        var b = parseFloat(params.pyritoConstB ?? 0.5);
+        var c = parseFloat(params.pyritoConstC ?? 1.0);
+
+        a /= c;
+        b /= c;
+
+        b = clamp(b, 0.0, 1.0);
+        a = clamp(a, 0.0, b);
+
+        let p = Math.abs(a) < THRESHOLD && Math.abs(b) < THRESHOLD ? 0.5 : Math.abs(b - 1) < THRESHOLD ? 1.0 : (a * a - b) / (a * a - a * b + b * b + a - 2 * b);
+        let q = Math.abs(a) < THRESHOLD && Math.abs(b) < THRESHOLD ? 0.5 : Math.abs(b - 1) < THRESHOLD ? 1.0 : (a * a - b) / (a * a + a * b + b * b - a - 2 * b);
+
+        let u = Math.abs(a) < THRESHOLD && Math.abs(b) < THRESHOLD ? 1.0 : Math.abs(b - 1) < THRESHOLD ? 0.0 : b * (1 - b) / (b - a * a);
+        let v = Math.abs(a) < THRESHOLD && Math.abs(b) < THRESHOLD || Math.abs(b - 1) < THRESHOLD ? 0.0 : a * (1 - b) / (b - a * a);
+
+        let verts = [
+            [u, -v, 1],
+            [-u, v, 1],
+            [-u, -v, -1],
+            [u, v, -1],
+            [-v, 1, u],
+            [v, -1, u],
+            [v, 1, -u],
+            [-v, -1, -u],
+            [1, u, -v],
+            [-1, -u, -v],
+            [-1, u, v],
+            [1, -u, v]
+        ];
+
+        let faces = [
+            [1, 0, 4],
+            [0, 1, 5],
+            [8, 11, 3],
+            [8, 0, 11],
+            [3, 2, 6],
+            [2, 3, 7],
+            [10, 9, 1],
+            [9, 10, 2],
+            [6, 4, 8],
+            [4, 6, 10],
+            [7, 5, 9],
+            [5, 7, 11],
+            [8, 3, 6],
+            [2, 10, 6],
+            [10, 1, 4],
+            [0, 8, 4],
+            [0, 5, 11],
+            [11, 7, 3],
+            [2, 7, 9],
+            [9, 5, 1]
+        ];
+
+        let edges = [
+            [0, 1],
+            [0, 4],
+            [1, 4],
+            [1, 5],
+            [0, 5],
+            [8, 11],
+            [3, 11],
+            [3, 8],
+            [0, 11],
+            [0, 8],
+            [2, 3],
+            [2, 6],
+            [3, 6],
+            [3, 7],
+            [2, 7],
+            [9, 10],
+            [1, 9],
+            [1, 10],
+            [2, 10],
+            [2, 9],
+            [4, 6],
+            [4, 8],
+            [6, 8],
+            [6, 10],
+            [4, 10],
+            [5, 7],
+            [5, 9],
+            [7, 9],
+            [7, 11],
+            [5, 11]
+        ];
+
+        let inverseDist1 = Math.hypot(a, b, 1);
+        let inverseDist2 = Math.sqrt(3) * p;
+        let inverseDist3 = Math.sqrt(3) * q;
+
+        let dist1 = 1.0 / inverseDist1;
+        let dist2 = 1.0 / inverseDist2;
+        let dist3 = 1.0 / inverseDist3;
+
+        let faceDistances = [dist1, dist2, dist3];
+
+        let inverseFaceDistances = [inverseDist1, inverseDist2, inverseDist3];
+
+        let closestFace = Math.min(dist1, dist2, dist3);
+        let closestFaceInverse = 1.0 / closestFace;
+        let furthestVertex = Math.hypot(u, v, 1);
+        let furthestVertexInverse = 1.0 / furthestVertex;
+
+        let infos = { faceDistances, inverseFaceDistances, closestFace, closestFaceInverse, furthestVertex, furthestVertexInverse };
+
+        let vertices = verts.map(Vector.fromArray);
+        let triangles = triangleFan(faces);
+
+        return { vertices, triangles, infos };
+    }
+});
+
+addDrawShape({
+    name: 'deltoidal_icositetrahedron',
+    paramsRequired: ['deltoidalConstant'],
+    getShape: function(params) {
+        let x = parseFloat(params.deltoidalConstant ?? 22.5);
+        let tx = Math.tan(x * (Math.PI / 180.0));
+
+        var a = tx;
+        var b = tx;
+
+        var c = (1 + a + b);
+        var da = Math.abs(a - 1) < THRESHOLD && Math.abs(b - 1) < THRESHOLD ? 1.5 : (1 - a) * c / (1 - a * b);
+        var db = Math.abs(a - 1) < THRESHOLD && Math.abs(b - 1) < THRESHOLD ? 1.5 : (1 - b) * c / (1 - a * b);
+
+        let verts = [
+            [1, 1, 1],
+            [-1, 1, 1],
+            [1, -1, 1],
+            [-1, -1, 1],
+            [1, 1, -1],
+            [-1, 1, -1],
+            [1, -1, -1],
+            [-1, -1, -1],
+            [c, 0, 0],
+            [-c, 0, 0],
+            [0, 0, c],
+            [0, 0, -c],
+            [0, c, 0],
+            [0, -c, 0],
+            [0, da, db],
+            [0, -da, db],
+            [0, da, -db],
+            [0, -da, -db],
+            [da, db, 0],
+            [-da, -db, 0],
+            [-da, db, 0],
+            [da, -db, 0],
+            [db, 0, da],
+            [-db, 0, da],
+            [-db, 0, -da],
+            [db, 0, -da]
+        ];
+
+        let faces = [
+            [10, 22, 0, 14],
+            [10, 15, 2, 22],
+            [10, 14, 1, 23],
+            [10, 23, 3, 15],
+            [8, 18, 0, 22],
+            [21, 8, 22, 2],
+            [25, 8, 21, 6],
+            [8, 25, 4, 18],
+            [11, 25, 6, 17],
+            [24, 11, 17, 7],
+            [11, 24, 5, 16],
+            [25, 11, 16, 4],
+            [9, 24, 7, 19],
+            [9, 19, 3, 23],
+            [9, 23, 1, 20],
+            [9, 20, 5, 24],
+            [12, 20, 1, 14],
+            [12, 14, 0, 18],
+            [12, 18, 4, 16],
+            [12, 16, 5, 20],
+            [13, 19, 7, 17],
+            [13, 15, 3, 19],
+            [13, 21, 2, 15],
+            [13, 17, 6, 21]
+        ];
+
+        let edges = [
+            [10, 22],
+            [0, 22],
+            [0, 14],
+            [10, 14],
+            [10, 15],
+            [2, 15],
+            [2, 22],
+            [1, 14],
+            [1, 23],
+            [10, 23],
+            [3, 23],
+            [3, 15],
+            [8, 18],
+            [0, 18],
+            [8, 22],
+            [8, 21],
+            [2, 21],
+            [8, 25],
+            [6, 21],
+            [6, 25],
+            [4, 25],
+            [4, 18],
+            [11, 25],
+            [6, 17],
+            [11, 17],
+            [11, 24],
+            [7, 17],
+            [7, 24],
+            [5, 24],
+            [5, 16],
+            [11, 16],
+            [4, 16],
+            [9, 24],
+            [7, 19],
+            [9, 19],
+            [3, 19],
+            [9, 23],
+            [1, 20],
+            [9, 20],
+            [5, 20],
+            [12, 20],
+            [12, 14],
+            [12, 18],
+            [12, 16],
+            [13, 19],
+            [13, 17],
+            [13, 15],
+            [13, 21]
+        ];
+
+        // actually the inverse face distance is better to calculate first
+        let inverseDist = Math.hypot(a, b, 1) / c;
+        let faceDistances = [1.0 / inverseDist];
+        let inverseFaceDistances = [inverseDist];
+        let closestFace = 1.0 / inverseDist;
+        let closestFaceInverse = inverseDist;
+        let furthestVertex = Math.max(Math.max(Math.sqrt(3), c), Math.abs(a - 1) < THRESHOLD && Math.abs(b - 1) < THRESHOLD ? 3 : Math.hypot(da, db));
         let furthestVertexInverse = 1.0 / furthestVertex;
 
         let infos = { faceDistances, inverseFaceDistances, closestFace, closestFaceInverse, furthestVertex, furthestVertexInverse };
