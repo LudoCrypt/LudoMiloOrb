@@ -2755,7 +2755,7 @@ addSystem({
 });
 
 addSystem({
-    name: 'icositetrapyritohedron_vertices_variable',
+    name: 'icosihexapyritohedron_variable',
     paramsRequired: ['itphConstA', 'itphConstB', 'baseAxesIncluded'],
     getAxes: function(params) {
         let a = parseFloat(params.itphConstA ?? 0.5);
@@ -2895,7 +2895,7 @@ const langs = {
         'system.tetartoid_variable': 'Tetartoid',
         'system.snit_variable': 'Snub Tetrahedron',
         'system.icositetrapyritohedron_variable': 'Icositetrapyritohedron',
-        'system.icositetrapyritohedron_vertices_variable': 'Icositetrapyritohedron Vertices',
+        'system.icosihexapyritohedron_variable': 'Icosihexapyritohedron',
         'system.deltoidal_icositetrahedron': 'Deltoidal Icositetrahedron',
         'system.variable_normal': 'Custom Normal',
         'system.axis_system': 'Custom Axis System',
@@ -2981,7 +2981,7 @@ const langs = {
         'system.tetartoid_variable': 'Tétartoïde',
         'system.snit_variable': 'Tétraèdre adouci',
         'system.icositetrapyritohedron_variable': 'Icositétraèdre pyritoédrique',
-        'system.icositetrapyritohedron_vertices_variable': 'Sommets de l’icositétraèdre pyritoédrique',
+        'system.icosihexapyritohedron_variable': 'Icosihexaèdre pyritoédrique',
         'system.deltoidal_icositetrahedron': 'Icositétraèdre trapézoïdal',
         'system.variable_normal': 'Normale personnalisée',
         'system.axis_system': 'Système d’axes personnalisé',
@@ -3068,7 +3068,7 @@ const langs = {
         'system.tetartoid_variable': '五角三四面体',
         'system.snit_variable': '扭棱四面体',
         'system.icositetrapyritohedron_variable': '黄铁矿对称二十四面体',
-        'system.icositetrapyritohedron_vertices_variable': '黄铁矿对称二十四面体的顶点',
+        'system.icosihexapyritohedron_variable': '黄铁矿对称二十六面体',
         'system.deltoidal_icositetrahedron': '鸢形二十四面体',
         'system.variable_normal': '自定义法向量',
         'system.axis_system': '自定义轴系',
@@ -3155,7 +3155,7 @@ const langs = {
         'system.tetartoid_variable': '五角三四面體',
         'system.snit_variable': '扭稜四面體',
         'system.icositetrapyritohedron_variable': '黃鐵礦對稱二十四面體',
-        'system.icositetrapyritohedron_vertices_variable': '黃鐵礦對稱二十四面體的頂點',
+        'system.icosihexapyritohedron_variable': '黃鐵礦對稱二十六面體',
         'system.deltoidal_icositetrahedron': '鳶形二十四面體',
         'system.variable_normal': '自訂法向量',
         'system.axis_system': '自訂軸系',

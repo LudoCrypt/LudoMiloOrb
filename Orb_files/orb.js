@@ -1068,21 +1068,23 @@ function drawPointOnSphere(pointRaw) {
 
 function drawCircleOnSphere(centerRaw, depth, color) {
     let center = transform(sphereTransformation, centerRaw.unit());
-    // center is on sphere, depth from -1 to 1
+
     if (center.z < 0) {
         center = center.negative();
         depth *= -1;
     }
     let discrim = center.x ** 2 + center.y ** 2 - depth ** 2;
     let circleRadius = Math.sqrt(1 - depth ** 2);
-    //let circleSlant = center.z / Math.sqrt(1 - center.z**2);
+
+
     let beginAngle, endAngle;
-    //console.log(depth, discrim)
-    if (discrim <= 0 && depth > 0) {
+
+    if (discrim < THRESHOLD && depth > 0) {
         beginAngle = 0;
     } else if (discrim > 0) {
         beginAngle = Math.acos(center.z * depth / Math.sqrt((1 - center.z ** 2) * (1 - depth ** 2)));
     }
+
     if (beginAngle !== undefined) {
         endAngle = 2 * Math.PI - beginAngle;
         sphereCtx.beginPath();

@@ -1037,6 +1037,140 @@ addDrawShape({
     }
 });
 
+addDrawShape({
+    name: 'icosihexapyritohedron_variable',
+    paramsRequired: ['itphConstA', 'itphConstB'],
+    getShape: function(params) {
+        var a = parseFloat(params.itphConstA ?? 0.5);
+        var b = parseFloat(params.itphConstB ?? 0.5);
+
+        var c = (1 + a + b);
+
+        let verts = [
+            [a, b, 1],
+            [-a, b, 1],
+            [a, -b, 1],
+            [-a, -b, 1],
+            [a, b, -1],
+            [-a, b, -1],
+            [a, -b, -1],
+            [-a, -b, -1],
+            [b, 1, a],
+            [-b, 1, a],
+            [b, -1, a],
+            [-b, -1, a],
+            [b, 1, -a],
+            [-b, 1, -a],
+            [b, -1, -a],
+            [-b, -1, -a],
+            [1, a, b],
+            [-1, a, b],
+            [1, -a, b],
+            [-1, -a, b],
+            [1, a, -b],
+            [-1, a, -b],
+            [1, -a, -b],
+            [-1, -a, -b]
+        ];
+
+        let faces = [
+            [20, 16, 18, 22],
+            [5, 4, 6, 7],
+            [17, 21, 23, 19],
+            [0, 1, 3, 2],
+            [12, 13, 9, 8],
+            [10, 11, 15, 14],
+            [8, 0, 16],
+            [12, 20, 4],
+            [13, 5, 21],
+            [9, 17, 1],
+            [19, 11, 3],
+            [2, 10, 18],
+            [22, 14, 6],
+            [23, 7, 15],
+            [9, 13, 21, 17],
+            [1, 17, 19, 3],
+            [16, 0, 2, 18],
+            [20, 22, 6, 4],
+            [5, 7, 23, 21],
+            [23, 15, 11, 19],
+            [3, 11, 10, 2],
+            [18, 10, 14, 22],
+            [6, 14, 15, 7],
+            [13, 12, 4, 5],
+            [8, 9, 1, 0],
+            [12, 8, 16, 20]
+        ];
+
+        let edges = [
+            [16, 20],
+            [16, 18],
+            [18, 22],
+            [20, 22],
+            [4, 5],
+            [4, 6],
+            [6, 7],
+            [5, 7],
+            [17, 21],
+            [21, 23],
+            [19, 23],
+            [17, 19],
+            [0, 1],
+            [1, 3],
+            [2, 3],
+            [0, 2],
+            [12, 13],
+            [9, 13],
+            [8, 9],
+            [8, 12],
+            [10, 11],
+            [11, 15],
+            [14, 15],
+            [10, 14],
+            [0, 8],
+            [0, 16],
+            [8, 16],
+            [12, 20],
+            [4, 20],
+            [4, 12],
+            [5, 13],
+            [5, 21],
+            [13, 21],
+            [9, 17],
+            [1, 17],
+            [1, 9],
+            [11, 19],
+            [3, 11],
+            [3, 19],
+            [2, 10],
+            [10, 18],
+            [2, 18],
+            [14, 22],
+            [6, 14],
+            [6, 22],
+            [7, 23],
+            [7, 15],
+            [15, 23]
+        ];
+
+        let dist1 = Math.abs(a - 1) < THRESHOLD && Math.abs(b - 1) < THRESHOLD ? Math.sqrt(2) : (1 - a * b) / Math.hypot(1 - a, 1 - b);
+
+        let faceDistances = [1, c / Math.sqrt(3), dist1];
+        let inverseFaceDistances = [1, Math.sqrt(3) / c, 1.0 / dist1];
+        let closestFace = Math.min(1, c / Math.sqrt(3), dist1);
+        let closestFaceInverse = 1.0 / closestFace;
+        let furthestVertex = Math.hypot(1, a, b);
+        let furthestVertexInverse = 1.0 / furthestVertex;
+
+        let infos = { faceDistances, inverseFaceDistances, closestFace, closestFaceInverse, furthestVertex, furthestVertexInverse };
+
+        let vertices = verts.map(Vector.fromArray);
+        let triangles = triangleFan(faces);
+
+        return { vertices, triangles, infos };
+    }
+});
+
 function triangleFan(faces) {
     const triangles = [];
     for (const face of faces) {
