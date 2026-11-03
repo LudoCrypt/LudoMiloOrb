@@ -861,6 +861,119 @@ async function drawPuzzle() {
     }
 }
 
+function findMaskedCircleClippings(axis, depth, maskingAxes, maskingSigns, maskingDepth) {
+
+    let center = transform(sphereTransformation, axis.unit());
+
+    if (center.z < 0) {
+        center = center.negative();
+        depth *= -1;
+    }
+
+    let circleRadius = Math.sqrt(1 - depth * depth);
+    let hypot = Math.hypot(center.x, center.y);
+
+    let tangent = new Vector(1, 0, 0);
+    let binormal = new Vector(0, 1, 0);
+
+    // if we're not parallel to the z axis
+    if (hypot > THRESHOLD) {
+        tangent = new Vector(center.z * center.x / hypot, center.z * center.y / hypot, -hypot);
+        binormal = new Vector(-center.y / hypot, center.x / hypot, 0);
+    }
+
+    // maybe make these a floatset if necessary?
+    let coeffs = [];
+    let angles = [0, 2 * Math.PI];
+
+    // i = -1 is for clipping with the camera's view
+    for (let i = -1; i < maskingAxes.length; i++) {
+        let mask = (i < 0) ? new Vector(0, 0, 1) : transform(sphereTransformation, maskingAxes[i].unit());
+        let planeDepth = (i < 0) ? 0 : maskingDepth;
+        let sign = (i < 0) ? 1 : maskingSigns[i];
+
+        let cu = sign * circleRadius * (mask.x * tangent.x + mask.y * tangent.y + mask.z * tangent.z);
+        let cv = sign * circleRadius * (mask.x * binormal.x + mask.y * binormal.y + mask.z * binormal.z);
+        let cc = sign * (planeDepth - depth * (mask.x * center.x + mask.y * center.y + mask.z * center.z));
+
+        let hypot = Math.hypot(cu, cv);
+
+        // the plane doesn't cross the circle
+        if (hypot < THRESHOLD) {
+            // if we're not on the right side of a plane that doesnt cross the circle then no part of it is visible
+            if (cc > THRESHOLD) return [];
+            continue;
+        }
+
+        if (cc > hypot + THRESHOLD) return [];
+        if (cc < -hypot - THRESHOLD) continue;
+
+        coeffs.push([cu, cv, cc]);
+
+        const phase = Math.atan2(cv, cu);
+        const div = Math.acos(clamp(cc / hypot, -1, 1));
+
+        angles.push((((phase - div) % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI));
+        angles.push((((phase + div) % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI));
+    }
+
+    angles.sort((a, b) => a - b);
+
+    let clippings = [];
+
+    // validation
+    validation: for (let i = 0; i < angles.length - 1; i++) {
+        let beginAngle = angles[i];
+        let endAngle = angles[i + 1];
+
+        // TECHNICALLY this shouldnt be possible (due to the storting) but perhaps floating point around "equal" values?
+        if (endAngle - beginAngle < THRESHOLD) continue;
+
+        let midAngle = (beginAngle + endAngle) * 0.5;
+        let cm = Math.cos(midAngle);
+        let sm = Math.sin(midAngle);
+
+        for (let j = 0; j < coeffs.length; j++) {
+            if (coeffs[j][0] * cm + coeffs[j][1] * sm < coeffs[j][2] - THRESHOLD) {
+                continue validation;
+            }
+        }
+
+        if (clippings.length > 0 && beginAngle - clippings[clippings.length - 1][1] < THRESHOLD) {
+            clippings[clippings.length - 1][1] = endAngle;
+        } else {
+            clippings.push([beginAngle, endAngle]);
+        }
+    }
+
+    return clippings;
+}
+
+function drawMaskedCircleOnSphere(axis, depth, color, maskingAxes, maskingSigns, maskingDepth) {
+    let clippings = findMaskedCircleClippings(axis, depth, maskingAxes, maskingSigns, maskingDepth);
+
+    if (clippings.length === 0) return;
+
+    let center = transform(sphereTransformation, axis.unit());
+
+    if (center.z < 0) {
+        center = center.negative();
+        depth *= -1;
+    }
+
+    let circleRadius = Math.sqrt(1 - depth * depth);
+    let hypot = Math.hypot(center.x, center.y);
+
+    let rotation = Math.atan2(center.y, center.x);
+
+    for (let i = 0; i < clippings.length; i++) {
+        sphereCtx.beginPath();
+        sphereCtx.ellipse(center.x * depth, center.y * depth, circleRadius * center.z, circleRadius, rotation, clippings[i][0], clippings[i][1]);
+        sphereCtx.strokeStyle = color;
+        sphereCtx.stroke();
+    }
+}
+
 var shellsViewRadius = 15;
 function drawShells(systemUnit, systemAxes, prevSliderUnit, sliderUnit, nextSliderUnit, i) {
 

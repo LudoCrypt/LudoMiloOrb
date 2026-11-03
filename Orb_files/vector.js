@@ -77,7 +77,7 @@ Vector.prototype = {
     this.x = x; this.y = y; this.z = z;
     return this;
   },
-  // modified
+  // modified (added)
   toString: function() {
     return '(' + this.x + ', ' + this.y + ', ' + this.z + ')';
   }
@@ -144,4 +144,19 @@ Vector.fromArray = function(a) {
 };
 Vector.angleBetween = function(a, b) {
   return a.angleTo(b);
+};
+
+// modified (added)
+// the angle to rotate c around a to align with the ab plane
+// assumes a is a unit vector
+Vector.angleAround = function(a, b, c) {
+  let u = c.subtract(a.multiply(c.dot(a)));
+  let v = b.subtract(a.multiply(b.dot(a)));
+  return Math.atan2(a.dot(u.cross(v)), u.dot(v));
+};
+// modified (added)
+// rotate b around a by some angle
+// assumes a is a unit vector
+Vector.rotateAround = function(a, b, theta) {
+  return b.multiply(Math.cos(theta)).add(a.cross(b).multiply(Math.sin(theta))).add(a.multiply(a.dot(b) * (1 - Math.cos(theta))));
 };
