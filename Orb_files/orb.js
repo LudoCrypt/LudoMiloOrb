@@ -851,6 +851,16 @@ async function drawPuzzle() {
                     if (currentDrawShape) {
                         drawShapeCuts(currentDrawShape, systemAxes, depth, apex, color);
                     } else {
+
+                        // if (computedJumbling) {
+                        //     for (let jumblingDict of computedJumbling) {
+
+                        //         for (let axis of jumblingDict.candidates) {
+                        //             drawMaskedCircleOnSphere(new Vector(axis[0], axis[1], axis[2]), depth, color, systemAxes, jumblingDict.mask, depth);
+                        //         }
+                        //     }
+                        // }
+
                         for (let axis of systemAxes) {
                             drawCircleOnSphere(axis, depth, color);
                         }
@@ -859,6 +869,61 @@ async function drawPuzzle() {
             }
         }
     }
+}
+
+
+
+function precomputeBasicJumbling(systemAxes) {
+    let jumblingCuts = [];
+
+    for (let i = 0; i < systemAxes.length; i++) {
+        for (let j = 0; j < systemAxes.length; j++) {
+
+            let axis1 = systemAxes[i].unit();
+            let axis2 = systemAxes[j].unit();
+
+            if (systemAxes[i].equals(systemAxes[j])) continue;
+
+            let d12 = axis1.dot(axis2);
+
+            if (Math.abs(d12) < THRESHOLD) continue;
+
+            let mask = new Array(systemAxes.length).fill(0);
+            mask[i] = 1;
+            mask[j] = 1;
+
+            let candidates = new FloatSet(3);
+            let exclusion = new FloatSet(3);
+
+            for (let k = 0; k < systemAxes.length; k++) {
+                exclusion.add([systemAxes[k].x, systemAxes[k].y, systemAxes[k].z]);
+            }
+
+            candidates.exclusionSet = exclusion;
+
+            for (let k = 0; k < systemAxes.length; k++) {
+                let axis3 = systemAxes[k].unit();
+
+                if (systemAxes[i].equals(systemAxes[k])) continue;
+                if (systemAxes[j].equals(systemAxes[k])) continue;
+
+                let d13 = axis1.dot(axis3);
+
+                if (Math.abs(d12 - d13) < THRESHOLD) {
+                    let turnAmount = Vector.angleAround(axis1, axis2, axis3);
+
+                    for (let l = 0; l < systemAxes.length; l++) {
+                        let rotatedAxis = Vector.rotateAround(axis1, systemAxes[l], turnAmount);
+                        candidates.add([rotatedAxis.x, rotatedAxis.y, rotatedAxis.z]);
+                    }
+                }
+            }
+
+            jumblingCuts.push({candidates, mask});
+        }
+    }
+
+    return jumblingCuts;
 }
 
 function findMaskedCircleClippings(axis, depth, maskingAxes, maskingSigns, maskingDepth) {
@@ -2147,6 +2212,8 @@ function setSystem(systemIcon, systemName, fromInput = false) {
     createPhasePlot(true);
     hidePhaseDiagram();
     if (closeChangeDivsOnSelect && fromInput) removeChangeDivs();
+
+    //computedJumbling = precomputeBasicJumbling(getAxesFromSystemUnit(systemUnit));
 }
 
 var prevApexMod = 0;
@@ -2627,8 +2694,12 @@ async function setSystemParam(param, systemUnit, value, isDrawParams = false) {
         await resetDrawShapeRender();
     }
 
+    //computedJumbling = precomputeBasicJumbling(getAxesFromSystemUnit(systemUnit));
+
     drawPuzzle();
 }
+
+//var computedJumbling;
 
 function removeChangeDivs() {
     activeChangeDiv = undefined;

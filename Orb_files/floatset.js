@@ -14,6 +14,8 @@ function FloatSet(dimension=1, threshold){
     this.hashMap = new Map();
     this.size = 0;
 
+    this.exclusionSet = null;
+
     this.find = function(el, callbackFound, callbackNotFound){
         if (this.dimension === 1 && typeof el === 'number') el = [el];
         if (el.some(x => Number.isNaN(x))) return null;
@@ -47,6 +49,7 @@ function FloatSet(dimension=1, threshold){
     }
 
     this.add = function(el){
+        if (this.exclusionSet && this.exclusionSet.has(el)) return this;
         return this.find(el, (ths, el, box, j, nearbyElements) => ths, (ths, el, nearbyElements) => {
             nearbyElements.push(el);
             ths.size ++;
@@ -55,6 +58,10 @@ function FloatSet(dimension=1, threshold){
     }
 
     this.addWhich = function(el){
+        if (this.exclusionSet) {
+            let ele = this.exclusionSet.hasWhich(el);
+            if (ele) return ele;
+        }
         return this.find(el, (ths, el, box, j, nearbyElements) => nearbyElements[j], (ths, el, nearbyElements) => {
             nearbyElements.push(el);
             ths.size ++;
